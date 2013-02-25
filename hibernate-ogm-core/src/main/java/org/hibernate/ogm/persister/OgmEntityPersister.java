@@ -22,11 +22,12 @@ package org.hibernate.ogm.persister;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.persistence.InheritanceType;
 
 import org.hibernate.cache.spi.access.NaturalIdRegionAccessStrategy;
 import org.hibernate.internal.DynamicFilterAliasGenerator;
@@ -57,8 +58,9 @@ import org.hibernate.engine.spi.ValueInclusion;
 import org.hibernate.loader.entity.UniqueEntityLoader;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.PersistentClass;
-import org.hibernate.mapping.Subclass;
+import org.hibernate.mapping.Selectable;
 import org.hibernate.mapping.Table;
+import org.hibernate.mapping.Value;
 import org.hibernate.ogm.datastore.spi.Association;
 import org.hibernate.ogm.datastore.spi.Tuple;
 import org.hibernate.ogm.dialect.GridDialect;
@@ -84,28 +86,27 @@ import org.hibernate.type.Type;
 import static org.hibernate.ogm.persister.EntityDehydrator.buildRowKeyColumnNamesForStarToOne;
 
 /**
- * Use a table per concrete class strategy
+ * Use single table strategy
  * TODO most of the non persister code SIC comes from {@link org.hibernate.persister.entity.UnionSubclassEntityPersister}
  *
+ * @see InheritanceType#SINGLE_TABLE
  * @author Emmanuel Bernard
  */
 public class OgmEntityPersister extends AbstractEntityPersister implements EntityPersister {
 
 	private static final Log log = LoggerFactory.make();
 
-	//not per se SQL value but a regular grid value
-	private final String discriminatorSQLValue;
+	private final EntityDiscriminator discriminator;
+
 	private final String tableName;
 	private final String[] constraintOrderedTableNames;
 	private final String[][] constraintOrderedKeyColumnNames;
-	private final Map<Integer, String> subclassByDiscriminatorValue = new HashMap<Integer, String>();
 	private final String[] spaces;
 	private final String[] subclassSpaces;
 	private final GridType[] gridPropertyTypes;
 	private final GridType gridVersionType;
 	private final GridType gridIdentifierType;
 	private final String jpaEntityName;
-	private Object discriminatorValue;
 	private final TupleContext tupleContext;
 
 	//service references
@@ -119,6 +120,16 @@ public class OgmEntityPersister extends AbstractEntityPersister implements Entit
 			final NaturalIdRegionAccessStrategy naturalIdRegionAccessStrategy,
 			final SessionFactoryImplementor factory,
 			final Mapping mapping) throws HibernateException {
+		this( persistentClass, cacheAccessStrategy, naturalIdRegionAccessStrategy, factory, mapping, resolveDiscriminator( persistentClass, factory ) );
+	}
+
+	OgmEntityPersister(
+			final PersistentClass persistentClass,
+			final EntityRegionAccessStrategy cacheAccessStrategy,
+			final NaturalIdRegionAccessStrategy naturalIdRegionAccessStrategy,
+			final SessionFactoryImplementor factory,
+			final Mapping mapping,
+			final EntityDiscriminator discriminator) throws HibernateException {
 		super(persistentClass, cacheAccessStrategy, naturalIdRegionAccessStrategy, factory);
 		if ( log.isTraceEnabled() ) {
 			log.tracef( "Creating OgmEntityPersister for %s", persistentClass.getClassName() );
@@ -131,25 +142,8 @@ public class OgmEntityPersister extends AbstractEntityPersister implements Entit
 				factory.getSettings().getDefaultCatalogName(),
 				factory.getSettings().getDefaultSchemaName()
 		);
-		discriminatorValue = persistentClass.getSubclassId();
-		discriminatorSQLValue = String.valueOf( persistentClass.getSubclassId() );
 
-		// SUBCLASSES
-
-		//We do not need a discriminator as each entity type will be in its own key "space" roughly like a
-		//UnionSubclassEntityPersister / table-per-concrete-class implementation
-		subclassByDiscriminatorValue.put(
-				persistentClass.getSubclassId(),
-				persistentClass.getEntityName()
-		);
-		if ( persistentClass.isPolymorphic() ) {
-			@SuppressWarnings( "unchecked" )
-			Iterator<Subclass> iter = persistentClass.getSubclassIterator();
-			while ( iter.hasNext() ) {
-				Subclass sc = iter.next();
-				subclassByDiscriminatorValue.put( sc.getSubclassId(), sc.getEntityName() );
-			}
-		}
+		this.discriminator = discriminator;
 
 		//SPACES
 		//TODO: i'm not sure, but perhaps we should exclude
@@ -232,8 +226,27 @@ public class OgmEntityPersister extends AbstractEntityPersister implements Entit
 				columnNames.add( property[columnCount] );
 			}
 		}
+		if ( discriminator.getColumnName() != null ) {
+			columnNames.add( discriminator.getColumnName() );
+		}
 		this.tupleContext = new TupleContext( columnNames );
 		jpaEntityName = persistentClass.getJpaEntityName();
+	}
+
+	private static EntityDiscriminator resolveDiscriminator(final PersistentClass persistentClass, final SessionFactoryImplementor factory) {
+		if ( persistentClass.isPolymorphic() ) {
+			Value discrimValue = persistentClass.getDiscriminator();
+			Selectable selectable = (Selectable) discrimValue.getColumnIterator().next();
+			if ( discrimValue.hasFormula() ) {
+				throw new UnsupportedOperationException( "OGM doesn't support discriminator formulas" );
+			}
+			else {
+				return new ColumnBasedDiscriminator( persistentClass, factory, (Column) selectable );
+			}
+		}
+		else {
+			return NotNeededDiscriminator.INSTANCE;
+		}
 	}
 
 	//FIXME finish implement postInstantiate
@@ -890,8 +903,11 @@ public class OgmEntityPersister extends AbstractEntityPersister implements Entit
 					throw new HibernateException( "trying to insert an already existing entity: "
 							+  MessageHelper.infoString( this, id, getFactory() ) );
 				}
-				//TODO add discriminator
 
+				if ( discriminator.isNeeded() ) {
+					resultset = createNewResultSetIfNull( key, resultset, id, session );
+					resultset.put( getDiscriminatorColumnName(), getDiscriminatorValue() );
+				}
 			}
 
 			resultset = createNewResultSetIfNull( key, resultset, id, session );
@@ -900,6 +916,16 @@ public class OgmEntityPersister extends AbstractEntityPersister implements Entit
 			dehydrate(resultset, fields, propertiesToInsert, getPropertyColumnInsertable(), j, id, session );
 			gridDialect.updateTuple( resultset, key );
 		}
+	}
+
+	@Override
+	public String getDiscriminatorColumnName() {
+		return discriminator.getColumnName();
+	}
+
+	@Override
+	protected String getDiscriminatorAlias() {
+		return discriminator.getAlias();
 	}
 
 	private Tuple createNewResultSetIfNull(
@@ -1022,7 +1048,7 @@ public class OgmEntityPersister extends AbstractEntityPersister implements Entit
 
 	@Override
 	public String getDiscriminatorSQLValue() {
-		return discriminatorSQLValue;
+		return discriminator.getSqlValue();
 	}
 
 	@Override
@@ -1137,12 +1163,12 @@ public class OgmEntityPersister extends AbstractEntityPersister implements Entit
 
 	@Override
 	public Object getDiscriminatorValue() {
-		return discriminatorValue;
+		return discriminator.getValue();
 	}
 
 	@Override
 	public String getSubclassForDiscriminatorValue(Object value) {
-		return subclassByDiscriminatorValue.get(value);
+		return discriminator.provideClassByValue(value);
 	}
 
 	@Override
