@@ -23,6 +23,7 @@ package org.hibernate.ogm.test.massindex;
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,11 +55,11 @@ public class AssociationMassIndexerTest extends JpaTestCase {
 		{
 			List<IndexedLabel> labes = Arrays.asList( new IndexedLabel( "massindex" ), new IndexedLabel( "test" ) );
 			IndexedNews news = new IndexedNews( new NewsID( "title", "author" ), "content" );
+			news.setLabels( labes );
 			boolean operationSuccessful = false;
 			try {
 				getTransactionManager().begin();
 				EntityManager em = createEntityManager();
-				news.setLabels( labes );
 				em.persist( news );
 				operationSuccessful = true;
 			}
@@ -76,10 +77,13 @@ public class AssociationMassIndexerTest extends JpaTestCase {
 			try {
 				getTransactionManager().begin();
 				@SuppressWarnings("unchecked")
-				List<IndexedNews> list = createSession().createQuery( "FROM " + IndexedNews.class.getSimpleName() ).list();
+				List<IndexedNews> list = createSession().createQuery( "FROM IndexedNews " ).list();
 				assertThat( list ).hasSize( 1 );
-				assertThat( list.get( 0 ).getLabels() ).hasSize( 2 );
-				assertThat( list.get( 0 ).getLabels() ).contains( new IndexedLabel( "massindex" ), new IndexedLabel( "test" ) );
+
+				List<IndexedLabel> labels = list.get( 0 ).getLabels();
+				assertThat( labels ).hasSize( 2 );
+				assertThat( contains( labels, "massindex" ) ).isTrue();
+				assertThat( contains( labels, "test" ) ).isTrue();
 				operationSuccessful = true;
 			}
 			finally {
@@ -91,15 +95,25 @@ public class AssociationMassIndexerTest extends JpaTestCase {
 			try {
 				getTransactionManager().begin();
 				@SuppressWarnings("unchecked")
-				List<IndexedLabel> list = createSession().createQuery( "FROM " + IndexedLabel.class.getSimpleName() ).list();
-				assertThat( list ).hasSize( 2 );
-				assertThat( list ).contains( new IndexedLabel( "massindex" ), new IndexedLabel( "test" ) );
+				List<IndexedLabel> labels = createSession().createQuery( "FROM IndexedLabel " ).list();
+				assertThat( labels ).hasSize( 2 );
+				assertThat( contains( labels, "massindex" ) ).isTrue();
+				assertThat( contains( labels, "test" ) ).isTrue();
 				operationSuccessful = true;
 			}
 			finally {
 				commitOrRollback( operationSuccessful );
 			}
 		}
+	}
+
+	private boolean contains(List<IndexedLabel> list, String label) {
+		for ( IndexedLabel indexedLabel : list ) {
+			if ( indexedLabel.getName().equals( label ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@After

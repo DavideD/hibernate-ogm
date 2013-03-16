@@ -24,9 +24,10 @@ import org.hibernate.ogm.test.id.NewsID;
 import org.hibernate.search.bridge.TwoWayStringBridge;
 
 /**
+ * TODO: Don't try this at home
  * @author Davide D'Alto <davide@hibernate.org>
  */
-public class newsIdFieldBridge implements TwoWayStringBridge {
+public class NewsIdFieldBridge implements TwoWayStringBridge {
 
 	private static final String SEP = "::::";
 

@@ -24,6 +24,7 @@ import static org.hibernate.ogm.datastore.spi.DefaultDatastoreNames.ASSOCIATION_
 import static org.hibernate.ogm.datastore.spi.DefaultDatastoreNames.ENTITY_STORE;
 import static org.hibernate.ogm.datastore.spi.DefaultDatastoreNames.IDENTIFIER_STORE;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -55,6 +56,10 @@ import org.infinispan.Cache;
 import org.infinispan.atomic.AtomicMapLookup;
 import org.infinispan.atomic.FineGrainedAtomicMap;
 import org.infinispan.context.Flag;
+import org.infinispan.distexec.mapreduce.Collector;
+import org.infinispan.distexec.mapreduce.MapReduceTask;
+import org.infinispan.distexec.mapreduce.Mapper;
+import org.infinispan.distexec.mapreduce.Reducer;
 
 /**
  * @author Emmanuel Bernard
@@ -70,31 +75,34 @@ public class InfinispanDialect implements GridDialect {
 	/**
 	 * Get a strategy instance which knows how to acquire a database-level lock
 	 * of the specified mode for this dialect.
-	 *
-	 * @param lockable The persister for the entity to be locked.
-	 * @param lockMode The type of lock to be acquired.
+	 * 
+	 * @param lockable
+	 *            The persister for the entity to be locked.
+	 * @param lockMode
+	 *            The type of lock to be acquired.
 	 * @return The appropriate locking strategy.
 	 * @since 3.2
 	 */
 	@Override
 	public LockingStrategy getLockingStrategy(Lockable lockable, LockMode lockMode) {
-		if ( lockMode==LockMode.PESSIMISTIC_FORCE_INCREMENT ) {
+		if ( lockMode == LockMode.PESSIMISTIC_FORCE_INCREMENT ) {
 			return new PessimisticForceIncrementLockingStrategy( lockable, lockMode );
 		}
-		else if ( lockMode==LockMode.PESSIMISTIC_WRITE ) {
+		else if ( lockMode == LockMode.PESSIMISTIC_WRITE ) {
 			return new InfinispanPessimisticWriteLockingStrategy( lockable, lockMode );
 		}
-		else if ( lockMode==LockMode.PESSIMISTIC_READ ) {
-			//TODO find a more efficient pessimistic read
+		else if ( lockMode == LockMode.PESSIMISTIC_READ ) {
+			// TODO find a more efficient pessimistic read
 			return new InfinispanPessimisticWriteLockingStrategy( lockable, lockMode );
 		}
-		else if ( lockMode==LockMode.OPTIMISTIC ) {
+		else if ( lockMode == LockMode.OPTIMISTIC ) {
 			return new OptimisticLockingStrategy( lockable, lockMode );
 		}
-		else if ( lockMode==LockMode.OPTIMISTIC_FORCE_INCREMENT ) {
+		else if ( lockMode == LockMode.OPTIMISTIC_FORCE_INCREMENT ) {
 			return new OptimisticForceIncrementLockingStrategy( lockable, lockMode );
 		}
-		throw new UnsupportedOperationException( "LockMode " + lockMode + " is not supported by the Infinispan GridDialect" );
+		throw new UnsupportedOperationException( "LockMode " + lockMode
+				+ " is not supported by the Infinispan GridDialect" );
 	}
 
 	@Override
@@ -111,38 +119,38 @@ public class InfinispanDialect implements GridDialect {
 
 	@Override
 	public Tuple createTuple(EntityKey key) {
-		//TODO we don't verify that it does not yet exist assuming that this has been done before by the calling code
-		//should we improve?
-		Cache<EntityKey, Map<String, Object>> cache = provider.getCache(ENTITY_STORE);
-		FineGrainedAtomicMap<String,Object> atomicMap =  AtomicMapLookup.getFineGrainedAtomicMap( cache, key, true );
+		// TODO we don't verify that it does not yet exist assuming that this has been done before by the calling code
+		// should we improve?
+		Cache<EntityKey, Map<String, Object>> cache = provider.getCache( ENTITY_STORE );
+		FineGrainedAtomicMap<String, Object> atomicMap = AtomicMapLookup.getFineGrainedAtomicMap( cache, key, true );
 		return new Tuple( new InfinispanTupleSnapshot( atomicMap ) );
 	}
 
 	@Override
 	public void updateTuple(Tuple tuple, EntityKey key) {
-		Map<String,Object> atomicMap = ( (InfinispanTupleSnapshot) tuple.getSnapshot() ).getAtomicMap();
+		Map<String, Object> atomicMap = ( (InfinispanTupleSnapshot) tuple.getSnapshot() ).getAtomicMap();
 		MapHelpers.applyTupleOpsOnMap( tuple, atomicMap );
 	}
 
 	@Override
 	public void removeTuple(EntityKey key) {
-		Cache<EntityKey, Map<String, Object>> cache = provider.getCache(ENTITY_STORE);
+		Cache<EntityKey, Map<String, Object>> cache = provider.getCache( ENTITY_STORE );
 		AtomicMapLookup.removeAtomicMap( cache, key );
 	}
 
 	@Override
 	public Association getAssociation(AssociationKey key, AssociationContext associationContext) {
-		Cache<AssociationKey, Map<RowKey, Map<String, Object>>> cache = provider.getCache(ASSOCIATION_STORE);
+		Cache<AssociationKey, Map<RowKey, Map<String, Object>>> cache = provider.getCache( ASSOCIATION_STORE );
 		Map<RowKey, Map<String, Object>> atomicMap = AtomicMapLookup.getFineGrainedAtomicMap( cache, key, false );
 		return atomicMap == null ? null : new Association( new MapAssociationSnapshot( atomicMap ) );
 	}
 
 	@Override
 	public Association createAssociation(AssociationKey key) {
-		//TODO we don't verify that it does not yet exist assuming that this ahs been done before by the calling code
-		//should we improve?
-		Cache<AssociationKey, Map<RowKey, Map<String, Object>>> cache = provider.getCache(ASSOCIATION_STORE);
-		Map<RowKey, Map<String, Object>> atomicMap =  AtomicMapLookup.getFineGrainedAtomicMap( cache, key, true );
+		// TODO we don't verify that it does not yet exist assuming that this ahs been done before by the calling code
+		// should we improve?
+		Cache<AssociationKey, Map<RowKey, Map<String, Object>>> cache = provider.getCache( ASSOCIATION_STORE );
+		Map<RowKey, Map<String, Object>> atomicMap = AtomicMapLookup.getFineGrainedAtomicMap( cache, key, true );
 		return new Association( new MapAssociationSnapshot( atomicMap ) );
 	}
 
@@ -153,7 +161,7 @@ public class InfinispanDialect implements GridDialect {
 
 	@Override
 	public void removeAssociation(AssociationKey key) {
-		Cache<AssociationKey, Map<RowKey, Map<String, Object>>> cache = provider.getCache(ASSOCIATION_STORE);
+		Cache<AssociationKey, Map<RowKey, Map<String, Object>>> cache = provider.getCache( ASSOCIATION_STORE );
 		AtomicMapLookup.removeAtomicMap( cache, key );
 	}
 
@@ -164,38 +172,37 @@ public class InfinispanDialect implements GridDialect {
 
 	@Override
 	public void nextValue(RowKey key, IntegralDataTypeHolder value, int increment, int initialValue) {
-		final AdvancedCache<RowKey, Object> identifierCache = provider.getCache(IDENTIFIER_STORE).getAdvancedCache();
+		final AdvancedCache<RowKey, Object> identifierCache = provider.getCache( IDENTIFIER_STORE ).getAdvancedCache();
 		boolean done = false;
 		do {
-			//read value
-			//skip locking proposed by Sanne
+			// read value
+			// skip locking proposed by Sanne
 			Object valueFromDb = identifierCache.withFlags( Flag.SKIP_LOCKING ).get( key );
 			if ( valueFromDb == null ) {
-				//if not there, insert initial value
+				// if not there, insert initial value
 				value.initialize( initialValue );
-				//TODO should we use GridTypes here?
+				// TODO should we use GridTypes here?
 				valueFromDb = new Long( value.makeValue().longValue() );
 				final Object oldValue = identifierCache.putIfAbsent( key, valueFromDb );
-				//check in case somebody has inserted it behind our back
+				// check in case somebody has inserted it behind our back
 				if ( oldValue != null ) {
 					value.initialize( ( (Number) oldValue ).longValue() );
 					valueFromDb = oldValue;
 				}
 			}
 			else {
-				//read the value from the table
-				value.initialize( ( ( Number ) valueFromDb ).longValue() );
+				// read the value from the table
+				value.initialize( ( (Number) valueFromDb ).longValue() );
 			}
 
-			//update value
+			// update value
 			final IntegralDataTypeHolder updateValue = value.copy();
-			//increment value
+			// increment value
 			updateValue.add( increment );
-			//TODO should we use GridTypes here?
+			// TODO should we use GridTypes here?
 			final Object newValueFromDb = updateValue.makeValue();
 			done = identifierCache.replace( key, valueFromDb, newValueFromDb );
-		}
-		while ( !done );
+		} while ( !done );
 	}
 
 	@Override
@@ -206,14 +213,43 @@ public class InfinispanDialect implements GridDialect {
 	@Override
 	@SuppressWarnings("unchecked")
 	public void forEachTuple(Consumer consumer, EntityKeyMetadata... entityKeyMetadatas) {
-		Map<EntityKey, Map<String, Object>> cache = provider.getCache(ENTITY_STORE);
-		for ( Entry<EntityKey, Map<String, Object>> entry : cache.entrySet() ) {
+		Cache<EntityKey, Map<String, Object>> cache = provider.getCache( ENTITY_STORE );
+
+		MapReduceTask<EntityKey, Map<String, Object>, EntityKey, Map<String, Object>> queryTask = new MapReduceTask<EntityKey, Map<String, Object>, EntityKey, Map<String, Object>>(
+				cache );
+
+		queryTask.mappedWith( new TupleMapper( entityKeyMetadatas ) ).reducedWith( new TupleReducer() );
+
+		Map<EntityKey, Map<String, Object>> queryResult = queryTask.execute();
+		for ( Entry<EntityKey, Map<String, Object>> entry : queryResult.entrySet() ) {
+			consumer.consume( getTuple( entry.getKey(), null ) );
+		}
+	}
+
+	static class TupleMapper implements Mapper<EntityKey, Map<String, Object>, EntityKey, Map<String, Object>> {
+
+		private final EntityKeyMetadata[] entityKeyMetadatas;
+
+		public TupleMapper(EntityKeyMetadata... entityKeyMetadatas) {
+			this.entityKeyMetadatas = entityKeyMetadatas;
+		}
+
+		@Override
+		public void map(EntityKey key, Map<String, Object> value, Collector<EntityKey, Map<String, Object>> collector) {
 			for ( EntityKeyMetadata entityKeyMetadata : entityKeyMetadatas ) {
-				if ( entry.getKey().getTable().equals( entityKeyMetadata.getTable() ) ) {
-					consumer.consume( getTuple( entry.getKey(), null ) );
+				if ( key.getTable().equals( entityKeyMetadata.getTable() ) ) {
+					collector.emit( key, value );
 				}
 			}
 		}
 	}
 
+	static class TupleReducer implements Reducer<EntityKey, Map<String, Object>> {
+
+		@Override
+		public Map<String, Object> reduce(EntityKey reducedKey, Iterator<Map<String, Object>> iter) {
+			return iter.next();
+		}
+
+	}
 }

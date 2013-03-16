@@ -207,12 +207,11 @@ public class TupleIndexer implements SessionAwareRunnable {
 	}
 
 	private Object entity(Session session, Tuple tuple) {
-		OgmEntityPersister persister = (OgmEntityPersister) ( (SessionFactoryImplementor) sessionFactory )
-				.getEntityPersister( indexedType.getName() );
+		OgmEntityPersister persister = (OgmEntityPersister) ( (SessionFactoryImplementor) sessionFactory ).getEntityPersister( indexedType.getName() );
 		OgmLoader loader = new OgmLoader( new OgmEntityPersister[] { persister } );
-		OgmLoadingContext ogmLoadingContext = new OgmLoadingContext();
 		List<Tuple> tuples = new ArrayList<Tuple>();
 		tuples.add( tuple );
+		OgmLoadingContext ogmLoadingContext = new OgmLoadingContext();
 		ogmLoadingContext.setTuples( tuples );
 		List<Object> entities = loader.loadEntities( (SessionImplementor) session, LockOptions.NONE, ogmLoadingContext );
 		return entities.get( 0 );

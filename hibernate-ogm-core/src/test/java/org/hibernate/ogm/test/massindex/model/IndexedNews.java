@@ -25,12 +25,12 @@ import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinColumns;
 import javax.persistence.OneToMany;
 
 import org.hibernate.ogm.test.id.NewsID;
-import org.hibernate.search.annotations.DocumentId;
 import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Indexed;
 
@@ -41,9 +41,9 @@ import org.hibernate.search.annotations.Indexed;
 @Indexed
 public class IndexedNews {
 
-	@DocumentId
+	@Id
 	@EmbeddedId
-	@FieldBridge(impl = newsIdFieldBridge.class)
+	@FieldBridge(impl = NewsIdFieldBridge.class)
 	private NewsID newsId;
 
 	private String content;

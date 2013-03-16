@@ -161,9 +161,6 @@ public class OgmMassIndexer implements MassIndexer {
 	public void startAndWait() throws InterruptedException {
 		BatchCoordinator coordinator = createCoordinator();
 		coordinator.run();
-		if ( Thread.currentThread().isInterrupted() ) {
-			throw new InterruptedException();
-		}
 	}
 
 	protected BatchCoordinator createCoordinator() {
