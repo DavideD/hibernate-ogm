@@ -27,14 +27,20 @@
 -->
 <infinispan
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="urn:infinispan:config:5.1 http://www.infinispan.org/schemas/infinispan-config-5.1.xsd"
-    xmlns="urn:infinispan:config:5.1">
+    xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
+    xmlns="urn:infinispan:config:5.2">
 
     <global>
         <globalJmxStatistics
             enabled="false"
-            cacheManagerName="HibernateOGM-Testsuite"
+            cacheManagerName="HibernateOGM-Testsuite-Dist"
             allowDuplicateDomains="true" />
+        <transport
+            clusterName="HibernateOGM-Infinispan-cluster"
+            >
+            <!-- Note that the JGroups transport uses sensible defaults if no configuration 
+                property is defined. See the JGroupsTransport javadocs for more flags -->
+        </transport>
     </global>
 
     <!-- *************************** -->
@@ -42,6 +48,7 @@
     <!-- *************************** -->
 
     <default>
+        <clustering mode="distribution" />
         <transaction
             transactionMode="TRANSACTIONAL"
             transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup" />

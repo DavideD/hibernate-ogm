@@ -200,6 +200,7 @@ public class EhcacheDialect implements GridDialect {
 		List<EntityKey> keys = entityCache.getKeys();
 		for ( EntityKey key : keys ) {
 			for ( EntityKeyMetadata entityKeyMetadata : entityKeyMetadatas ) {
+				//Check with Alex if there is a way to load keys applying a filter
 				if ( key.getTable().equals( entityKeyMetadata.getTable() ) ) {
 					Element element = entityCache.get( key );
 					consumer.consume( createTuple( element ) );
