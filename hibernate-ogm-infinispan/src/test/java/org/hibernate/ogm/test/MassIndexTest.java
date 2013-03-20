@@ -20,7 +20,6 @@
  */
 package org.hibernate.ogm.test;
 
-import org.hibernate.ogm.dialect.infinispan.InfinispanDialect;
 import org.hibernate.ogm.test.massindex.AssociationMassIndexerTest;
 import org.hibernate.ogm.test.utils.jpa.GetterPersistenceUnitInfo;
 
@@ -33,5 +32,6 @@ public class MassIndexTest extends AssociationMassIndexerTest {
 	protected void refineInfo(GetterPersistenceUnitInfo info) {
 		super.refineInfo( info );
 		info.getProperties().setProperty( "hibernate.ogm.datastore.provider", "infinispan" );
+		info.getProperties().setProperty( "hibernate.ogm.infinispan.configuration_resourcename", "infinispan-dist.xml" );
 	}
 }
