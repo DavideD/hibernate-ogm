@@ -6,20 +6,6 @@
  */
 package org.hibernate.ogm.datastore.redis;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.hibernate.ogm.datastore.document.impl.DotPatternMapHelpers;
-import org.hibernate.ogm.datastore.document.options.AssociationStorageType;
-import org.hibernate.ogm.datastore.document.options.spi.AssociationStorageOption;
-import org.hibernate.ogm.datastore.map.impl.MapHelpers;
-import org.hibernate.ogm.datastore.redis.dialect.model.impl.RedisAssociation;
-import org.hibernate.ogm.datastore.redis.dialect.model.impl.RedisAssociationSnapshot;
-import org.hibernate.ogm.datastore.redis.dialect.model.impl.RedisTupleSnapshot;
 import org.hibernate.ogm.datastore.redis.dialect.value.Association;
 import org.hibernate.ogm.datastore.redis.dialect.value.Entity;
 import org.hibernate.ogm.datastore.redis.impl.RedisDatastoreProvider;

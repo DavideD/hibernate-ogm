@@ -139,7 +139,7 @@ public class QueriesWithEmbeddedCollectionTest extends OgmTestCase {
 
 	@Test
 	@SkipByGridDialect(
-			value = { GridDialectType.CASSANDRA, GridDialectType.COUCHDB, GridDialectType.EHCACHE, GridDialectType.HASHMAP, GridDialectType.INFINISPAN, GridDialectType.REDIS_JSON, GridDialectType.REDIS_HASH },
+			value = { GridDialectType.CASSANDRA, GridDialectType.COUCHDB, GridDialectType.EHCACHE, GridDialectType.HASHMAP, GridDialectType.INFINISPAN, GridDialectType.REDIS, GridDialectType.REDIS_HASH },
 			comment = "Hibernate Search cannot project multiple values from the same field at the moment" )
 	@SkipByDatastoreProvider(value = AvailableDatastoreProvider.FONGO, comment = "OGM-835 - needs a Fongo upgrade (once avialable)")
 	public void testProjectionsOfPropertyInEmbeddedCollection() throws Exception {

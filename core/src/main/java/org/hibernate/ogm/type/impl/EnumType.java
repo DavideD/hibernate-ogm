@@ -27,7 +27,7 @@ public class EnumType extends GridTypeDelegatingToCoreType {
 	private static final Log log = LoggerFactory.make();
 
 	private org.hibernate.type.EnumType coreEnumType;
-	private final boolean isOrdinal;
+	protected final boolean isOrdinal;
 	private transient volatile Enum[] enumValues;
 
 	public EnumType(CustomType customType, org.hibernate.type.EnumType enumType) {

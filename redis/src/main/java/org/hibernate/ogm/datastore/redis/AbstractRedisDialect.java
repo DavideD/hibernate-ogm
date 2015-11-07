@@ -7,7 +7,6 @@
 package org.hibernate.ogm.datastore.redis;
 
 import java.text.Collator;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
