@@ -14,7 +14,6 @@ import java.util.Map;
 import org.hibernate.ogm.datastore.redis.dialect.model.impl.RedisAssociation;
 import org.hibernate.ogm.datastore.redis.dialect.model.impl.RedisAssociationSnapshot;
 import org.hibernate.ogm.datastore.redis.dialect.model.impl.RedisTupleSnapshot;
-import org.hibernate.ogm.datastore.redis.dialect.value.HashEntity;
 import org.hibernate.ogm.datastore.redis.impl.RedisDatastoreProvider;
 import org.hibernate.ogm.datastore.redis.impl.hash.RedisHashTypeConverter;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
@@ -24,7 +23,6 @@ import org.hibernate.ogm.dialect.spi.TupleAlreadyExistsException;
 import org.hibernate.ogm.dialect.spi.TupleContext;
 import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.key.spi.AssociationKeyMetadata;
-import org.hibernate.ogm.model.key.spi.AssociationType;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.RowKey;
@@ -38,10 +36,10 @@ import com.lambdaworks.redis.KeyScanCursor;
 import com.lambdaworks.redis.ScanArgs;
 
 /**
- * Stores tuples and associations inside Redis using hash data structures.
+* Stores tuples and associations inside Redis using hash data structures.
  * <p>
  * Tuples are stored in Redis within hashes. Associations are stored in Redis obtained as either single values or a
- * JSON serialization of a {@link org.hibernate.ogm.datastore.redis.dialect.value.Association} object in list/set data structures.
+ * JSON serialization of a {@link org.hibernate.ogm.datastore.redis.dialect.value.Association} object in list data structures.
  *
  * @author Mark Paluch
  */
@@ -57,7 +55,7 @@ public class RedisHashDialect extends AbstractRedisDialect {
 	}
 
 	@Override
-	@SuppressWarnings({"unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Tuple getTuple(
 			EntityKey key, TupleContext tupleContext) {
 		String entityIdString = entityId( key );
@@ -154,23 +152,13 @@ public class RedisHashDialect extends AbstractRedisDialect {
 	@Override
 	public Association getAssociation(
 			AssociationKey key, AssociationContext associationContext) {
-		RedisAssociation redisAssociation;
-		if ( isStoredInEntityStructure( key.getMetadata(), associationContext.getAssociationTypeContext() ) ) {
-			if ( !connection.exists( entityId( key.getEntityKey() ) ) ) {
-				return null;
-			}
+		org.hibernate.ogm.datastore.redis.dialect.value.Association association = getAssociation( key );
 
-			Map<String, String> entity = connection.hgetall( entityId( key.getEntityKey() ) );
-			redisAssociation = RedisAssociation.fromEmbeddedAssociation( entity, key.getMetadata() );
+		if ( association == null ) {
+			return null;
 		}
-		else {
-			org.hibernate.ogm.datastore.redis.dialect.value.Association association = getAssociation( key );
 
-			if ( association == null ) {
-				return null;
-			}
-			redisAssociation = RedisAssociation.fromAssociationDocument( association );
-		}
+		RedisAssociation redisAssociation = RedisAssociation.fromAssociationDocument( association );
 
 		return redisAssociation != null ? new org.hibernate.ogm.model.spi.Association(
 				new RedisAssociationSnapshot(
@@ -182,27 +170,31 @@ public class RedisHashDialect extends AbstractRedisDialect {
 	@Override
 	public Association createAssociation(
 			AssociationKey key, AssociationContext associationContext) {
+		org.hibernate.ogm.datastore.redis.dialect.value.Association association = getAssociation( key );
 
-		RedisAssociation redisAssociation;
-		if ( isStoredInEntityStructure( key.getMetadata(), associationContext.getAssociationTypeContext() ) ) {
-			Map<String, String> entity = connection.hgetall( entityId( key.getEntityKey() ) );
-			redisAssociation = RedisAssociation.fromEmbeddedAssociation( entity, key.getMetadata() );
-
+		if ( association == null ) {
+			return null;
 		}
-		else {
-			org.hibernate.ogm.datastore.redis.dialect.value.Association association = getAssociation( key );
 
-			if ( association == null ) {
-				return null;
-			}
-			redisAssociation = RedisAssociation.fromAssociationDocument( association );
-		}
+		RedisAssociation redisAssociation = RedisAssociation.fromAssociationDocument( association );
 
 		return new org.hibernate.ogm.model.spi.Association(
 				new RedisAssociationSnapshot(
 						redisAssociation, key
 				)
 		);
+	}
+
+	private org.hibernate.ogm.datastore.redis.dialect.value.Association getAssociation(AssociationKey key) {
+		String associationId = associationId( key );
+		List<String> lrange = connection.lrange( associationId, 0, -1 );
+
+		org.hibernate.ogm.datastore.redis.dialect.value.Association association = new org.hibernate.ogm.datastore.redis.dialect.value.Association();
+
+		for ( String item : lrange ) {
+			association.getRows().add( strategy.deserialize( item, Object.class ) );
+		}
+		return association;
 	}
 
 	@Override
@@ -213,20 +205,22 @@ public class RedisHashDialect extends AbstractRedisDialect {
 		RedisAssociation redisAssociation = ( (RedisAssociationSnapshot) association.getSnapshot() ).getRedisAssociation();
 		redisAssociation.setRows( rows );
 
-		if ( isStoredInEntityStructure(
-				associationKey.getMetadata(),
-				associationContext.getAssociationTypeContext()
-		) ) {
-			HashEntity owningDocument = (HashEntity) redisAssociation.getOwningDocument();
-			connection.hmset( entityId( associationKey.getEntityKey() ), owningDocument.getEntity() );
-		}
-		else {
-			Long currentTtl = connection.pttl( associationId( associationKey ) );
-			storeAssociation(
-					associationKey,
-					(org.hibernate.ogm.datastore.redis.dialect.value.Association) redisAssociation.getOwningDocument()
-			);
-			setAssociationTTL( associationKey, associationContext, currentTtl );
+		Long currentTtl = connection.pttl( associationId( associationKey ) );
+		storeAssociation(
+				associationKey,
+				(org.hibernate.ogm.datastore.redis.dialect.value.Association) redisAssociation.getOwningDocument()
+		);
+		setAssociationTTL( associationKey, associationContext, currentTtl );
+	}
+
+	private void storeAssociation(
+			AssociationKey key,
+			org.hibernate.ogm.datastore.redis.dialect.value.Association document) {
+		String associationId = associationId( key );
+		connection.del( associationId );
+
+		for ( Object row : document.getRows() ) {
+			connection.rpush( associationId, strategy.serialize( row ) );
 		}
 	}
 
@@ -244,21 +238,12 @@ public class RedisHashDialect extends AbstractRedisDialect {
 	@Override
 	public void removeAssociation(
 			AssociationKey key, AssociationContext associationContext) {
-		if ( isStoredInEntityStructure( key.getMetadata(), associationContext.getAssociationTypeContext() ) ) {
-			String entityId = entityId( key.getEntityKey() );
-			connection.hdel( entityId, key.getMetadata().getCollectionRole() );
-		}
-		else {
-			connection.del( associationId( key ) );
-		}
+		connection.del( associationId( key ) );
 	}
 
 	@Override
 	public boolean isStoredInEntityStructure(
-			AssociationKeyMetadata keyMetadata, AssociationTypeContext associationTypeContext) {
-		if ( keyMetadata.getAssociationType() == AssociationType.ONE_TO_ONE ) {
-			return true;
-		}
+			AssociationKeyMetadata associationKeyMetadata, AssociationTypeContext associationTypeContext) {
 		return false;
 	}
 
