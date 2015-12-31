@@ -16,22 +16,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
  */
-package org.hibernate.datastore.ogm.orientdb;
+package org.hibernate.datastore.ogm.orientdb.query.impl;
 
-import org.hibernate.ogm.datastore.spi.DatastoreConfiguration;
-import org.hibernate.ogm.options.navigation.GlobalContext;
-import org.hibernate.ogm.options.navigation.spi.ConfigurationContext;
-import org.hibernate.ogm.options.navigation.spi.GenericOptionModel;
+import org.hibernate.engine.query.spi.ParameterParser;
+import org.hibernate.ogm.dialect.query.spi.RecognizerBasedParameterMetadataBuilder;
+import org.parboiled.Parboiled;
+import org.parboiled.parserunners.RecoveringParseRunner;
 
 /**
  *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
-public class OrientDB implements DatastoreConfiguration<GlobalContext<?, ?>> {
+public class OrientDBParameterMetadataBuilder  extends RecognizerBasedParameterMetadataBuilder {
 
-    @Override
-    public GlobalContext<?, ?> getConfigurationBuilder(ConfigurationContext context) {
-        return GenericOptionModel.createGlobalContext( context );
-    }
+	@Override
+	public void parseQueryParameters(String nativeQuery, ParameterParser.Recognizer journaler) {
+		QueryParser parser = Parboiled.createParser( QueryParser.class, journaler );
+		new RecoveringParseRunner<ParameterParser.Recognizer>( parser.Query() ).run( nativeQuery );
+	}
     
 }

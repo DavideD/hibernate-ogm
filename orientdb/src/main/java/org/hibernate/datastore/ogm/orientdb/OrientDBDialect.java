@@ -45,7 +45,7 @@ import org.hibernate.service.spi.ServiceRegistryImplementor;
 
 /**
  *
- * @author Сергей
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements MultigetGridDialect, QueryableGridDialect<String>, ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect {
 

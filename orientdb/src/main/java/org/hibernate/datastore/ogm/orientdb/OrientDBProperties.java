@@ -18,20 +18,19 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
-import org.hibernate.ogm.datastore.spi.DatastoreConfiguration;
-import org.hibernate.ogm.options.navigation.GlobalContext;
-import org.hibernate.ogm.options.navigation.spi.ConfigurationContext;
-import org.hibernate.ogm.options.navigation.spi.GenericOptionModel;
+import org.hibernate.ogm.cfg.OgmProperties;
 
 /**
  *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
-public class OrientDB implements DatastoreConfiguration<GlobalContext<?, ?>> {
+public class OrientDBProperties implements OgmProperties {
+    
+    
+    
 
-    @Override
-    public GlobalContext<?, ?> getConfigurationBuilder(ConfigurationContext context) {
-        return GenericOptionModel.createGlobalContext( context );
+    private OrientDBProperties() {
     }
+    
     
 }

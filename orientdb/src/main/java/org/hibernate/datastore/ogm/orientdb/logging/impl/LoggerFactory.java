@@ -16,22 +16,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
  */
-package org.hibernate.datastore.ogm.orientdb;
+package org.hibernate.datastore.ogm.orientdb.logging.impl;
 
-import org.hibernate.ogm.datastore.spi.DatastoreConfiguration;
-import org.hibernate.ogm.options.navigation.GlobalContext;
-import org.hibernate.ogm.options.navigation.spi.ConfigurationContext;
-import org.hibernate.ogm.options.navigation.spi.GenericOptionModel;
+import org.jboss.logging.Logger;
 
 /**
  *
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * @author chernolyassv
  */
-public class OrientDB implements DatastoreConfiguration<GlobalContext<?, ?>> {
+public class LoggerFactory {
+    private static final CallerProvider callerProvider = new CallerProvider();
 
-    @Override
-    public GlobalContext<?, ?> getConfigurationBuilder(ConfigurationContext context) {
-        return GenericOptionModel.createGlobalContext( context );
-    }
+	public static Log getLogger() {
+		return Logger.getMessageLogger( Log.class, callerProvider.getCallerClass().getCanonicalName() );
+	}
+
+	private static class CallerProvider extends SecurityManager {
+
+		public Class<?> getCallerClass() {
+			return getClassContext()[2];
+		}
+	}
     
 }
