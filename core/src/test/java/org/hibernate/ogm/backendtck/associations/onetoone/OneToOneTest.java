@@ -126,37 +126,37 @@ public class OneToOneTest extends OgmTestCase {
 	public void testBidirectionalOneToOneCompositeId() throws Exception {
 		final Session session = openSession();
 		Transaction transaction = session.beginTransaction();
-		PatchCable patchCable = new PatchCable( new MediaId( "Belkin", "cat7" ) );
-		NetworkSwitch networkSwitch = new NetworkSwitch( new MediaId( "Frisco", "AS500" ));
-		patchCable.setNetworkSwitch( networkSwitch );
-		networkSwitch.setPatchCable( patchCable );
-		session.persist( patchCable );
-		session.persist( networkSwitch );
+		Victim victim = new Victim( new PersonId( "John", "Doe" ) );
+		Offender offender = new Offender( new PersonId( "Max", "Mustermann" ));
+		victim.setOffender( offender );
+		offender.setVictim( victim );
+		session.persist( victim );
+		session.persist( offender );
 		transaction.commit();
 		session.clear();
 
 		transaction = session.beginTransaction();
-		patchCable = session.get( PatchCable.class, patchCable.getId() );
-		assertNotNull( patchCable );
-		assertNotNull( patchCable.getNetworkSwitch() );
+		victim = session.get( Victim.class, victim.getId() );
+		assertNotNull( victim );
+		assertNotNull( victim.getOffender() );
 		session.clear();
-		networkSwitch = session.get( NetworkSwitch.class, networkSwitch.getId() );
-		assertNotNull( networkSwitch );
-		patchCable = networkSwitch.getPatchCable();
-		assertNotNull( patchCable );
-		assertNotNull( patchCable.getId() );
+		offender = session.get( Offender.class, offender.getId() );
+		assertNotNull( offender );
+		victim = offender.getVictim();
+		assertNotNull( victim );
+		assertNotNull( victim.getId() );
 		transaction.commit();
 		session.clear();
 
 		transaction = session.beginTransaction();
-		patchCable = session.get( PatchCable.class, patchCable.getId() );
-		assertNotNull( patchCable );
-		assertNotNull( patchCable.getNetworkSwitch() );
+		victim = session.get( Victim.class, victim.getId() );
+		assertNotNull( victim );
+		assertNotNull( victim.getOffender() );
 		session.clear();
-		networkSwitch = session.get( NetworkSwitch.class, networkSwitch.getId() );
-		assertNotNull( networkSwitch );
-		session.delete( patchCable );
-		session.delete( networkSwitch );
+		offender = session.get( Offender.class, offender.getId() );
+		assertNotNull( offender );
+		session.delete( victim );
+		session.delete( offender );
 		transaction.commit();
 		session.close();
 	}
@@ -170,8 +170,8 @@ public class OneToOneTest extends OgmTestCase {
 				Wheel.class,
 				Husband.class,
 				Wife.class,
-				NetworkSwitch.class,
-				PatchCable.class
+				Offender.class,
+				Victim.class
 		};
 	}
 }
