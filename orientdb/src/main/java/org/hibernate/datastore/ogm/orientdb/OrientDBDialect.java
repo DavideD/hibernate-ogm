@@ -18,7 +18,19 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationQueries;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBEntityQueries;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleSnapshot;
+import org.hibernate.datastore.ogm.orientdb.impl.OrientDBDatastoreProvider;
+import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
+import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.datastore.ogm.orientdb.query.impl.OrientDBParameterMetadataBuilder;
+import org.hibernate.datastore.ogm.orientdb.type.spi.ORecordIdGridType;
 import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.dialect.multiget.spi.MultigetGridDialect;
@@ -40,18 +52,50 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.Association;
 import org.hibernate.ogm.model.spi.Tuple;
+import org.hibernate.ogm.persister.impl.OgmCollectionPersister;
+import org.hibernate.ogm.persister.impl.OgmEntityPersister;
+import org.hibernate.ogm.type.spi.GridType;
+import org.hibernate.persister.collection.CollectionPersister;
+import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.service.spi.ServiceRegistryAwareService;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
+import org.hibernate.type.Type;
 
 /**
  *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
-public class OrientDBDialect extends BaseGridDialect implements MultigetGridDialect, QueryableGridDialect<String>, ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect {
+public class OrientDBDialect extends BaseGridDialect implements MultigetGridDialect, QueryableGridDialect<String>,
+        ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect {
+
+    private static final Log log = LoggerFactory.getLogger();
+
+    private ServiceRegistryImplementor serviceRegistry;
+    private OrientDBDatastoreProvider provider;
+    private Map<AssociationKeyMetadata, OrientDBAssociationQueries> associationQueries;
+    private Map<EntityKeyMetadata, OrientDBEntityQueries> entityQueries;
+
+    public OrientDBDialect(OrientDBDatastoreProvider provider) {
+        this.provider = provider;
+    }
 
     @Override
     public Tuple getTuple(EntityKey key, TupleContext tupleContext) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        log.info("EntityKey:" + key + ";");
+        for (int i = 0; i < key.getColumnNames().length; i++) {
+            String columnName = key.getColumnNames()[i];
+            Object columnValue = key.getColumnValues()[i];
+            log.info("EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");");
+        }
+        try {
+            Map<String, Object> dbValuesMap = entityQueries.get(key.getMetadata()).findEntity(provider.getConnection(), key.getColumnValues());
+            return new Tuple(new OrientDBTupleSnapshot(dbValuesMap, tupleContext.getAllAssociatedEntityKeyMetadata(),
+                    tupleContext.getAllRoles(),
+                    key.getMetadata()));
+        } catch (SQLException e) {
+            log.error("Can not find entity", e);
+        }
+        return null;        
     }
 
     @Override
@@ -116,7 +160,7 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public ParameterMetadataBuilder getParameterMetadataBuilder() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return new OrientDBParameterMetadataBuilder();
     }
 
     @Override
@@ -125,13 +169,66 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
     }
 
     @Override
-    public void injectServices(ServiceRegistryImplementor sri) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void injectServices(ServiceRegistryImplementor serviceRegistry) {
+        this.serviceRegistry = serviceRegistry;
     }
 
     @Override
     public void sessionFactoryCreated(SessionFactoryImplementor sessionFactoryImplementor) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+        this.associationQueries = initializeAssociationQueries(sessionFactoryImplementor);
+        this.entityQueries = initializeEntityQueries(sessionFactoryImplementor, associationQueries);
     }
-    
+
+    private Map<EntityKeyMetadata, OrientDBEntityQueries> initializeEntityQueries(SessionFactoryImplementor sessionFactoryImplementor,
+            Map<AssociationKeyMetadata, OrientDBAssociationQueries> associationQueries) {
+        Map<EntityKeyMetadata, OrientDBEntityQueries> entityQueries = initializeEntityQueries(sessionFactoryImplementor);
+        for (AssociationKeyMetadata associationKeyMetadata : associationQueries.keySet()) {
+            EntityKeyMetadata entityKeyMetadata = associationKeyMetadata.getAssociatedEntityKeyMetadata().getEntityKeyMetadata();
+            if (!entityQueries.containsKey(entityKeyMetadata)) {
+                // Embeddables metadata
+                entityQueries.put(entityKeyMetadata, new OrientDBEntityQueries(entityKeyMetadata));
+            }
+        }
+        return entityQueries;
+    }
+
+    private Map<EntityKeyMetadata, OrientDBEntityQueries> initializeEntityQueries(SessionFactoryImplementor sessionFactoryImplementor) {
+        Map<EntityKeyMetadata, OrientDBEntityQueries> queryMap = new HashMap<EntityKeyMetadata, OrientDBEntityQueries>();
+        Collection<EntityPersister> entityPersisters = sessionFactoryImplementor.getEntityPersisters().values();
+        for (EntityPersister entityPersister : entityPersisters) {
+            if (entityPersister instanceof OgmEntityPersister) {
+                OgmEntityPersister ogmEntityPersister = (OgmEntityPersister) entityPersister;
+                queryMap.put(ogmEntityPersister.getEntityKeyMetadata(), new OrientDBEntityQueries(ogmEntityPersister.getEntityKeyMetadata()));
+            }
+        }
+        return queryMap;
+    }
+
+    private Map<AssociationKeyMetadata, OrientDBAssociationQueries> initializeAssociationQueries(SessionFactoryImplementor sessionFactoryImplementor) {
+        Map<AssociationKeyMetadata, OrientDBAssociationQueries> queryMap = new HashMap<AssociationKeyMetadata, OrientDBAssociationQueries>();
+        Collection<CollectionPersister> collectionPersisters = sessionFactoryImplementor.getCollectionPersisters().values();
+        for (CollectionPersister collectionPersister : collectionPersisters) {
+            if (collectionPersister instanceof OgmCollectionPersister) {
+                OgmCollectionPersister ogmCollectionPersister = (OgmCollectionPersister) collectionPersister;
+                EntityKeyMetadata ownerEntityKeyMetadata = ((OgmEntityPersister) (ogmCollectionPersister.getOwnerEntityPersister())).getEntityKeyMetadata();
+                AssociationKeyMetadata associationKeyMetadata = ogmCollectionPersister.getAssociationKeyMetadata();
+                queryMap.put(associationKeyMetadata, new OrientDBAssociationQueries(ownerEntityKeyMetadata, associationKeyMetadata));
+            }
+        }
+        return queryMap;
+    }
+
+    @Override
+    public GridType overrideType(Type type) {
+        log.info("overrideType:" + type.getName() + ";" + type.getReturnedClass());
+        GridType gridType = null;
+        if (type.getName().equals("com.orientechnologies.orient.core.id.ORecordId")) {
+            gridType = ORecordIdGridType.INSTANCE;
+        } else {
+            gridType = super.overrideType(type); //To change body of generated methods, choose Tools | Templates.
+        }
+        return gridType;
+    }
+
 }
