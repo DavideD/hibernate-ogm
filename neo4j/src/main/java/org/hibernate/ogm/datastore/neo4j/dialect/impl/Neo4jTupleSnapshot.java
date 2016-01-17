@@ -32,10 +32,16 @@ import org.neo4j.graphdb.Relationship;
  */
 public final class Neo4jTupleSnapshot implements TupleSnapshot {
 
-	private final Node node;
+	private Node node;
+	private final EntityKeyMetadata entityKeyMetadata;
 	private final Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata;
 	private final Map<String, String> rolesByColumn;
-	private final EntityKeyMetadata entityKeyMetadata;
+
+	public Neo4jTupleSnapshot(EntityKeyMetadata entityKeyMetadata) {
+		this.entityKeyMetadata = entityKeyMetadata;
+		associatedEntityKeyMetadata = Collections.emptyMap();
+		rolesByColumn = Collections.emptyMap();
+	}
 
 	public Neo4jTupleSnapshot(Node node, EntityKeyMetadata entityKeyMetadata) {
 		this( node, Collections.<String, AssociatedEntityKeyMetadata>emptyMap(), Collections.<String, String>emptyMap(), entityKeyMetadata );
@@ -50,7 +56,10 @@ public final class Neo4jTupleSnapshot implements TupleSnapshot {
 
 	@Override
 	public Object get(String column) {
-		if ( associatedEntityKeyMetadata.containsKey( column ) ) {
+		if ( isNew() ) {
+			return null;
+		}
+		else if ( associatedEntityKeyMetadata.containsKey( column ) ) {
 			return readPropertyOnOtherNode( column );
 		}
 		else if ( Neo4jDialect.isPartOfRegularEmbedded( entityKeyMetadata.getColumnNames(), column ) ) {
@@ -99,15 +108,20 @@ public final class Neo4jTupleSnapshot implements TupleSnapshot {
 
 	@Override
 	public boolean isEmpty() {
-		return !node.getPropertyKeys().iterator().hasNext();
+		return isNew() ? true : !node.getPropertyKeys().iterator().hasNext();
 	}
 
 	@Override
 	public Set<String> getColumnNames() {
+		if ( isNew() ) {
+			return Collections.emptySet();
+		}
+
 		Set<String> names = new HashSet<String>();
 		for ( String string : node.getPropertyKeys() ) {
 			names.add( string );
 		}
+
 		return names;
 	}
 
@@ -115,4 +129,16 @@ public final class Neo4jTupleSnapshot implements TupleSnapshot {
 		return node;
 	}
 
+	public void setNode(Node node) {
+		this.node = node;
+	}
+
+	/**
+	 * Whether this snapshot has been newly created (meaning it doesn't have an actual {@link Node} yet) or not. A node
+	 * will be in the "new" state between the {@code createTuple()} call and the next {@code insertOrUpdateTuple()}
+	 * call.
+	 */
+	public boolean isNew() {
+		return node == null;
+	}
 }

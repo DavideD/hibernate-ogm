@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.hibernate.HibernateException;
 import org.hibernate.LockMode;
@@ -27,8 +28,16 @@ import org.hibernate.ogm.datastore.cassandra.impl.CassandraTypeMapper;
 import org.hibernate.ogm.datastore.cassandra.logging.impl.Log;
 import org.hibernate.ogm.datastore.cassandra.logging.impl.LoggerFactory;
 import org.hibernate.ogm.datastore.cassandra.model.impl.ResultSetAssociationSnapshot;
+import org.hibernate.ogm.datastore.cassandra.model.impl.ResultSetTupleIterator;
 import org.hibernate.ogm.datastore.cassandra.model.impl.ResultSetTupleSnapshot;
+import org.hibernate.ogm.datastore.cassandra.query.impl.CassandraParameterMetadataBuilder;
 import org.hibernate.ogm.datastore.map.impl.MapTupleSnapshot;
+import org.hibernate.ogm.dialect.query.spi.BackendQuery;
+import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
+import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
+import org.hibernate.ogm.dialect.query.spi.QueryParameters;
+import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
+import org.hibernate.ogm.dialect.query.spi.TypedGridValue;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
 import org.hibernate.ogm.dialect.spi.AssociationTypeContext;
 import org.hibernate.ogm.dialect.spi.DuplicateInsertPreventionStrategy;
@@ -62,13 +71,16 @@ import com.datastax.driver.core.querybuilder.Delete;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 /**
  * Dialect implementation using CQL3 over Cassandra's native transport via java-driver.
  *
  * @author Jonathan Halliday
  */
-public class CassandraDialect implements GridDialect {
+public class CassandraDialect implements GridDialect, QueryableGridDialect<String> {
 
 	private static final Log log = LoggerFactory.getLogger();
 
@@ -76,6 +88,7 @@ public class CassandraDialect implements GridDialect {
 	private final Session session;
 	private final CodecRegistry codecRegistry;
 	private final QueryBuilder queryBuilder;
+	private final LoadingCache<String, PreparedStatement> preparedStatementCache;
 
 	public CassandraDialect(CassandraDatastoreProvider provider) {
 		this.provider = provider;
@@ -85,6 +98,17 @@ public class CassandraDialect implements GridDialect {
 				.getCluster()
 				.getConfiguration()
 				.getCodecRegistry();
+
+		preparedStatementCache = CacheBuilder.newBuilder()
+				.maximumSize( 100000 )
+				.build(
+						new CacheLoader<String, PreparedStatement>() {
+							@Override
+							public PreparedStatement load(String query) throws Exception {
+								return session.prepare( query );
+							}
+						}
+				);
 	}
 
 	@Override
@@ -96,8 +120,16 @@ public class CassandraDialect implements GridDialect {
 
 	private ResultSet bindAndExecute(Object[] columnValues, RegularStatement statement) {
 
+		PreparedStatement preparedStatement;
 		try {
-			PreparedStatement preparedStatement = session.prepare( statement );
+			preparedStatement = preparedStatementCache.get( statement.getQueryString() );
+			session.prepare( statement );
+		}
+		catch (ExecutionException e) {
+			throw log.failToPrepareCQL( statement.getQueryString(), e.getCause() );
+		}
+
+		try {
 			BoundStatement boundStatement = new BoundStatement( preparedStatement );
 			for ( int i = 0; i < columnValues.length; i++ ) {
 				boundStatement.setObject( i, columnValues[i] );
@@ -105,8 +137,7 @@ public class CassandraDialect implements GridDialect {
 			return session.execute( boundStatement );
 		}
 		catch (DriverException e) {
-			log.failToExecuteCQL( statement.getQueryString(), e );
-			throw e;
+			throw log.failToExecuteCQL( statement.getQueryString(), e );
 		}
 	}
 
@@ -444,5 +475,49 @@ public class CassandraDialect implements GridDialect {
 	@Override
 	public DuplicateInsertPreventionStrategy getDuplicateInsertPreventionStrategy(EntityKeyMetadata entityKeyMetadata) {
 		return null;
+	}
+
+	@Override
+	public ClosableIterator<Tuple> executeBackendQuery(
+			BackendQuery<String> query, QueryParameters queryParameters) {
+
+		Object[] parameters = new Object[queryParameters.getPositionalParameters().size()];
+		int i = 0;
+		Tuple dummy = new Tuple();
+
+		for ( TypedGridValue parameter : queryParameters.getPositionalParameters() ) {
+			parameter.getType().nullSafeSet( dummy, parameter.getValue(), new String[]{ "dummy" }, null );
+			parameters[i] = dummy.get( "dummy" );
+			i++;
+		}
+
+		ResultSet resultSet = bindAndExecute(
+				parameters,
+				session.newSimpleStatement( query.getQuery() )
+		);
+
+		int first = 0;
+		if ( queryParameters.getRowSelection().getFirstRow() != null ) {
+			first = queryParameters.getRowSelection().getFirstRow();
+		}
+
+		int max = Integer.MAX_VALUE;
+		if ( queryParameters.getRowSelection().getMaxRows() != null ) {
+			max = queryParameters.getRowSelection().getMaxRows();
+		}
+
+		return new ResultSetTupleIterator( resultSet, first, max );
+	}
+
+	@Override
+	public ParameterMetadataBuilder getParameterMetadataBuilder() {
+		return new CassandraParameterMetadataBuilder( session, provider.getMetaDataCache() );
+	}
+
+	@Override
+	public String parseNativeQuery(String nativeQuery) {
+		// we defer the work, since at this point the table may not yet exist in the db and without
+		// the db server supplied metadata or parsing assistance we can't do much meaningful validation.
+		return nativeQuery;
 	}
 }

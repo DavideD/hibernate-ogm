@@ -24,10 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.hibernate.AssertionFailure;
-import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.TypedValue;
-import org.hibernate.ogm.datastore.impl.EmptyTupleSnapshot;
 import org.hibernate.ogm.datastore.neo4j.dialect.impl.MapsTupleIterator;
 import org.hibernate.ogm.datastore.neo4j.dialect.impl.Neo4jAssociationQueries;
 import org.hibernate.ogm.datastore.neo4j.dialect.impl.Neo4jAssociationSnapshot;
@@ -46,7 +43,9 @@ import org.hibernate.ogm.dialect.multiget.spi.MultigetGridDialect;
 import org.hibernate.ogm.dialect.query.spi.BackendQuery;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
+import org.hibernate.ogm.dialect.query.spi.QueryParameters;
 import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
+import org.hibernate.ogm.dialect.query.spi.TypedGridValue;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
 import org.hibernate.ogm.dialect.spi.AssociationTypeContext;
 import org.hibernate.ogm.dialect.spi.BaseGridDialect;
@@ -69,12 +68,9 @@ import org.hibernate.ogm.model.spi.TupleOperation;
 import org.hibernate.ogm.persister.impl.OgmCollectionPersister;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
 import org.hibernate.ogm.type.spi.GridType;
-import org.hibernate.ogm.type.spi.TypeTranslator;
 import org.hibernate.ogm.util.impl.ArrayHelper;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
-import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.type.Type;
 import org.neo4j.graphdb.ConstraintViolationException;
 import org.neo4j.graphdb.Direction;
@@ -98,7 +94,7 @@ import org.neo4j.kernel.api.exceptions.schema.UniqueConstraintViolationKernelExc
  *
  * @author Davide D'Alto &lt;davide@hibernate.org&gt;
  */
-public class Neo4jDialect extends BaseGridDialect implements MultigetGridDialect, QueryableGridDialect<String>, ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect {
+public class Neo4jDialect extends BaseGridDialect implements MultigetGridDialect, QueryableGridDialect<String>, SessionFactoryLifecycleAwareDialect {
 
 	public static final String CONSTRAINT_VIOLATION_CODE = "Neo.ClientError.Schema.ConstraintViolation";
 
@@ -108,8 +104,6 @@ public class Neo4jDialect extends BaseGridDialect implements MultigetGridDialect
 
 	private final GraphDatabaseService dataBase;
 
-	private ServiceRegistryImplementor serviceRegistry;
-
 	private Map<EntityKeyMetadata, Neo4jEntityQueries> entityQueries;
 
 	private Map<AssociationKeyMetadata, Neo4jAssociationQueries> associationQueries;
@@ -118,11 +112,6 @@ public class Neo4jDialect extends BaseGridDialect implements MultigetGridDialect
 	public Neo4jDialect(Neo4jDatastoreProvider provider) {
 		dataBase = provider.getDataBase();
 		this.neo4jSequenceGenerator = provider.getSequenceGenerator();
-	}
-
-	@Override
-	public void injectServices(ServiceRegistryImplementor serviceRegistry) {
-		this.serviceRegistry = serviceRegistry;
 	}
 
 	@Override
@@ -240,26 +229,26 @@ public class Neo4jDialect extends BaseGridDialect implements MultigetGridDialect
 
 	@Override
 	public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
-		return new Tuple();
+		return new Tuple( new Neo4jTupleSnapshot( key.getMetadata() ) );
 	}
 
 	@Override
 	public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) {
-		Node node;
+		Neo4jTupleSnapshot snapshot = (Neo4jTupleSnapshot) tuple.getSnapshot();
 
 		// insert
-		if ( tuple.getSnapshot() instanceof EmptyTupleSnapshot ) {
-			node = insertTuple( key, tuple );
+		if ( snapshot.isNew() ) {
+			Node node = insertTuple( key, tuple );
+			snapshot.setNode( node );
 			applyTupleOperations( key, tuple, node, tuple.getOperations(), tupleContext );
 			GraphLogger.log( "Inserted node: %1$s", node );
 		}
 		// update
 		else {
-			node = ( (Neo4jTupleSnapshot) tuple.getSnapshot() ).getNode();
+			Node node = snapshot.getNode();
 			applyTupleOperations( key, tuple, node, tuple.getOperations(), tupleContext );
 			GraphLogger.log( "Updated node: %1$s", node );
 		}
-
 	}
 
 	private Node insertTuple(EntityKey key, Tuple tuple) {
@@ -669,11 +658,9 @@ public class Neo4jDialect extends BaseGridDialect implements MultigetGridDialect
 	private Map<String, Object> getNamedParameterValuesConvertedByGridType(QueryParameters queryParameters) {
 		Map<String, Object> parameterValues = new HashMap<String, Object>( queryParameters.getNamedParameters().size() );
 		Tuple dummy = new Tuple();
-		TypeTranslator typeTranslator = serviceRegistry.getService( TypeTranslator.class );
 
-		for ( Entry<String, TypedValue> parameter : queryParameters.getNamedParameters().entrySet() ) {
-			GridType gridType = typeTranslator.getType( parameter.getValue().getType() );
-			gridType.nullSafeSet( dummy, parameter.getValue().getValue(), new String[]{ parameter.getKey() }, null );
+		for ( Entry<String, TypedGridValue> parameter : queryParameters.getNamedParameters().entrySet() ) {
+			parameter.getValue().getType().nullSafeSet( dummy, parameter.getValue().getValue(), new String[]{ parameter.getKey() }, null );
 			parameterValues.put( parameter.getKey(), dummy.get( parameter.getKey() ) );
 		}
 
