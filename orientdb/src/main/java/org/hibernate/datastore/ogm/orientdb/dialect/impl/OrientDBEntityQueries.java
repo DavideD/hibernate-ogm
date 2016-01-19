@@ -57,6 +57,7 @@ public class OrientDBEntityQueries extends QueriesBase {
      * @param columnValues the values in
      * {@link org.hibernate.ogm.model.key.spi.EntityKey#getColumnValues()}
      * @return the corresponding node
+     * @throws java.sql.SQLException
      */
     public Map<String, Object> findEntity(Connection executionEngine, Object[] columnValues) throws SQLException {
         Map<String, Object> params = params(columnValues);

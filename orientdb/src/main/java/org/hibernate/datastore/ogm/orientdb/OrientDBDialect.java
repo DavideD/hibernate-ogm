@@ -18,6 +18,8 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,18 +28,20 @@ import java.util.Map;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationQueries;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBEntityQueries;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleSnapshot;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.ResultSetTupleIterator;
 import org.hibernate.datastore.ogm.orientdb.impl.OrientDBDatastoreProvider;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.query.impl.OrientDBParameterMetadataBuilder;
 import org.hibernate.datastore.ogm.orientdb.type.spi.ORecordIdGridType;
-import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.dialect.multiget.spi.MultigetGridDialect;
 import org.hibernate.ogm.dialect.query.spi.BackendQuery;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
+import org.hibernate.ogm.dialect.query.spi.QueryParameters;
 import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
+import org.hibernate.ogm.dialect.query.spi.TypedGridValue;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
 import org.hibernate.ogm.dialect.spi.AssociationTypeContext;
 import org.hibernate.ogm.dialect.spi.BaseGridDialect;
@@ -95,7 +99,7 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
         } catch (SQLException e) {
             log.error("Can not find entity", e);
         }
-        return null;        
+        return null;
     }
 
     @Override
@@ -154,8 +158,58 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
     }
 
     @Override
-    public ClosableIterator<Tuple> executeBackendQuery(BackendQuery<String> query, QueryParameters queryParameters) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public ClosableIterator<Tuple> executeBackendQuery(BackendQuery<String> backendQuery, QueryParameters queryParameters) {
+
+        Map<String, Object> parameters = getNamedParameterValuesConvertedByGridType(queryParameters);
+        String nativeQuery = buildNativeQuery(backendQuery, queryParameters);
+        try {
+            log.info("3.executeBackendQuery.native query: " + nativeQuery);
+            PreparedStatement pstmt = provider.getConnection().prepareStatement(nativeQuery);
+            for (Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet()) {
+                String key = entry.getKey();
+                TypedGridValue value = entry.getValue();
+                log.info("key: " + key+"; type:"+value.getType().getName()+"; value:"+value.getValue());
+                //@todo  move to Map
+                if (value.getType().getName().equals("string")) {
+                    pstmt.setString(1, (String)value.getValue());
+                }
+                
+            }
+            log.info("3.executeBackendQuery. before pstmt.executeQuery()");            
+            ResultSet rs = pstmt.executeQuery();
+log.info("3.executeBackendQuery. after pstmt.executeQuery()");
+            /*if (backendQuery.getSingleEntityKeyMetadataOrNull() != null) {
+            return new NodesTupleIterator(result, backendQuery.getSingleEntityKeyMetadataOrNull());
+        } */
+            return new ResultSetTupleIterator(rs);
+        } catch (SQLException e) {
+            log.error("Error with ResultSet", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String buildNativeQuery(BackendQuery<String> customQuery, QueryParameters queryParameters) {
+        StringBuilder nativeQuery = new StringBuilder(customQuery.getQuery());
+        log.info("2.buildNativeQuery.native query: " + customQuery.getQuery());
+        return nativeQuery.toString();
+    }
+
+    /**
+     * Returns a map with the named parameter values from the given parameters
+     * object, converted by the {@link GridType} corresponding to each parameter
+     * type.
+     */
+    private Map<String, Object> getNamedParameterValuesConvertedByGridType(QueryParameters queryParameters) {
+        log.info("getNamedParameterValuesConvertedByGridType. named parameters: " + queryParameters.getNamedParameters().size());
+        Map<String, Object> parameterValues = new HashMap<String, Object>(queryParameters.getNamedParameters().size());
+        Tuple dummy = new Tuple();
+
+        for (Map.Entry<String, TypedGridValue> parameter : queryParameters.getNamedParameters().entrySet()) {
+            parameter.getValue().getType().nullSafeSet(dummy, parameter.getValue().getValue(), new String[]{parameter.getKey()}, null);
+            parameterValues.put(parameter.getKey(), dummy.get(parameter.getKey()));
+        }
+
+        return parameterValues;
     }
 
     @Override
@@ -165,7 +219,11 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public String parseNativeQuery(String nativeQuery) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        log.info("1.parseNativeQuery.native query: " + nativeQuery);
+        // We return given native SQL query as they is; Currently there is no API for validating OrientDB queries without
+        // actually executing them
+        return nativeQuery;
+
     }
 
     @Override
@@ -230,5 +288,4 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
         }
         return gridType;
     }
-
 }
