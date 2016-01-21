@@ -26,9 +26,18 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import org.apache.log4j.BasicConfigurator;
+import org.hibernate.CacheMode;
 import org.hibernate.datastore.ogm.orientdb.jpa.Customer;
 import org.hibernate.datastore.ogm.orientdb.util.MemoryDBUtil;
+import org.hibernate.search.MassIndexer;
+import org.hibernate.search.jpa.FullTextEntityManager;
+import org.hibernate.search.jpa.FullTextQuery;
+import org.hibernate.search.jpa.Search;
+import org.hibernate.search.query.DatabaseRetrievalMethod;
+import org.hibernate.search.query.ObjectLookupMethod;
+import org.hibernate.search.query.dsl.QueryBuilder;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -61,8 +70,10 @@ public class OrientDBTest {
 
     @AfterClass
     public static void tearDownClass() {
-        em.close();
-        emf.close();
+        if (em != null) {
+            em.close();
+            emf.close();
+        };
     }
 
     @Before
@@ -115,11 +126,50 @@ public class OrientDBTest {
             customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
              */
-            
+
             System.out.println("query: select from Customer where name='Ivahoe'");
             query = em.createNativeQuery("select from Customer where name='Ivahoe'", Customer.class);
             customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
+
+        } finally {
+            em.getTransaction().commit();
+        }
+
+    }
+
+    @Test
+    public void createNamedQuery() throws Exception {
+        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTestIT.createNamedQuery()");
+        try {
+            em.getTransaction().begin();
+            FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(em);
+            MassIndexer indexer = fullTextEntityManager.createIndexer();
+            indexer.cacheMode(CacheMode.REFRESH);
+            indexer.startAndWait();                        
+            
+            System.out.println("entities has indexed");
+            
+            System.out.println("named query: Customer.findAll");
+            TypedQuery<Customer> query = em.createNamedQuery("Customer.findAll", Customer.class);
+            List<Customer> customers = query.getResultList();
+            System.out.println("1.customers.size(): " + customers.size());
+            
+            QueryBuilder qb = fullTextEntityManager.getSearchFactory()
+                    .buildQueryBuilder().forEntity(Customer.class).get();
+
+            org.apache.lucene.search.Query luceneQuery = qb.all().createQuery();
+            FullTextQuery jpaQuery
+                    = fullTextEntityManager.createFullTextQuery(luceneQuery, Customer.class);
+            jpaQuery.initializeObjectsWith(ObjectLookupMethod.PERSISTENCE_CONTEXT, DatabaseRetrievalMethod.QUERY);
+            
+            
+            customers = jpaQuery.getResultList();
+            System.out.println("2.customers.size(): " + customers.size());
+            
+            assertFalse("Customers must be", customers.isEmpty());
+            ORecordId id = classIdMap.get("Customer");
+            assertEquals(id, customers.get(0).getId());
 
         } finally {
             em.getTransaction().commit();

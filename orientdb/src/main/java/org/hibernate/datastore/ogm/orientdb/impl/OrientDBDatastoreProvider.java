@@ -54,7 +54,6 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
     @Override
     public Class<? extends GridDialect> getDefaultDialect() {
-        LOG.info("getDefaultDialect");
         return OrientDBDialect.class;
     }
 

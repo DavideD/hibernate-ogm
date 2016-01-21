@@ -23,18 +23,35 @@ import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import org.hibernate.search.annotations.Analyze;
+import org.hibernate.search.annotations.DocumentId;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.FieldBridge;
+import org.hibernate.search.annotations.Index;
+import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.annotations.Store;
+import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 
 /**
  *
  * @author chernolyassv
  */
 @Entity
+@Indexed(index = "Customer")
+@NamedQueries({
+    @NamedQuery(name = "Customer.findAll",
+            query = "SELECT c FROM Customer c"),
+    @NamedQuery(name = "Country.findByName",
+            query = "SELECT c FROM Customer c WHERE c.name = :name")})
 public class Customer {
 
     @Id
     @Column(name = "@rid")
+    @FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
     private ORecordId id;
-    @Column(name = "name")
+    @Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
     private String name;
 
     public ORecordId getId() {

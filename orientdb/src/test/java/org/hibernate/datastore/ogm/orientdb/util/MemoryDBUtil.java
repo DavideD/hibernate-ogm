@@ -24,6 +24,7 @@ public class MemoryDBUtil {
 
     public static Map<String,ORecordId> prepareDb(String url) {
         Map<String,ORecordId> idMap = new HashMap<>();
+        System.setProperty("ORIENTDB_HOME", "./target/testhome");
         OrientGraphFactory factory = new OrientGraphFactory(url);
 
         OrientGraphNoTx graph = factory.getNoTx();
