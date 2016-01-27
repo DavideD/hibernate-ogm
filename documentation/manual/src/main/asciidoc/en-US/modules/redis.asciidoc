@@ -39,7 +39,12 @@ The following properties are available to configure Redis support in Hibernate O
 hibernate.ogm.datastore.provider::
 To use Redis as a datastore provider, this property must be set to `redis_experimental`
 hibernate.ogm.datastore.grid_dialect::
-The dialect type how Hibernate OGM Redis maps entities and associations within Redis. The following two dialects exist: `org.hibernate.ogm.datastore.redis.RedisJsonDialect` (store entities as JSON documents within Redis keys. Associations are mapped to Redis lists/sets) and `org.hibernate.ogm.datastore.redis.RedisHashDialect` (store entities as key-value pairs within Redis hashes. Associations are mapped as JSON documents to Redis lists/sets)
+The dialect type how Hibernate OGM Redis maps entities and associations within Redis.
+The following two dialects exist:
+`org.hibernate.ogm.datastore.redis.RedisJsonDialect` (store entities as JSON documents within Redis keys.
+Associations are mapped to Redis lists/sets) and
+`org.hibernate.ogm.datastore.redis.RedisHashDialect` (store entities as key-value pairs within Redis hashes.
+Associations are mapped as JSON documents to Redis lists/sets)
 hibernate.ogm.datastore.host::
 The hostname and port of the Redis instance.
 The optional port is concatenated to the host and separated by a colon.
