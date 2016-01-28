@@ -18,6 +18,7 @@
  */
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -36,9 +37,9 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
     private static Log LOG = LoggerFactory.getLogger();
     private final Map<String, Object> dbNameValueMap;
 
-    private final Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata;
-    private final Map<String, String> rolesByColumn;
-    private final EntityKeyMetadata entityKeyMetadata;
+    private Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata;
+    private Map<String, String> rolesByColumn;
+    private EntityKeyMetadata entityKeyMetadata;
 
     public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap, Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
             Map<String, String> rolesByColumn, EntityKeyMetadata entityKeyMetadata) {
@@ -46,7 +47,11 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
         this.associatedEntityKeyMetadata = associatedEntityKeyMetadata;
         this.rolesByColumn = rolesByColumn;
         this.entityKeyMetadata = entityKeyMetadata;
-        LOG.info("dbNameValueMap:"+dbNameValueMap);
+        LOG.info("dbNameValueMap:" + dbNameValueMap);
+    }
+
+    public OrientDBTupleSnapshot(EntityKeyMetadata entityKeyMetadata) {
+        this(new HashMap<String,Object>(), null, null, entityKeyMetadata);
     }
 
     @Override
@@ -54,6 +59,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
         LOG.info("targetColumnName: " + targetColumnName);
         return dbNameValueMap.get(targetColumnName);
     }
+
     @Override
     public boolean isEmpty() {
         LOG.info("isEmpty");
@@ -62,7 +68,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 
     @Override
     public Set<String> getColumnNames() {
-        LOG.info("getColumnNames");        
+        LOG.info("getColumnNames");
         return dbNameValueMap.keySet();
     }
 

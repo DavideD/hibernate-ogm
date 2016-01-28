@@ -31,12 +31,12 @@ import org.parboiled.support.StringVar;
  *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
-public class QueryParser extends BaseParser<ParameterParser.Recognizer> {
+public class OrientDBQueryParser extends BaseParser<ParameterParser.Recognizer> {
 
     final ParameterParser.Recognizer journaler;
     final RecognizerAdapter adapter;
 
-    public QueryParser(ParameterParser.Recognizer journaler) {
+    public OrientDBQueryParser(ParameterParser.Recognizer journaler) {
         this.journaler = journaler;
         this.adapter = new RecognizerAdapter(journaler);
     }
@@ -61,11 +61,11 @@ public class QueryParser extends BaseParser<ParameterParser.Recognizer> {
 
         return Sequence(
                 ParameterBeginDelimiter(),
-                ZeroOrMore(WhiteSpace()),
-                OneOrMore(Alphanumeric()),
+                //ZeroOrMore(WhiteSpace()),
+                Sequence(OneOrMore(Letter()),ZeroOrMore(Digit())),
                 name.set(match()),
-                ZeroOrMore(WhiteSpace()),
-                ParameterEndDelimiter(),
+                //ZeroOrMore(WhiteSpace()),
+                //ParameterEndDelimiter(),
                 adapter.addNamedParameter(name.get(), currentIndex())
         );
     }
@@ -120,13 +120,14 @@ public class QueryParser extends BaseParser<ParameterParser.Recognizer> {
     }
 
     public Rule ParameterBeginDelimiter() {
-        return Ch('{');
+        return Ch(':');
     }
 
+    /*
     public Rule ParameterEndDelimiter() {
         return Ch('}');
     }
-
+     */
     public Rule Alphanumeric() {
         return FirstOf(Letter(), Digit());
     }

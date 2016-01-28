@@ -114,4 +114,26 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+        <plugins>           
+            <!--<plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <dependenciesToScan>
+                        <dependency>org.hibernate.ogm:hibernate-ogm-core</dependency>
+                    </dependenciesToScan>
+                </configuration>
+            </plugin> -->
+            <plugin>
+                 <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>    
 </project>

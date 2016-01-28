@@ -35,7 +35,7 @@ public class OrientDBParameterMetadataBuilder extends RecognizerBasedParameterMe
 
     @Override
     public void parseQueryParameters(String nativeQuery, ParameterParser.Recognizer journaler) {
-        QueryParser parser = Parboiled.createParser(QueryParser.class, journaler);
+        OrientDBQueryParser parser = Parboiled.createParser(OrientDBQueryParser.class, journaler);
         new RecoveringParseRunner<ParameterParser.Recognizer>(parser.Query()).run(nativeQuery);
     }
 

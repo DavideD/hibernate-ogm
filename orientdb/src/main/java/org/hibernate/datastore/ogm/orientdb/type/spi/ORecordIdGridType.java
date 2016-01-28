@@ -20,10 +20,8 @@ package org.hibernate.datastore.ogm.orientdb.type.spi;
 
 import org.hibernate.MappingException;
 import org.hibernate.engine.spi.Mapping;
-import org.hibernate.ogm.type.descriptor.impl.GridTypeDescriptor;
 import org.hibernate.ogm.type.descriptor.impl.PassThroughGridTypeDescriptor;
 import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
-import org.hibernate.type.descriptor.java.ClassTypeDescriptor;
 import com.orientechnologies.orient.core.id.ORecordId;
 import org.hibernate.datastore.ogm.orientdb.type.descriptor.java.ORecordIdTypeDescriptor;
 

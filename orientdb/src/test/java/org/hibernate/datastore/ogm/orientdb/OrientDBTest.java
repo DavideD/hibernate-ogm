@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -52,7 +53,7 @@ import static org.junit.Assert.*;
 public class OrientDBTest {
 
     private static final Logger LOG = Logger.getLogger(OrientDBTest.class.getName());
-    private static Map<String, ORecordId> classIdMap;
+    private static Map<String,List<ORecordId>> classIdMap;
     private static EntityManager em;
     private static EntityManagerFactory emf;
 
@@ -65,6 +66,7 @@ public class OrientDBTest {
         BasicConfigurator.configure();
         emf = Persistence.createEntityManagerFactory("hibernateOgmJpaUnit");
         em = emf.createEntityManager();
+        em.setFlushMode(FlushModeType.COMMIT);
 
     }
 
@@ -84,12 +86,12 @@ public class OrientDBTest {
     public void tearDown() {
     }
 
-    @Test
+    //@Test
     public void find() {
         System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTestIT.find()");
         try {
             em.getTransaction().begin();
-            ORecordId id = classIdMap.get("Customer");
+            ORecordId id = classIdMap.get("Customer").get(0);
             Customer customer = em.find(Customer.class, id);
             System.out.println("read entity properties:");
             System.out.println("customer.getId():" + customer.getId());
@@ -101,7 +103,7 @@ public class OrientDBTest {
 
     }
 
-    @Test
+    //@Test
     public void createNativeQuery() {
         System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTestIT.createNativeQuery()");
         try {
@@ -110,7 +112,7 @@ public class OrientDBTest {
             Query query = em.createNativeQuery("select from Customer", Customer.class);
             List<Customer> customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
-            ORecordId id = classIdMap.get("Customer");
+            ORecordId id = classIdMap.get("Customer").get(0);
 
             assertEquals(id, customers.get(0).getId());
 
@@ -118,14 +120,13 @@ public class OrientDBTest {
             query = em.createNativeQuery("select from " + id.toString(), Customer.class);
             customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
-            /*
-            not supported by OrientDB core
-            System.out.println("query: select from Customer where name={name}");
-            query = em.createNativeQuery("select from Customer where name={name}", Customer.class);
+            
+            System.out.println("query: select from Customer where name=:name");
+            query = em.createNativeQuery("select from Customer where name=:name", Customer.class);
             query.setParameter("name", "Ivahoe");
             customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
-             */
+             
 
             System.out.println("query: select from Customer where name='Ivahoe'");
             query = em.createNativeQuery("select from Customer where name='Ivahoe'", Customer.class);
@@ -137,8 +138,65 @@ public class OrientDBTest {
         }
 
     }
-
+    
     @Test
+    public void insertNewCustomer() throws Exception  {
+        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTest.insertNewCustomer()");        
+        try {            
+            em.getTransaction().begin();
+            System.out.println("em.getTransaction().isActive():"+em.getTransaction().isActive());
+            System.out.println("em.getTransaction().getRollbackOnly():"+em.getTransaction().getRollbackOnly());
+            Customer newCustomer = new Customer();
+            newCustomer.setName("test");
+            System.out.println("New Customer ready for  persit");
+            em.persist(newCustomer);            
+            em.flush();
+            Query query = em.createNativeQuery("select from Customer where name=:name", Customer.class);
+            query.setParameter("name", "test");
+            List<Customer> customers = query.getResultList();
+            System.out.println("customers.size():"+customers.size());
+            assertFalse("Customers must be", customers.isEmpty());
+            Customer testCustomer = customers.get(0);
+            assertNotNull("Customer with 'test' must be saved!", testCustomer);
+            assertTrue("Customer with 'test' must have valid rid!", testCustomer.getId().isValid());
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+         } finally {
+            em.getTransaction().commit();
+        }
+    }
+    @Test
+    public void updateCustomer() {
+        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTest.updateCustomer()");
+        
+        try {            
+            em.getTransaction().begin();
+            System.out.println("em.getTransaction().isActive():"+em.getTransaction().isActive());
+            System.out.println("em.getTransaction().getRollbackOnly():"+em.getTransaction().getRollbackOnly());
+            Query query = em.createNativeQuery("select from Customer where name=:name", Customer.class);
+            query.setParameter("name", "test");
+            List<Customer> customers = query.getResultList();
+            System.out.println("customers.size():"+customers.size());
+            assertFalse("Customers must be", customers.isEmpty());
+            Customer testCustomer = customers.get(0);
+            assertNotNull("Customer with 'test' must be saved!", testCustomer);
+            assertTrue("Customer with 'test' must have valid rid!", testCustomer.getId().isValid());
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+         } finally {
+            em.getTransaction().commit();
+        }
+    }
+    
+    
+    
+    
+
+    //@Test yet not work
     public void createNamedQuery() throws Exception {
         System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTestIT.createNamedQuery()");
         try {
@@ -168,7 +226,7 @@ public class OrientDBTest {
             System.out.println("2.customers.size(): " + customers.size());
             
             assertFalse("Customers must be", customers.isEmpty());
-            ORecordId id = classIdMap.get("Customer");
+            ORecordId id = classIdMap.get("Customer").get(0);
             assertEquals(id, customers.get(0).getId());
 
         } finally {

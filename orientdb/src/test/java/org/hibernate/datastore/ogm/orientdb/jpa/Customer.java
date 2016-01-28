@@ -22,11 +22,12 @@ import com.orientechnologies.orient.core.id.ORecordId;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.DocumentId;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Index;
@@ -49,8 +50,9 @@ public class Customer {
 
     @Id
     @Column(name = "@rid")
+    //@GeneratedValue(strategy=GenerationType.AUTO)
     @FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-    private ORecordId id;
+    private ORecordId id  =ORecordId.EMPTY_RECORD_ID;
     @Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
     private String name;
 
