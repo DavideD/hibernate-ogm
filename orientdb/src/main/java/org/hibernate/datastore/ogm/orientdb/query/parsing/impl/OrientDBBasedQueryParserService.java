@@ -1,20 +1,8 @@
 /*
- * Copyright (C) 2015 Hibernate.
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301  USA
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb.query.parsing.impl;
 
@@ -30,25 +18,25 @@ import org.hibernate.ogm.util.impl.LoggerFactory;
  *
  * @author chernolyassv
  */
-public class OrientDBBasedQueryParserService extends BaseQueryParserService  {
+public class OrientDBBasedQueryParserService extends BaseQueryParserService {
+
     private static final Log log = LoggerFactory.make();
 
-	private volatile SessionFactoryEntityNamesResolver entityNamesResolver;
+    private volatile SessionFactoryEntityNamesResolver entityNamesResolver;
 
     @Override
     public boolean supportsParameters() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory, String queryString, Map<String, Object> namedParameters) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory,String queryString,Map<String,Object> namedParameters) {
+        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory, String queryString) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory,String queryString) {
+        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
     }
-        
-    
+
 }

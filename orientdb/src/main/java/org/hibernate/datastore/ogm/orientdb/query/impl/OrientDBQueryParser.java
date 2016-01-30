@@ -1,20 +1,8 @@
 /*
- * Copyright (C) 2015 Hibernate.
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301  USA
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb.query.impl;
 
@@ -31,12 +19,12 @@ import org.parboiled.support.StringVar;
  *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
-public class QueryParser extends BaseParser<ParameterParser.Recognizer> {
+public class OrientDBQueryParser extends BaseParser<ParameterParser.Recognizer> {
 
     final ParameterParser.Recognizer journaler;
     final RecognizerAdapter adapter;
 
-    public QueryParser(ParameterParser.Recognizer journaler) {
+    public OrientDBQueryParser(ParameterParser.Recognizer journaler) {
         this.journaler = journaler;
         this.adapter = new RecognizerAdapter(journaler);
     }
@@ -61,11 +49,11 @@ public class QueryParser extends BaseParser<ParameterParser.Recognizer> {
 
         return Sequence(
                 ParameterBeginDelimiter(),
-                ZeroOrMore(WhiteSpace()),
-                OneOrMore(Alphanumeric()),
+                //ZeroOrMore(WhiteSpace()),
+                Sequence(OneOrMore(Letter()),ZeroOrMore(Digit())),
                 name.set(match()),
-                ZeroOrMore(WhiteSpace()),
-                ParameterEndDelimiter(),
+                //ZeroOrMore(WhiteSpace()),
+                //ParameterEndDelimiter(),
                 adapter.addNamedParameter(name.get(), currentIndex())
         );
     }
@@ -120,13 +108,14 @@ public class QueryParser extends BaseParser<ParameterParser.Recognizer> {
     }
 
     public Rule ParameterBeginDelimiter() {
-        return Ch('{');
+        return Ch(':');
     }
 
+    /*
     public Rule ParameterEndDelimiter() {
         return Ch('}');
     }
-
+     */
     public Rule Alphanumeric() {
         return FirstOf(Letter(), Digit());
     }

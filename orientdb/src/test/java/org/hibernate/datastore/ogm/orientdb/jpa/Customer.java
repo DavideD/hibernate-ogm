@@ -19,14 +19,18 @@
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
 import com.orientechnologies.orient.core.id.ORecordId;
+import java.util.List;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Version;
 import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.DocumentId;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Index;
@@ -50,10 +54,16 @@ public class Customer {
     @Id
     @Column(name = "@rid")
     @FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-    private ORecordId id;
+    private ORecordId id = ORecordId.EMPTY_RECORD_ID;
     @Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
     private String name;
-
+    @OneToMany(mappedBy = "owner")
+    private List<BuyingOrder> orders;
+    
+    @Version
+    @Column(name = "@version")
+    private int version;
+    
     public ORecordId getId() {
         return id;
     }
@@ -68,6 +78,14 @@ public class Customer {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public List<BuyingOrder> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<BuyingOrder> orders) {
+        this.orders = orders;
     }
 
     @Override

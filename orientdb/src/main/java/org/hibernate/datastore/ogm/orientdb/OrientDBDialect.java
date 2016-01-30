@@ -1,23 +1,13 @@
 /*
- * Copyright (C) 2015 Hibernate.
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301  USA
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb;
 
+import com.orientechnologies.orient.core.id.ORecordId;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,6 +25,7 @@ import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.query.impl.OrientDBParameterMetadataBuilder;
 import org.hibernate.datastore.ogm.orientdb.type.spi.ORecordIdGridType;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.ogm.dialect.identity.spi.IdentityColumnAwareGridDialect;
 import org.hibernate.ogm.dialect.multiget.spi.MultigetGridDialect;
 import org.hibernate.ogm.dialect.query.spi.BackendQuery;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
@@ -70,7 +61,7 @@ import org.hibernate.type.Type;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements MultigetGridDialect, QueryableGridDialect<String>,
-        ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect {
+        ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect,IdentityColumnAwareGridDialect {
 
     private static final Log log = LoggerFactory.getLogger();
 
@@ -85,12 +76,24 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public Tuple getTuple(EntityKey key, TupleContext tupleContext) {
-        log.info("EntityKey:" + key + ";");
+        log.info("getTuple:EntityKey:" + key + "; tupleContext"+tupleContext);
+        ORecordId dbKey = null;
         for (int i = 0; i < key.getColumnNames().length; i++) {
             String columnName = key.getColumnNames()[i];
             Object columnValue = key.getColumnValues()[i];
             log.info("EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");");
+            if (columnName.equals("@rid")) {
+                dbKey = (ORecordId) columnValue;
+            }
         }
+        
+        if (dbKey.getClusterPosition()==ORecordId.EMPTY_RECORD_ID.getClusterPosition()) {
+            //is is temporary value.  no entity in db with this key
+            log.info("getTuple:Key:" + dbKey + "is temporary!");
+            return null;
+        }
+        
+        
         try {
             Map<String, Object> dbValuesMap = entityQueries.get(key.getMetadata()).findEntity(provider.getConnection(), key.getColumnValues());
             return new Tuple(new OrientDBTupleSnapshot(dbValuesMap, tupleContext.getAllAssociatedEntityKeyMetadata(),
@@ -104,16 +107,75 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
+        log.info("createTuple:EntityKey:" + key + "; tupleContext"+tupleContext);        
+        return new Tuple( new OrientDBTupleSnapshot( key.getMetadata() ) );
+    }
+    
+    @Override
+    public Tuple createTuple(EntityKeyMetadata entityKeyMetadata, TupleContext tupleContext) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
+        log.info("insertOrUpdateTuple:EntityKey:" + key + "; tupleContext"+tupleContext+"; tuple:"+tuple);
+        Connection connection = provider.getConnection();
+        
+        StringBuilder queryBuffer = new StringBuilder();
+        ORecordId dbKey = null;
+        for (int i = 0; i < key.getColumnNames().length; i++) {
+            String columnName = key.getColumnNames()[i];
+            Object columnValue = key.getColumnValues()[i];
+            log.info("EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");");
+            if (columnName.equals("@rid")) {
+                dbKey = (ORecordId) columnValue;
+            }
+        }
+        if (dbKey.getClusterPosition()==ORecordId.EMPTY_RECORD_ID.getClusterPosition()) {
+            //it is new record =>insert a new record!
+            log.info("insertOrUpdateTuple:Key:" + dbKey + "is temporary!. Insert new record");
+            
+            queryBuffer.append("insert into ").append(key.getTable());
+            if (tuple.getColumnNames().size()>1) {
+                queryBuffer.append(" set ");
+            }
+            for (String columnName : tuple.getColumnNames()) {
+                if (columnName.equals("@rid")) {
+                    continue;
+                }
+                //@TODO  correct type
+                queryBuffer.append(" ").append(columnName).append("='").
+                        append(tuple.get(columnName)).append("',");
+            }
+            queryBuffer.setLength(queryBuffer.length()-1);
+            log.info("insertOrUpdateTuple:Key:" + dbKey + ". insert query:"+queryBuffer.toString());
+          try {  
+            PreparedStatement pstmt = connection.prepareStatement(queryBuffer.toString());
+            log.info("insertOrUpdateTuple:Key:" + dbKey + ". inserted: "+pstmt.executeUpdate());
+          } catch (SQLException e) {
+              log.error("Can not find entity", e);
+              throw new RuntimeException(e);
+          } 
+            
+            
+        } else {
+            // it is old record =>update the record
+            log.info("insertOrUpdateTuple:Key:" + dbKey + "is persistent!. Update old record");
+        }
+        
+        
+        
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    @Override
+    public void insertTuple(EntityKeyMetadata entityKeyMetadata, Tuple tuple, TupleContext tupleContext) {
+        log.info("insertTuple:EntityKeyMetadata:" + entityKeyMetadata + "; tupleContext"+tupleContext+"; tuple:"+tuple);
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void removeTuple(EntityKey key, TupleContext tupleContext) {
+        log.info("removeTuple:EntityKey:" + key + "; tupleContext"+tupleContext);
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -139,13 +201,20 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public boolean isStoredInEntityStructure(AssociationKeyMetadata associationKeyMetadata, AssociationTypeContext associationTypeContext) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return true;
     }
 
     @Override
     public Number nextValue(NextValueRequest request) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        log.info("NextValueRequest:" + request + "; ");   
+        return ORecordId.EMPTY_RECORD_ID.getClusterPosition();
     }
+
+    @Override
+    public boolean supportsSequences() {
+        return super.supportsSequences(); //To change body of generated methods, choose Tools | Templates.
+    }
+    
 
     @Override
     public void forEachTuple(ModelConsumer consumer, EntityKeyMetadata... entityKeyMetadatas) {
@@ -168,16 +237,16 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
             for (Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet()) {
                 String key = entry.getKey();
                 TypedGridValue value = entry.getValue();
-                log.info("key: " + key+"; type:"+value.getType().getName()+"; value:"+value.getValue());
+                log.info("key: " + key + "; type:" + value.getType().getName() + "; value:" + value.getValue());
                 //@todo  move to Map
                 if (value.getType().getName().equals("string")) {
-                    pstmt.setString(1, (String)value.getValue());
+                    pstmt.setString(1, (String) value.getValue());
                 }
-                
+
             }
-            log.info("3.executeBackendQuery. before pstmt.executeQuery()");            
+            log.info("3.executeBackendQuery. before pstmt.executeQuery()");
             ResultSet rs = pstmt.executeQuery();
-log.info("3.executeBackendQuery. after pstmt.executeQuery()");
+            log.info("3.executeBackendQuery. after pstmt.executeQuery()");
             /*if (backendQuery.getSingleEntityKeyMetadataOrNull() != null) {
             return new NodesTupleIterator(result, backendQuery.getSingleEntityKeyMetadataOrNull());
         } */
@@ -288,4 +357,10 @@ log.info("3.executeBackendQuery. after pstmt.executeQuery()");
         }
         return gridType;
     }
+
+    
+
+    
+
+   
 }
