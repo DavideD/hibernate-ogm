@@ -85,6 +85,7 @@ public class MemoryDBUtil {
             graph.addEdge(null, pizza,orderItem,  "Buying");
             graph.addEdge(null, buyingOrder, orderItem, "Order");
             graph.addEdge(null, customer, buyingOrder, "Owner");
+
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Error", e);
         }

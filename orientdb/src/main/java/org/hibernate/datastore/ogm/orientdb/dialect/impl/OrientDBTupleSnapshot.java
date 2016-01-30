@@ -7,6 +7,7 @@
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
