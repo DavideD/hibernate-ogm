@@ -1,26 +1,15 @@
 /*
- * Copyright (C) 2016 Hibernate.
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301  USA
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb;
 
 import com.orientechnologies.orient.core.id.ORecordId;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -30,6 +19,7 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import org.apache.log4j.BasicConfigurator;
 import org.hibernate.CacheMode;
+import org.hibernate.datastore.ogm.orientdb.jpa.BuyingOrder;
 import org.hibernate.datastore.ogm.orientdb.jpa.Customer;
 import org.hibernate.datastore.ogm.orientdb.util.MemoryDBUtil;
 import org.hibernate.search.MassIndexer;
@@ -45,15 +35,18 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 
 /**
  *
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OrientDBTest {
 
     private static final Logger LOG = Logger.getLogger(OrientDBTest.class.getName());
-    private static Map<String,List<ORecordId>> classIdMap;
+    private static Map<String, List<ORecordId>> classIdMap;
     private static EntityManager em;
     private static EntityManagerFactory emf;
 
@@ -87,17 +80,18 @@ public class OrientDBTest {
     public void tearDown() {
     }
 
-    //@Test
-    public void find() {
-        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTestIT.find()");
+    @Test
+    public void test1Find() {
         try {
             em.getTransaction().begin();
             ORecordId id = classIdMap.get("Customer").get(0);
             Customer customer = em.find(Customer.class, id);
-            System.out.println("read entity properties:");
-            System.out.println("customer.getId():" + customer.getId());
-            System.out.println("customer.getName():" + customer.getName());
+            LOG.log(Level.INFO, "read entity properties:");
+            LOG.log(Level.INFO, "customer.getId():{0}", customer.getId());
+            LOG.log(Level.INFO, "customer.getName(): {0}", customer.getName());
             assertEquals(id, customer.getId());
+            
+            List<BuyingOrder> orders = customer.getOrders();
         } finally {
             em.getTransaction().commit();
         }
@@ -105,11 +99,10 @@ public class OrientDBTest {
     }
 
     //@Test
-    public void createNativeQuery() {
-        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTestIT.createNativeQuery()");
+    public void test2CreateNativeQuery() {
         try {
             em.getTransaction().begin();
-            System.out.println("query: select from Customer");
+            LOG.log(Level.INFO, "query: select from Customer");
             Query query = em.createNativeQuery("select from Customer", Customer.class);
             List<Customer> customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
@@ -117,19 +110,18 @@ public class OrientDBTest {
 
             assertEquals(id, customers.get(0).getId());
 
-            System.out.println("query: select from " + id.toString());
+            LOG.log(Level.INFO, "query: select from " + id.toString());
             query = em.createNativeQuery("select from " + id.toString(), Customer.class);
             customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
-            
-            System.out.println("query: select from Customer where name=:name");
+
+            LOG.log(Level.INFO, "query: select from Customer where name=:name");
             query = em.createNativeQuery("select from Customer where name=:name", Customer.class);
             query.setParameter("name", "Ivahoe");
             customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
-             
 
-            System.out.println("query: select from Customer where name='Ivahoe'");
+            LOG.log(Level.INFO, "query: select from Customer where name='Ivahoe'");
             query = em.createNativeQuery("select from Customer where name='Ivahoe'", Customer.class);
             customers = query.getResultList();
             assertFalse("Customers must be", customers.isEmpty());
@@ -139,63 +131,81 @@ public class OrientDBTest {
         }
 
     }
-    
-    @Test
-    public void insertNewCustomer() throws Exception  {
-        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTest.insertNewCustomer()");        
-        try {            
+
+    //@Test
+    public void test3InsertNewCustomer() throws Exception {
+        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTest.insertNewCustomer()");
+        try {
             em.getTransaction().begin();
-            System.out.println("em.getTransaction().isActive():"+em.getTransaction().isActive());
-            System.out.println("em.getTransaction().getRollbackOnly():"+em.getTransaction().getRollbackOnly());
             Customer newCustomer = new Customer();
             newCustomer.setName("test");
-            System.out.println("New Customer ready for  persit");
-            em.persist(newCustomer);            
+            LOG.log(Level.INFO, "New Customer ready for  persit");
+            em.persist(newCustomer);
             em.flush();
             Query query = em.createNativeQuery("select from Customer where name=:name", Customer.class);
             query.setParameter("name", "test");
             List<Customer> customers = query.getResultList();
-            System.out.println("customers.size():"+customers.size());
+            LOG.log(Level.INFO, "customers.size():" + customers.size());
             assertFalse("Customers must be", customers.isEmpty());
             Customer testCustomer = customers.get(0);
             assertNotNull("Customer with 'test' must be saved!", testCustomer);
             assertTrue("Customer with 'test' must have valid rid!", testCustomer.getId().isValid());
-            
+
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Error", e);
             throw e;
-         } finally {
+        } finally {
             em.getTransaction().commit();
         }
     }
-    @Test
-    public void updateCustomer() {
-        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTest.updateCustomer()");
-        
-        try {            
+
+    //@Test
+    public void test4UpdateCustomer() {
+        try {
             em.getTransaction().begin();
-            System.out.println("em.getTransaction().isActive():"+em.getTransaction().isActive());
-            System.out.println("em.getTransaction().getRollbackOnly():"+em.getTransaction().getRollbackOnly());
-            Query query = em.createNativeQuery("select from Customer where name=:name", Customer.class);
-            query.setParameter("name", "test");
-            List<Customer> customers = query.getResultList();
-            System.out.println("customers.size():"+customers.size());
-            assertFalse("Customers must be", customers.isEmpty());
-            Customer testCustomer = customers.get(0);
-            assertNotNull("Customer with 'test' must be saved!", testCustomer);
-            assertTrue("Customer with 'test' must have valid rid!", testCustomer.getId().isValid());
-            
+            ORecordId id = classIdMap.get("Customer").get(0);
+            Customer customer = em.find(Customer.class, id);
+            customer.setName("Ivahoe2");
+            int oldVersion = customer.getVersion();
+            LOG.log(Level.INFO, "old version:{0}", oldVersion);
+            em.merge(customer);
+            em.flush();
+            Customer newCustomer = em.find(Customer.class, id);
+            assertNotNull("Must not be null", newCustomer);
+            assertEquals(customer.getId(), newCustomer.getId());
+            assertEquals("Ivahoe2", newCustomer.getName());
+            int newVersion = newCustomer.getVersion();
+            LOG.log(Level.INFO, "new version:{0}", newVersion);
+            assertTrue("Version must be chanched", (newVersion > oldVersion));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Error", e);
             throw e;
-         } finally {
+        } finally {
             em.getTransaction().commit();
         }
     }
-    
-    
-    
-    
+
+   // @Test
+    public void test5RemoveCustomer() {
+        try {
+            em.getTransaction().begin();
+            ORecordId id = classIdMap.get("Customer").get(0);
+            Customer customer = em.find(Customer.class, id);
+            em.remove(customer);
+            em.flush();
+
+            Customer removedCustomer = em.find(Customer.class, id);
+            LOG.log(Level.INFO, "customer:{0}", removedCustomer);
+
+            //assertEquals(customer.getId(), newCustomer.getId());
+            //assertEquals("Ivahoe2", newCustomer.getName());
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Error", e);
+            throw e;
+        } finally {
+            em.getTransaction().commit();
+        }
+    }
 
     //@Test yet not work
     public void createNamedQuery() throws Exception {
@@ -205,15 +215,15 @@ public class OrientDBTest {
             FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(em);
             MassIndexer indexer = fullTextEntityManager.createIndexer();
             indexer.cacheMode(CacheMode.REFRESH);
-            indexer.startAndWait();                        
-            
+            indexer.startAndWait();
+
             System.out.println("entities has indexed");
-            
+
             System.out.println("named query: Customer.findAll");
             TypedQuery<Customer> query = em.createNamedQuery("Customer.findAll", Customer.class);
             List<Customer> customers = query.getResultList();
             System.out.println("1.customers.size(): " + customers.size());
-            
+
             QueryBuilder qb = fullTextEntityManager.getSearchFactory()
                     .buildQueryBuilder().forEntity(Customer.class).get();
 
@@ -221,11 +231,10 @@ public class OrientDBTest {
             FullTextQuery jpaQuery
                     = fullTextEntityManager.createFullTextQuery(luceneQuery, Customer.class);
             jpaQuery.initializeObjectsWith(ObjectLookupMethod.PERSISTENCE_CONTEXT, DatabaseRetrievalMethod.QUERY);
-            
-            
+
             customers = jpaQuery.getResultList();
             System.out.println("2.customers.size(): " + customers.size());
-            
+
             assertFalse("Customers must be", customers.isEmpty());
             ORecordId id = classIdMap.get("Customer").get(0);
             assertEquals(id, customers.get(0).getId());

@@ -12,9 +12,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationQueries;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBEntityQueries;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleSnapshot;
@@ -61,7 +64,16 @@ import org.hibernate.type.Type;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements MultigetGridDialect, QueryableGridDialect<String>,
-        ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect,IdentityColumnAwareGridDialect {
+        ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+
+    private static final Set<String> SYSTEM_FIELDS;
+
+    static {
+        Set<String> set = new HashSet<>();
+        set.add("@rid");
+        set.add("@version");
+        SYSTEM_FIELDS = Collections.unmodifiableSet(set);
+    }
 
     private static final Log log = LoggerFactory.getLogger();
 
@@ -76,7 +88,7 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public Tuple getTuple(EntityKey key, TupleContext tupleContext) {
-        log.info("getTuple:EntityKey:" + key + "; tupleContext"+tupleContext);
+        log.info("getTuple:EntityKey:" + key + "; tupleContext" + tupleContext);
         ORecordId dbKey = null;
         for (int i = 0; i < key.getColumnNames().length; i++) {
             String columnName = key.getColumnNames()[i];
@@ -86,19 +98,22 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
                 dbKey = (ORecordId) columnValue;
             }
         }
-        
-        if (dbKey.getClusterPosition()==ORecordId.EMPTY_RECORD_ID.getClusterPosition()) {
+
+        if (dbKey.getClusterPosition() == ORecordId.EMPTY_RECORD_ID.getClusterPosition()) {
             //is is temporary value.  no entity in db with this key
             log.info("getTuple:Key:" + dbKey + "is temporary!");
             return null;
         }
-        
-        
+
         try {
             Map<String, Object> dbValuesMap = entityQueries.get(key.getMetadata()).findEntity(provider.getConnection(), key.getColumnValues());
-            return new Tuple(new OrientDBTupleSnapshot(dbValuesMap, tupleContext.getAllAssociatedEntityKeyMetadata(),
-                    tupleContext.getAllRoles(),
-                    key.getMetadata()));
+            if (dbValuesMap != null) {
+                return new Tuple(new OrientDBTupleSnapshot(dbValuesMap, tupleContext.getAllAssociatedEntityKeyMetadata(),
+                        tupleContext.getAllRoles(),
+                        key.getMetadata()));
+            } else {
+                return null;
+            }
         } catch (SQLException e) {
             log.error("Can not find entity", e);
         }
@@ -107,10 +122,10 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
-        log.info("createTuple:EntityKey:" + key + "; tupleContext"+tupleContext);        
-        return new Tuple( new OrientDBTupleSnapshot( key.getMetadata() ) );
+        log.info("createTuple:EntityKey:" + key + "; tupleContext" + tupleContext);
+        return new Tuple(new OrientDBTupleSnapshot(key.getMetadata()));
     }
-    
+
     @Override
     public Tuple createTuple(EntityKeyMetadata entityKeyMetadata, TupleContext tupleContext) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -118,9 +133,9 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
-        log.info("insertOrUpdateTuple:EntityKey:" + key + "; tupleContext"+tupleContext+"; tuple:"+tuple);
+        log.info("insertOrUpdateTuple:EntityKey:" + key + "; tupleContext" + tupleContext + "; tuple:" + tuple);
         Connection connection = provider.getConnection();
-        
+
         StringBuilder queryBuffer = new StringBuilder();
         ORecordId dbKey = null;
         for (int i = 0; i < key.getColumnNames().length; i++) {
@@ -131,52 +146,80 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
                 dbKey = (ORecordId) columnValue;
             }
         }
-        if (dbKey.getClusterPosition()==ORecordId.EMPTY_RECORD_ID.getClusterPosition()) {
+        if (dbKey.getClusterPosition() == ORecordId.EMPTY_RECORD_ID.getClusterPosition()) {
             //it is new record =>insert a new record!
             log.info("insertOrUpdateTuple:Key:" + dbKey + "is temporary!. Insert new record");
-            
+
             queryBuffer.append("insert into ").append(key.getTable());
-            if (tuple.getColumnNames().size()>1) {
+            if (tuple.getColumnNames().size() > 1) {
                 queryBuffer.append(" set ");
             }
             for (String columnName : tuple.getColumnNames()) {
-                if (columnName.equals("@rid")) {
+                if (SYSTEM_FIELDS.contains(columnName)) {
                     continue;
                 }
                 //@TODO  correct type
                 queryBuffer.append(" ").append(columnName).append("='").
                         append(tuple.get(columnName)).append("',");
             }
-            queryBuffer.setLength(queryBuffer.length()-1);
-            log.info("insertOrUpdateTuple:Key:" + dbKey + ". insert query:"+queryBuffer.toString());
-          try {  
-            PreparedStatement pstmt = connection.prepareStatement(queryBuffer.toString());
-            log.info("insertOrUpdateTuple:Key:" + dbKey + ". inserted: "+pstmt.executeUpdate());
-          } catch (SQLException e) {
-              log.error("Can not find entity", e);
-              throw new RuntimeException(e);
-          } 
-            
-            
+            queryBuffer.setLength(queryBuffer.length() - 1);
+            log.info("insertOrUpdateTuple:Key:" + dbKey + ". insert query:" + queryBuffer.toString());
+
         } else {
             // it is old record =>update the record
-            log.info("insertOrUpdateTuple:Key:" + dbKey + "is persistent!. Update old record");
+            log.info("insertOrUpdateTuple:Key:" + dbKey + "is persistent! Update old record!");
+
+            queryBuffer.append("update  ").append(dbKey).append(" set ");
+            for (String columnName : tuple.getColumnNames()) {
+                if (SYSTEM_FIELDS.contains(columnName)) {
+                    continue;
+                }
+                //@TODO  correct type
+                queryBuffer.append(" ").append(columnName).append("='").
+                        append(tuple.get(columnName)).append("',");
+            }
+            queryBuffer.setLength(queryBuffer.length() - 1);
+            log.info("insertOrUpdateTuple:Key:" + dbKey + ". update query:" + queryBuffer.toString());
         }
-        
-        
-        
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+        try {
+            PreparedStatement pstmt = connection.prepareStatement(queryBuffer.toString());
+            log.info("insertOrUpdateTuple:Key:" + dbKey + ". inserted or updated: " + pstmt.executeUpdate());
+        } catch (SQLException e) {
+            log.error("Can not find entity", e);
+            throw new RuntimeException(e);
+        }
     }
+
     @Override
     public void insertTuple(EntityKeyMetadata entityKeyMetadata, Tuple tuple, TupleContext tupleContext) {
-        log.info("insertTuple:EntityKeyMetadata:" + entityKeyMetadata + "; tupleContext"+tupleContext+"; tuple:"+tuple);
+        log.info("insertTuple:EntityKeyMetadata:" + entityKeyMetadata + "; tupleContext" + tupleContext + "; tuple:" + tuple);
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void removeTuple(EntityKey key, TupleContext tupleContext) {
-        log.info("removeTuple:EntityKey:" + key + "; tupleContext"+tupleContext);
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        log.info("removeTuple:EntityKey:" + key + "; tupleContext" + tupleContext);
+        Connection connection = provider.getConnection();
+        StringBuilder queryBuffer = new StringBuilder();
+        ORecordId dbKey = null;
+        for (int i = 0; i < key.getColumnNames().length; i++) {
+            String columnName = key.getColumnNames()[i];
+            Object columnValue = key.getColumnValues()[i];
+            log.info("EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");");
+            if (columnName.equals("@rid")) {
+                dbKey = (ORecordId) columnValue;
+            }
+        }
+
+        try {
+            queryBuffer.append("DELETE VERTEX ").append(dbKey);
+            PreparedStatement pstmt = connection.prepareStatement(queryBuffer.toString());
+            log.info("removeTuple:Key:" + dbKey + ". remove: " + pstmt.executeUpdate());
+        } catch (SQLException e) {
+            log.error("Can not find entity", e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -206,7 +249,7 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
     @Override
     public Number nextValue(NextValueRequest request) {
-        log.info("NextValueRequest:" + request + "; ");   
+        log.info("NextValueRequest:" + request + "; ");
         return ORecordId.EMPTY_RECORD_ID.getClusterPosition();
     }
 
@@ -214,7 +257,6 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
     public boolean supportsSequences() {
         return super.supportsSequences(); //To change body of generated methods, choose Tools | Templates.
     }
-    
 
     @Override
     public void forEachTuple(ModelConsumer consumer, EntityKeyMetadata... entityKeyMetadatas) {
@@ -340,6 +382,7 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
                 OgmCollectionPersister ogmCollectionPersister = (OgmCollectionPersister) collectionPersister;
                 EntityKeyMetadata ownerEntityKeyMetadata = ((OgmEntityPersister) (ogmCollectionPersister.getOwnerEntityPersister())).getEntityKeyMetadata();
                 AssociationKeyMetadata associationKeyMetadata = ogmCollectionPersister.getAssociationKeyMetadata();
+                log.info("initializeAssociationQueries. ownerEntityKeyMetadata: " + ownerEntityKeyMetadata+"; associationKeyMetadata:"+associationKeyMetadata);
                 queryMap.put(associationKeyMetadata, new OrientDBAssociationQueries(ownerEntityKeyMetadata, associationKeyMetadata));
             }
         }
@@ -358,9 +401,4 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
         return gridType;
     }
 
-    
-
-    
-
-   
 }

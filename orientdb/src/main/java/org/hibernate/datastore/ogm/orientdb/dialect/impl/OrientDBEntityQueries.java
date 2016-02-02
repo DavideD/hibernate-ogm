@@ -49,7 +49,7 @@ public class OrientDBEntityQueries extends QueriesBase {
      */
     public Map<String, Object> findEntity(Connection executionEngine, Object[] columnValues) throws SQLException {
         Map<String, Object> params = params(columnValues);
-        Map<String, Object> dbValues = new LinkedHashMap<>();
+        Map<String, Object> dbValues = null;
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -69,8 +69,10 @@ public class OrientDBEntityQueries extends QueriesBase {
 
         ResultSet rs = stmt.executeQuery(query.toString());
         if (rs.next()) {
+            dbValues = new LinkedHashMap<>();
             ResultSetMetaData metadata = rs.getMetaData();
             dbValues.put("@rid", rs.getObject("@rid"));
+            dbValues.put("@version", rs.getObject("@version"));
 
             for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
                 int dbFieldNo = i + 1;
