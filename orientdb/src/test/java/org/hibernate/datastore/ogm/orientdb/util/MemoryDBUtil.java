@@ -1,14 +1,15 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
- *
+ * 
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.datastore.ogm.orientdb.utils;
+package org.hibernate.datastore.ogm.orientdb.util;
 
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
@@ -22,9 +23,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author chernolyassv
+ * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-@Deprecated
 public class MemoryDBUtil {
 
 	private static final Logger LOG = Logger.getLogger( MemoryDBUtil.class.getName() );
@@ -40,10 +40,16 @@ public class MemoryDBUtil {
 
 			// vertex classes
 			OrientVertexType pizzaType = graph.createVertexType( "Pizza" );
+			pizzaType.createProperty( "bKey", OType.LONG );
 			pizzaType.createProperty( "name", OType.STRING );
 			for ( OProperty p : pizzaType.declaredProperties() ) {
-				System.out.println( "Property: " + p );
+				LOG.log( Level.INFO, "Property: {0}", p );
 			}
+			LOG.log( Level.INFO, "Create unique index like primary key for Pizza" );
+			graph.command( new OCommandSQL( "CREATE INDEX pizzaPrimaryIndex ON Pizza(bKey) UNIQUE" ) ).execute();
+			LOG.log( Level.INFO, "Create sequence for Pizza" );
+			graph.command( new OCommandSQL( "CREATE SEQUENCE seq_pizza_bkey TYPE ORDERED START 2" ) ).execute();
+			// INSERT INTO Account SET id = sequence('mysequence').next()
 
 			OrientVertexType buyingOrderType = graph.createVertexType( "BuyingOrder" );
 			buyingOrderType.createProperty( "orderKey", OType.STRING );
@@ -55,6 +61,7 @@ public class MemoryDBUtil {
 
 			// create vertex
 			Vertex pizza = graph.addVertex( "class:Pizza" );
+			pizza.setProperty( "bKey", Long.valueOf( 1L ) );
 			pizza.setProperty( "name", "Super Papa" );
 			System.out.println( "pizza.getId():" + pizza.getId() );
 			List<ORecordId> pizzaRids = new LinkedList<>();

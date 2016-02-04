@@ -17,7 +17,7 @@ import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.model.spi.Tuple;
 
 /**
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 
@@ -62,6 +62,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			map.put( resultSet.getMetaData().getColumnName( fieldNum ), resultSet.getObject( fieldNum ) );
 		}
 		map.put( "@rid", resultSet.getObject( "@rid" ) );
+		map.put( "@version", resultSet.getObject( "@version" ) );
 		log.info( "field map: " + map );
 		return new Tuple( new MapTupleSnapshot( map ) );
 	}

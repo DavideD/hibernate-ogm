@@ -17,7 +17,7 @@ import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
 
 /**
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBTupleSnapshot implements TupleSnapshot {
 
@@ -28,8 +28,10 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	private Map<String, String> rolesByColumn;
 	private EntityKeyMetadata entityKeyMetadata;
 
-	public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap, Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
-			Map<String, String> rolesByColumn, EntityKeyMetadata entityKeyMetadata) {
+	public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap,
+			Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
+			Map<String, String> rolesByColumn,
+			EntityKeyMetadata entityKeyMetadata) {
 		this.dbNameValueMap = dbNameValueMap;
 		this.associatedEntityKeyMetadata = associatedEntityKeyMetadata;
 		this.rolesByColumn = rolesByColumn;
@@ -44,7 +46,11 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	@Override
 	public Object get(String targetColumnName) {
 		LOG.info( "targetColumnName: " + targetColumnName );
-		return dbNameValueMap.get( targetColumnName );
+		Object value = dbNameValueMap.get( targetColumnName );
+		if ( targetColumnName.equals( "@version" ) && !dbNameValueMap.containsKey( targetColumnName ) ) {
+			value = Integer.valueOf( 0 );
+		}
+		return value;
 	}
 
 	@Override
