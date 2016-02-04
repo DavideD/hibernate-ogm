@@ -1,9 +1,9 @@
- /*
- * Hibernate OGM, Domain model persistence for NoSQL datastores
- * 
- * License: GNU Lesser General Public License (LGPL), version 2.1 or later
- * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
- */
+/*
+* Hibernate OGM, Domain model persistence for NoSQL datastores
+* 
+* License: GNU Lesser General Public License (LGPL), version 2.1 or later
+* See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+*/
 
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
@@ -27,93 +27,91 @@ import org.hibernate.search.annotations.Store;
 import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 
 @Entity
 @Indexed(index = "BuyingOrder")
 public class BuyingOrder {
-    @Id
-    @Column(name = "@rid")
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-    private ORecordId id;
-    @Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
-    private String orderKey;
-    @ManyToOne
-    private Customer owner;
-    @OneToMany(mappedBy = "order")
-    private List<OrderItem> orders;
-    @Version
-    @Column(name = "@version")
-    private int version;
 
-    public ORecordId getId() {
-        return id;
-    }
+	@Id
+	@Column(name = "@rid")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
+	private ORecordId id;
+	@Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
+	private String orderKey;
+	@ManyToOne
+	private Customer owner;
+	@OneToMany(mappedBy = "order")
+	private List<OrderItem> orders;
+	@Version
+	@Column(name = "@version")
+	private int version;
 
-    public void setId(ORecordId id) {
-        this.id = id;
-    }
+	public ORecordId getId() {
+		return id;
+	}
 
-    public String getOrderKey() {
-        return orderKey;
-    }
+	public void setId(ORecordId id) {
+		this.id = id;
+	}
 
-    public void setOrderKey(String orderKey) {
-        this.orderKey = orderKey;
-    }
+	public String getOrderKey() {
+		return orderKey;
+	}
 
-    public Customer getOwner() {
-        return owner;
-    }
+	public void setOrderKey(String orderKey) {
+		this.orderKey = orderKey;
+	}
 
-    public void setOwner(Customer owner) {
-        this.owner = owner;
-    }
+	public Customer getOwner() {
+		return owner;
+	}
 
-    public List<OrderItem> getOrders() {
-        return orders;
-    }
+	public void setOwner(Customer owner) {
+		this.owner = owner;
+	}
 
-    public void setOrders(List<OrderItem> orders) {
-        this.orders = orders;
-    }
+	public List<OrderItem> getOrders() {
+		return orders;
+	}
 
-    public int getVersion() {
-        return version;
-    }
+	public void setOrders(List<OrderItem> orders) {
+		this.orders = orders;
+	}
 
-    public void setVersion(int version) {
-        this.version = version;
-    }
+	public int getVersion() {
+		return version;
+	}
 
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 53 * hash + Objects.hashCode(this.id);
-        return hash;
-    }
+	public void setVersion(int version) {
+		this.version = version;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final BuyingOrder other = (BuyingOrder) obj;
-        if (!Objects.equals(this.id, other.id)) {
-            return false;
-        }
-        return true;
-    }
-    
-    
-    
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 53 * hash + Objects.hashCode( this.id );
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null ) {
+			return false;
+		}
+		if ( getClass() != obj.getClass() ) {
+			return false;
+		}
+		final BuyingOrder other = (BuyingOrder) obj;
+		if ( !Objects.equals( this.id, other.id ) ) {
+			return false;
+		}
+		return true;
+	}
+
 }

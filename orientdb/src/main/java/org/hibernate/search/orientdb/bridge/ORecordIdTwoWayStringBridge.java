@@ -10,20 +10,19 @@ import com.orientechnologies.orient.core.id.ORecordId;
 import org.hibernate.search.bridge.TwoWayStringBridge;
 
 /**
- *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class ORecordIdTwoWayStringBridge implements TwoWayStringBridge {
 
-    @Override
-    public Object stringToObject(String string) {
-        return new ORecordId(string);
-    }
+	@Override
+	public Object stringToObject(String string) {
+		return new ORecordId( string );
+	}
 
-    @Override
-    public String objectToString(Object o) {
-        ORecordId id = (ORecordId) o;
-        return id.toString();
-    }
-    
+	@Override
+	public String objectToString(Object o) {
+		ORecordId id = (ORecordId) o;
+		return id.toString();
+	}
+
 }

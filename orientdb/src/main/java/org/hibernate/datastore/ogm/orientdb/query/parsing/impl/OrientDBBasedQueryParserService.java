@@ -15,28 +15,30 @@ import org.hibernate.ogm.util.impl.Log;
 import org.hibernate.ogm.util.impl.LoggerFactory;
 
 /**
- *
  * @author chernolyassv
  */
 public class OrientDBBasedQueryParserService extends BaseQueryParserService {
 
-    private static final Log log = LoggerFactory.make();
+	private static final Log log = LoggerFactory.make();
 
-    private volatile SessionFactoryEntityNamesResolver entityNamesResolver;
+	private volatile SessionFactoryEntityNamesResolver entityNamesResolver;
 
-    @Override
-    public boolean supportsParameters() {
-        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
-    }
+	@Override
+	public boolean supportsParameters() {
+		throw new UnsupportedOperationException( "Not supported yet." ); // To change body of generated methods, choose
+																			// Tools | Templates.
+	}
 
-    @Override
-    public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory,String queryString,Map<String,Object> namedParameters) {
-        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
-    }
+	@Override
+	public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory, String queryString, Map<String, Object> namedParameters) {
+		throw new UnsupportedOperationException( "Not supported yet." ); // To change body of generated methods, choose
+																			// Tools | Templates.
+	}
 
-    @Override
-    public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory,String queryString) {
-        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
-    }
+	@Override
+	public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory, String queryString) {
+		throw new UnsupportedOperationException( "Not supported yet." ); // To change body of generated methods, choose
+																			// Tools | Templates.
+	}
 
 }

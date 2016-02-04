@@ -9,16 +9,11 @@ package org.hibernate.datastore.ogm.orientdb;
 import org.hibernate.ogm.cfg.OgmProperties;
 
 /**
- *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBProperties implements OgmProperties {
-    
-    
-    
 
-    private OrientDBProperties() {
-    }
-    
-    
+	private OrientDBProperties() {
+	}
+
 }

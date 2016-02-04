@@ -22,93 +22,91 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 
 @Entity
 @Indexed(index = "OrderItem")
 public class OrderItem {
-    @Id
-    @Column(name = "@rid")
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-    private ORecordId id;
-    
-    private BigDecimal cost;
-    @ManyToOne
-    private BuyingOrder order;
-    @ManyToOne
-    private Pizza buying;
-    @Version
-    @Column(name = "@version")
-    private int version;
 
-    public ORecordId getId() {
-        return id;
-    }
+	@Id
+	@Column(name = "@rid")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
+	private ORecordId id;
 
-    public void setId(ORecordId id) {
-        this.id = id;
-    }
+	private BigDecimal cost;
+	@ManyToOne
+	private BuyingOrder order;
+	@ManyToOne
+	private Pizza buying;
+	@Version
+	@Column(name = "@version")
+	private int version;
 
-    public BigDecimal getCost() {
-        return cost;
-    }
+	public ORecordId getId() {
+		return id;
+	}
 
-    public void setCost(BigDecimal cost) {
-        this.cost = cost;
-    }
+	public void setId(ORecordId id) {
+		this.id = id;
+	}
 
-    public BuyingOrder getOrder() {
-        return order;
-    }
+	public BigDecimal getCost() {
+		return cost;
+	}
 
-    public void setOrder(BuyingOrder order) {
-        this.order = order;
-    }
+	public void setCost(BigDecimal cost) {
+		this.cost = cost;
+	}
 
-    public Pizza getBuying() {
-        return buying;
-    }
+	public BuyingOrder getOrder() {
+		return order;
+	}
 
-    public void setBuying(Pizza buying) {
-        this.buying = buying;
-    }
+	public void setOrder(BuyingOrder order) {
+		this.order = order;
+	}
 
-    public int getVersion() {
-        return version;
-    }
+	public Pizza getBuying() {
+		return buying;
+	}
 
-    public void setVersion(int version) {
-        this.version = version;
-    }
+	public void setBuying(Pizza buying) {
+		this.buying = buying;
+	}
 
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 97 * hash + Objects.hashCode(this.id);
-        return hash;
-    }
+	public int getVersion() {
+		return version;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final OrderItem other = (OrderItem) obj;
-        if (!Objects.equals(this.id, other.id)) {
-            return false;
-        }
-        return true;
-    }
-    
-    
-    
+	public void setVersion(int version) {
+		this.version = version;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 97 * hash + Objects.hashCode( this.id );
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null ) {
+			return false;
+		}
+		if ( getClass() != obj.getClass() ) {
+			return false;
+		}
+		final OrderItem other = (OrderItem) obj;
+		if ( !Objects.equals( this.id, other.id ) ) {
+			return false;
+		}
+		return true;
+	}
+
 }
