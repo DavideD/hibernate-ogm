@@ -4,24 +4,27 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.datastore.ogm.orientdb.type.spi;
+package org.hibernate.ogm.datastore.cassandra.type.impl;
+
+import java.util.UUID;
 
 import org.hibernate.MappingException;
 import org.hibernate.engine.spi.Mapping;
 import org.hibernate.ogm.type.descriptor.impl.PassThroughGridTypeDescriptor;
 import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
-import com.orientechnologies.orient.core.id.ORecordId;
-import org.hibernate.datastore.ogm.orientdb.type.descriptor.java.ORecordIdTypeDescriptor;
+import org.hibernate.type.descriptor.java.UUIDTypeDescriptor;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * Maps {@link UUID} to Cassandra's native {@code uuid} type.
+ *
+ * @author Gunnar Morling
  */
-public class ORecordIdGridType extends AbstractGenericBasicType<ORecordId> {
+public class CassandraUuidType extends AbstractGenericBasicType<UUID> {
 
-	public static final ORecordIdGridType INSTANCE = new ORecordIdGridType();
+	public static final CassandraUuidType INSTANCE = new CassandraUuidType();
 
-	public ORecordIdGridType() {
-		super( PassThroughGridTypeDescriptor.INSTANCE, ORecordIdTypeDescriptor.INSTANCE );
+	public CassandraUuidType() {
+		super( PassThroughGridTypeDescriptor.INSTANCE, UUIDTypeDescriptor.INSTANCE );
 	}
 
 	@Override
@@ -31,7 +34,6 @@ public class ORecordIdGridType extends AbstractGenericBasicType<ORecordId> {
 
 	@Override
 	public String getName() {
-		return "ORecordId";
+		return "cassandra_uuid";
 	}
-
 }

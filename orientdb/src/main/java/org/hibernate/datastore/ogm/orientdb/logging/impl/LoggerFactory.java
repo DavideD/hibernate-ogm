@@ -9,11 +9,11 @@ package org.hibernate.datastore.ogm.orientdb.logging.impl;
 import org.jboss.logging.Logger;
 
 /**
- *
  * @author chernolyassv
  */
 public class LoggerFactory {
-    private static final CallerProvider callerProvider = new CallerProvider();
+
+	private static final CallerProvider callerProvider = new CallerProvider();
 
 	public static Log getLogger() {
 		return Logger.getMessageLogger( Log.class, callerProvider.getCallerClass().getCanonicalName() );
@@ -25,5 +25,5 @@ public class LoggerFactory {
 			return getClassContext()[2];
 		}
 	}
-    
+
 }

@@ -98,7 +98,7 @@ public class OrientDBTest {
 
     }
 
-    //@Test
+    @Test
     public void test2CreateNativeQuery() {
         try {
             em.getTransaction().begin();
@@ -132,7 +132,7 @@ public class OrientDBTest {
 
     }
 
-    //@Test
+    @Test
     public void test3InsertNewCustomer() throws Exception {
         System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTest.insertNewCustomer()");
         try {
@@ -159,7 +159,7 @@ public class OrientDBTest {
         }
     }
 
-    //@Test
+    @Test
     public void test4UpdateCustomer() {
         try {
             em.getTransaction().begin();
@@ -185,7 +185,7 @@ public class OrientDBTest {
         }
     }
 
-   // @Test
+   @Test
     public void test5RemoveCustomer() {
         try {
             em.getTransaction().begin();

@@ -19,7 +19,6 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
 /**
- *
  * @author chernolyassv
  */
 @MessageLogger(projectCode = "OGM")
@@ -53,5 +52,4 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 
 	@Message(id = 1408, value = "Error while cheking transaction status")
 	HibernateException exceptionWhileChekingTransactionStatus(@Cause Exception e);
-    
 }

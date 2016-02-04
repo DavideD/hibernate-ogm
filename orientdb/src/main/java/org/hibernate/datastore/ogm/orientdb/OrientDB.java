@@ -12,14 +12,13 @@ import org.hibernate.ogm.options.navigation.spi.ConfigurationContext;
 import org.hibernate.ogm.options.navigation.spi.GenericOptionModel;
 
 /**
- *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDB implements DatastoreConfiguration<GlobalContext<?, ?>> {
 
-    @Override
-    public GlobalContext<?, ?> getConfigurationBuilder(ConfigurationContext context) {
-        return GenericOptionModel.createGlobalContext( context );
-    }
-    
+	@Override
+	public GlobalContext<?, ?> getConfigurationBuilder(ConfigurationContext context) {
+		return GenericOptionModel.createGlobalContext( context );
+	}
+
 }

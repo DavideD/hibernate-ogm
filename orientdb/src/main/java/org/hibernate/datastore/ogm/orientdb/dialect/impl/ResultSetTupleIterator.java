@@ -17,73 +17,73 @@ import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.model.spi.Tuple;
 
 /**
- *
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 
-    private static final Log log = LoggerFactory.getLogger();
+	private static final Log log = LoggerFactory.getLogger();
 
-    private final ResultSet resultSet;
+	private final ResultSet resultSet;
 
-    public ResultSetTupleIterator(ResultSet resultSet) {
-        this.resultSet = resultSet;
-    }
+	public ResultSetTupleIterator(ResultSet resultSet) {
+		this.resultSet = resultSet;
+	}
 
-    @Override
-    public boolean hasNext() {
-        try {
-            log.info("3.hasNext. resultSet.isLast():"+resultSet.isLast());
-            return !resultSet.isLast();
-        } catch (SQLException e) {
-            log.error("Error with ResultSet", e);
-            throw new RuntimeException(e);
-        }
-    }
+	@Override
+	public boolean hasNext() {
+		try {
+			log.info( "3.hasNext. resultSet.isLast():" + resultSet.isLast() );
+			return !resultSet.isLast();
+		}
+		catch (SQLException e) {
+			log.error( "Error with ResultSet", e );
+			throw new RuntimeException( e );
+		}
+	}
 
-    @Override
-    public Tuple next() {
-        log.info("call next()");
-        
-        try {
-            resultSet.next();
-            return convert();
-        } catch (SQLException e) {
-            log.error("Error with ResultSet", e);
-            throw new RuntimeException(e);
-        }
-        
-    }
+	@Override
+	public Tuple next() {
+		log.info( "call next()" );
 
-    protected Tuple convert() throws SQLException {
-        Map<String, Object> map = new HashMap<>();
-        for (int i =0; i<resultSet.getMetaData().getColumnCount();i++) {
-            int fieldNum = i+1;
-            map.put(resultSet.getMetaData().getColumnName(fieldNum),
-                    resultSet.getObject(fieldNum));
-        }
-        map.put("@rid",resultSet.getObject("@rid"));
-        map.put("@version",resultSet.getObject("@version"));
-        log.info("field map: "+map);
-        return new Tuple(new MapTupleSnapshot(map));
-    }
+		try {
+			resultSet.next();
+			return convert();
+		}
+		catch (SQLException e) {
+			log.error( "Error with ResultSet", e );
+			throw new RuntimeException( e );
+		}
+	}
 
-    @Override
-    public void remove() {
-        try {
-            resultSet.deleteRow();
-        } catch (SQLException e) {
-            log.error("Error with ResultSet", e);
-        }
-    }
+	protected Tuple convert() throws SQLException {
+		Map<String, Object> map = new HashMap<>();
+		for ( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ ) {
+			int fieldNum = i + 1;
+			map.put( resultSet.getMetaData().getColumnName( fieldNum ), resultSet.getObject( fieldNum ) );
+		}
+		map.put( "@rid", resultSet.getObject( "@rid" ) );
+		log.info( "field map: " + map );
+		return new Tuple( new MapTupleSnapshot( map ) );
+	}
 
-    @Override
-    public void close() {
-        try {
-            resultSet.close();
-        } catch (SQLException e) {
-            log.error("Error with ResultSet", e);
-        }
-    }
+	@Override
+	public void remove() {
+		try {
+			resultSet.deleteRow();
+		}
+		catch (SQLException e) {
+			log.error( "Error with ResultSet", e );
+		}
+	}
+
+	@Override
+	public void close() {
+		try {
+			resultSet.close();
+		}
+		catch (SQLException e) {
+			log.error( "Error with ResultSet", e );
+		}
+	}
 
 }

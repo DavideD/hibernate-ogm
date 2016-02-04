@@ -11,20 +11,18 @@ import org.hibernate.search.bridge.TwoWayStringBridge;
 
 /**
  *
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class ORecordIdTwoWayStringBridge implements TwoWayStringBridge {
 
     @Override
     public Object stringToObject(String string) {
-        System.out.println("ORecordIdTwoWayStringBridge: "+string);
         return new ORecordId(string);
     }
 
     @Override
     public String objectToString(Object o) {
         ORecordId id = (ORecordId) o;
-        System.out.println("ORecordIdTwoWayStringBridge: "+id);
         return id.toString();
     }
     

@@ -12,19 +12,17 @@ import org.hibernate.ogm.util.impl.Log;
 import org.hibernate.ogm.util.impl.LoggerFactory;
 
 /**
- *
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBAssociationQueries extends QueriesBase {
-    private static final Log log = LoggerFactory.make();
 
-    private final EntityKeyMetadata ownerEntityKeyMetadata;
-    private final AssociationKeyMetadata associationKeyMetadata;
+	private static final Log log = LoggerFactory.make();
 
-    public OrientDBAssociationQueries(EntityKeyMetadata ownerEntityKeyMetadata, AssociationKeyMetadata associationKeyMetadata) {
-        this.ownerEntityKeyMetadata = ownerEntityKeyMetadata;
-        this.associationKeyMetadata = associationKeyMetadata;
-    }
-    
+	private final EntityKeyMetadata ownerEntityKeyMetadata;
+	private final AssociationKeyMetadata associationKeyMetadata;
 
+	public OrientDBAssociationQueries(EntityKeyMetadata ownerEntityKeyMetadata, AssociationKeyMetadata associationKeyMetadata) {
+		this.ownerEntityKeyMetadata = ownerEntityKeyMetadata;
+		this.associationKeyMetadata = associationKeyMetadata;
+	}
 }

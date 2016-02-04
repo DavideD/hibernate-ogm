@@ -1,3 +1,39 @@
-/orientdb/target/
+#OS
+.DS_Store
+
+#IDEs
+
+# IntelliJ specific files/directories
+.idea
+*.ipr
+*.iws
+*.iml
+atlassian-ide-plugin.xml
+
+#XMLEditor
+*.*xml~
+
+# Eclipse specific files/directories
+.classpath
+.project
+.factorypath
+.settings
+.externalToolBuilders
+bin/
+
+# NetBeans specific files/directories
+.nbattrs
 **/nbactions.xml
-**/nb-configuration.xml
+**/nb-configuration.xml                                                               
+**/nbproject/*
+
+
+#build
+target/
+
+#test output
+test-output/
+transaction.log
+**/transaction.log
+infinispan.log
+

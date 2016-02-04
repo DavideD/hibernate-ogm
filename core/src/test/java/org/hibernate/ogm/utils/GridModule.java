@@ -32,6 +32,7 @@ public enum GridModule {
 	CASSANDRA( "org.hibernate.ogm.datastore.cassandra.utils.CassandraTestHelper" ),
 	REDIS( "org.hibernate.ogm.datastore.redis.utils.RedisTestHelper" ),
 	ORIENTDB( "org.hibernate.datastore.ogm.orientdb.util.OrientDBTestHelper" );
+
 	private final String testHelperClassName;
 
 	GridModule(String testHelperClassName) {

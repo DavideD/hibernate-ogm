@@ -19,90 +19,87 @@ import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 
 /**
- *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBEntityQueries extends QueriesBase {
 
-    private static Log LOG = LoggerFactory.getLogger();
+	private static Log LOG = LoggerFactory.getLogger();
 
-    private final EntityKeyMetadata entityKeyMetadata;
+	private final EntityKeyMetadata entityKeyMetadata;
 
-    public OrientDBEntityQueries(EntityKeyMetadata entityKeyMetadata) {
-        this.entityKeyMetadata = entityKeyMetadata;
-        for (int i = 0; i < entityKeyMetadata.getColumnNames().length; i++) {
-            String columnName = entityKeyMetadata.getColumnNames()[i];
-            LOG.info("column number:" + i + "; column name:" + columnName);
-        }
+	public OrientDBEntityQueries(EntityKeyMetadata entityKeyMetadata) {
+		this.entityKeyMetadata = entityKeyMetadata;
+		for ( int i = 0; i < entityKeyMetadata.getColumnNames().length; i++ ) {
+			String columnName = entityKeyMetadata.getColumnNames()[i];
+			LOG.info( "column number:" + i + "; column name:" + columnName );
+		}
 
-    }
+	}
 
-    /**
-     * Find the node corresponding to an entity.
-     *
-     * @param executionEngine the {@link GraphDatabaseService} used to run the
-     * query
-     * @param columnValues the values in
-     * {@link org.hibernate.ogm.model.key.spi.EntityKey#getColumnValues()}
-     * @return the corresponding node
-     * @throws java.sql.SQLException
-     */
-    public Map<String, Object> findEntity(Connection executionEngine, Object[] columnValues) throws SQLException {
-        Map<String, Object> params = params(columnValues);
-        Map<String, Object> dbValues = null;
-        for (Map.Entry<String, Object> entry : params.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            LOG.info("key: " + key + "; value:" + value + "; (class: " + value.getClass() + ")");
-        }
+	/**
+	 * Find the node corresponding to an entity.
+	 *
+	 * @param executionEngine the {@link GraphDatabaseService} used to run the query
+	 * @param columnValues the values in {@link org.hibernate.ogm.model.key.spi.EntityKey#getColumnValues()}
+	 * @return the corresponding node
+	 * @throws java.sql.SQLException
+	 */
+	public Map<String, Object> findEntity(Connection executionEngine, Object[] columnValues) throws SQLException {
+		Map<String, Object> params = params( columnValues );
+		Map<String, Object> dbValues = new LinkedHashMap<>();
+		for ( Map.Entry<String, Object> entry : params.entrySet() ) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+			LOG.info( "key: " + key + "; value:" + value + "; (class: " + value.getClass() + ")" );
+		}
 
-        Statement stmt = executionEngine.createStatement();
-        StringBuilder query = new StringBuilder("select from ");
-        if (params.size() == 1 && params.get("0") instanceof ORecordId) {
-            ORecordId rid = (ORecordId) params.get("0");
-            query.append(rid);
-        } else {
-            query.append(entityKeyMetadata.getTable());
-        }
+		Statement stmt = executionEngine.createStatement();
+		StringBuilder query = new StringBuilder( "select from " );
+		if ( params.size() == 1 && params.get( "0" ) instanceof ORecordId ) {
+			ORecordId rid = (ORecordId) params.get( "0" );
+			query.append( rid );
+		}
+		else {
+			query.append( entityKeyMetadata.getTable() );
+		}
 
-        LOG.info("find entiry query: " + query.toString());
+		LOG.info( "find entiry query: " + query.toString() );
 
-        ResultSet rs = stmt.executeQuery(query.toString());
-        if (rs.next()) {
-            dbValues = new LinkedHashMap<>();
-            ResultSetMetaData metadata = rs.getMetaData();
-            dbValues.put("@rid", rs.getObject("@rid"));
-            dbValues.put("@version", rs.getObject("@version"));
+		ResultSet rs = stmt.executeQuery( query.toString() );
+		if ( rs.next() ) {
+			ResultSetMetaData metadata = rs.getMetaData();
+			dbValues.put( "@rid", rs.getObject( "@rid" ) );
+                        dbValues.put( "@version", rs.getObject( "@version" ) );
 
-            for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-                int dbFieldNo = i + 1;
-                String dbColumnName = metadata.getColumnName(dbFieldNo);
-                LOG.info(i + " dbColumnName " + dbColumnName);
-                dbValues.put(dbColumnName, rs.getObject(dbColumnName));
-            }
-            LOG.info(" entiry values from db: " + dbValues);
-        }
+			for ( int i = 0; i < rs.getMetaData().getColumnCount(); i++ ) {
+				int dbFieldNo = i + 1;
+				String dbColumnName = metadata.getColumnName( dbFieldNo );
+				LOG.info( i + " dbColumnName " + dbColumnName );
+				dbValues.put( dbColumnName, rs.getObject( dbColumnName ) );
+			}
+			LOG.info( " entiry values from db: " + dbValues );
+		}
 
-        //Result result = executionEngine.execute(findEntityQuery, params);
-        return dbValues;
-    }
+		// Result result = executionEngine.execute(findEntityQuery, params);
+		return dbValues;
+	}
 
-    private String findColumnByName(String name) {
-        String index = "-1";
-        for (int i = 0; i < entityKeyMetadata.getColumnNames().length; i++) {
-            String columnName = entityKeyMetadata.getColumnNames()[i];
-            if (columnName.equals(name)) {
-                index = String.valueOf(i);
-                break;
-            }
+	private String findColumnByName(String name) {
+		String index = "-1";
+		for ( int i = 0; i < entityKeyMetadata.getColumnNames().length; i++ ) {
+			String columnName = entityKeyMetadata.getColumnNames()[i];
+			if ( columnName.equals( name ) ) {
+				index = String.valueOf( i );
+				break;
+			}
 
-        }
-        return index;
-    }
+		}
+		return index;
+	}
 
-    private String findColumnByNum(int num) {
-        return !(num > entityKeyMetadata.getColumnNames().length - 1)
-                ? entityKeyMetadata.getColumnNames()[num] : null;
-    }
+	private String findColumnByNum(int num) {
+		return !( num > entityKeyMetadata.getColumnNames().length - 1 ) ? entityKeyMetadata.getColumnNames()[num] : null;
+	}
+
 
 }

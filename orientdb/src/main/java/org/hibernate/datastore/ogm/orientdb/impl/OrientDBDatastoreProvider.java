@@ -1,20 +1,8 @@
 /*
- * Copyright (C) 2015 Hibernate.
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301  USA
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb.impl;
 
@@ -39,80 +27,77 @@ import org.hibernate.service.spi.Startable;
 import org.hibernate.service.spi.Stoppable;
 
 /**
- *
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
-    private static Log LOG = LoggerFactory.getLogger();
-    private ConfigurationPropertyReader propertyReader;
-    private ServiceRegistryImplementor registry;
-    private JtaPlatform jtaPlatform;
-    private JndiService jndiService;
-    
-    private Connection connection;
+	private static Log LOG = LoggerFactory.getLogger();
+	private ConfigurationPropertyReader propertyReader;
+	private ServiceRegistryImplementor registry;
+	private JtaPlatform jtaPlatform;
+	private JndiService jndiService;
 
-    @Override
-    public Class<? extends GridDialect> getDefaultDialect() {
-        return OrientDBDialect.class;
-    }
+	private Connection connection;
 
-    @Override
-    public void start() {
-        LOG.info("start");
-        try {
-            PropertyReaderContext<String> jdbcUrlPropery = propertyReader.property("javax.persistence.jdbc.url", String.class);
-            if (jdbcUrlPropery != null) {
-                String jdbcUrl = jdbcUrlPropery.getValue();
-                LOG.info("jdbcUrl:" + jdbcUrl);
-                Class.forName(propertyReader.property("javax.persistence.jdbc.driver", String.class).getValue()).newInstance();
-                Properties info = new Properties();
-                info.put("user", propertyReader.property("javax.persistence.jdbc.user", String.class).getValue());
-                info.put("password", propertyReader.property("javax.persistence.jdbc.password", String.class).getValue());
-                
-                connection = DriverManager.getConnection(jdbcUrl, info);
+	@Override
+	public Class<? extends GridDialect> getDefaultDialect() {
+		return OrientDBDialect.class;
+	}
 
-            }
+	@Override
+	public void start() {
+		LOG.info( "start" );
+		try {
+			PropertyReaderContext<String> jdbcUrlPropery = propertyReader.property( "javax.persistence.jdbc.url", String.class );
+			if ( jdbcUrlPropery != null ) {
+				String jdbcUrl = jdbcUrlPropery.getValue();
+				LOG.info( "jdbcUrl:" + jdbcUrl );
+				Class.forName( propertyReader.property( "javax.persistence.jdbc.driver", String.class ).getValue() ).newInstance();
+				Properties info = new Properties();
+				info.put( "user", propertyReader.property( "javax.persistence.jdbc.user", String.class ).getValue() );
+				info.put( "password", propertyReader.property( "javax.persistence.jdbc.password", String.class ).getValue() );
 
-        } catch (Exception e) {
-            throw LOG.unableToStartDatastoreProvider(e);
-        }
-    }
+				connection = DriverManager.getConnection( jdbcUrl, info );
 
-    public Connection getConnection() {
-        return connection;
-    }
+			}
 
-    public void setConnection(Connection connection) {
-        this.connection = connection;
-    }
-    
-    
+		}
+		catch (Exception e) {
+			throw LOG.unableToStartDatastoreProvider( e );
+		}
+	}
 
-    @Override
-    public void stop() {
-        LOG.info("stop");
-    }
+	public Connection getConnection() {
+		return connection;
+	}
 
-    @Override
-    public void configure(Map cfg) {
-        LOG.info("config map:" + cfg.toString());
-        propertyReader = new ConfigurationPropertyReader(cfg);
+	public void setConnection(Connection connection) {
+		this.connection = connection;
+	}
 
-    }
+	@Override
+	public void stop() {
+		LOG.info( "stop" );
+	}
 
-    @Override
-    public void injectServices(ServiceRegistryImplementor serviceRegistry) {
-        this.registry = serviceRegistry;
-        jtaPlatform = serviceRegistry.getService(JtaPlatform.class);
-        jndiService = serviceRegistry.getService(JndiService.class);
-    }
+	@Override
+	public void configure(Map cfg) {
+		LOG.info( "config map:" + cfg.toString() );
+		propertyReader = new ConfigurationPropertyReader( cfg );
 
-    @Override
-    public Class<? extends SchemaDefiner> getSchemaDefinerType() {
-        LOG.info("getSchemaDefinerType");
-        //return Neo4jSchemaDefiner.class;
-        return super.getSchemaDefinerType();
-    }
+	}
+
+	@Override
+	public void injectServices(ServiceRegistryImplementor serviceRegistry) {
+		this.registry = serviceRegistry;
+		jtaPlatform = serviceRegistry.getService( JtaPlatform.class );
+		jndiService = serviceRegistry.getService( JndiService.class );
+	}
+
+	@Override
+	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
+		LOG.info( "getSchemaDefinerType" );
+		return super.getSchemaDefinerType();
+	}
 
 }

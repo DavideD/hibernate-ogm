@@ -11,51 +11,52 @@ import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 
 /**
- *
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class ORecordIdTypeDescriptor extends AbstractTypeDescriptor<ORecordId> {
 
-    public static final ORecordIdTypeDescriptor INSTANCE = new ORecordIdTypeDescriptor();
+	public static final ORecordIdTypeDescriptor INSTANCE = new ORecordIdTypeDescriptor();
 
-    public ORecordIdTypeDescriptor() {
-        super(ORecordId.class);
-    }
+	public ORecordIdTypeDescriptor() {
+		super( ORecordId.class );
+	}
 
-    @Override
-    public String toString(ORecordId t) {
-        return t.toString();
-    }
+	@Override
+	public String toString(ORecordId t) {
+		return t.toString();
+	}
 
-    @Override
-    public ORecordId fromString(String rid) {
-        return new ORecordId(rid);
-    }
+	@Override
+	public ORecordId fromString(String rid) {
+		return new ORecordId( rid );
+	}
 
-    @Override
-    public <X> X unwrap(ORecordId value, Class<X> type, WrapperOptions wo) {
-        if (value == null) {
-            return null;
-        }
-        if (ORecordId.class.isAssignableFrom(type)) {
-            return (X) value;
-        } else if (String.class.isAssignableFrom(type)) {
-            return (X) value.toString();
-        }
-        throw new UnsupportedOperationException("Class" + type + "not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+	@Override
+	public <X> X unwrap(ORecordId value, Class<X> type, WrapperOptions wo) {
+		if ( value == null ) {
+			return null;
+		}
+		if ( ORecordId.class.isAssignableFrom( type ) ) {
+			return (X) value;
+		}
+		else if ( String.class.isAssignableFrom( type ) ) {
+			return (X) value.toString();
+		}
+		throw new UnsupportedOperationException( "Class" + type + "not supported yet." );
+	}
 
-    @Override
-    public <X> ORecordId wrap(X value, WrapperOptions wo) {
-        if (value == null) {
-            return null;
-        }
-        if (String.class.isInstance(value)) {
-            return new ORecordId(((String) value));
-        } else if (ORecordId.class.isInstance(value)) {
-            return (ORecordId) value;
-        }
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+	@Override
+	public <X> ORecordId wrap(X value, WrapperOptions wo) {
+		if ( value == null ) {
+			return null;
+		}
+		if ( String.class.isInstance( value ) ) {
+			return new ORecordId( ( (String) value ) );
+		}
+		else if ( ORecordId.class.isInstance( value ) ) {
+			return (ORecordId) value;
+		}
+		throw new UnsupportedOperationException( "Not supported yet." );
+	}
 
 }
