@@ -16,6 +16,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
+import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 
 /**
@@ -44,23 +46,29 @@ public class OrientDBEntityQueries extends QueriesBase {
 	 * @return the corresponding node
 	 * @throws java.sql.SQLException
 	 */
-	public Map<String, Object> findEntity(Connection executionEngine, Object[] columnValues) throws SQLException {
-		Map<String, Object> params = params( columnValues );
+	public Map<String, Object> findEntity(Connection executionEngine, EntityKey entityKey) throws SQLException {
+		Map<String, Object> params = params( entityKey.getColumnValues() );
 		Map<String, Object> dbValues = new LinkedHashMap<>();
-		for ( Map.Entry<String, Object> entry : params.entrySet() ) {
-			String key = entry.getKey();
-			Object value = entry.getValue();
-			LOG.info( "key: " + key + "; value:" + value + "; (class: " + value.getClass() + ")" );
-		}
+		Object dbKeyValue = EntityKeyUtil.findPrimaryKeyValue( entityKey );
+		String dbKeyName = EntityKeyUtil.findPrimaryKeyName( entityKey );
 
 		Statement stmt = executionEngine.createStatement();
 		StringBuilder query = new StringBuilder( "select from " );
-		if ( params.size() == 1 && params.get( "0" ) instanceof ORecordId ) {
-			ORecordId rid = (ORecordId) params.get( "0" );
-			query.append( rid );
+		if ( params.size() == 1 ) {
+			if ( dbKeyValue instanceof ORecordId ) {
+				// search by @rid
+				ORecordId rid = (ORecordId) dbKeyValue;
+				query.append( rid );
+			}
+			else if ( dbKeyValue instanceof Number ) {
+				// search by business key
+				Number businessKey = (Number) dbKeyValue;
+				query.append( entityKey.getTable() ).append( " WHERE " ).append( dbKeyName ).append( " = " ).append( businessKey );
+			}
 		}
 		else {
-			query.append( entityKeyMetadata.getTable() );
+			// query.append(entityKeyMetadata.getTable());
+			throw new UnsupportedOperationException( "Not supported yet." );
 		}
 
 		LOG.info( "find entiry query: " + query.toString() );
@@ -69,7 +77,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 		if ( rs.next() ) {
 			ResultSetMetaData metadata = rs.getMetaData();
 			dbValues.put( "@rid", rs.getObject( "@rid" ) );
-                        dbValues.put( "@version", rs.getObject( "@version" ) );
+			dbValues.put( "@version", rs.getObject( "@version" ) );
 
 			for ( int i = 0; i < rs.getMetaData().getColumnCount(); i++ ) {
 				int dbFieldNo = i + 1;
@@ -79,8 +87,6 @@ public class OrientDBEntityQueries extends QueriesBase {
 			}
 			LOG.info( " entiry values from db: " + dbValues );
 		}
-
-		// Result result = executionEngine.execute(findEntityQuery, params);
 		return dbValues;
 	}
 
@@ -100,6 +106,5 @@ public class OrientDBEntityQueries extends QueriesBase {
 	private String findColumnByNum(int num) {
 		return !( num > entityKeyMetadata.getColumnNames().length - 1 ) ? entityKeyMetadata.getColumnNames()[num] : null;
 	}
-
 
 }

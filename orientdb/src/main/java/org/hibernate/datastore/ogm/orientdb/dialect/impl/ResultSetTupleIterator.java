@@ -62,6 +62,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			map.put( resultSet.getMetaData().getColumnName( fieldNum ), resultSet.getObject( fieldNum ) );
 		}
 		map.put( "@rid", resultSet.getObject( "@rid" ) );
+		map.put( "@version", resultSet.getObject( "@version" ) );
 		log.info( "field map: " + map );
 		return new Tuple( new MapTupleSnapshot( map ) );
 	}

@@ -27,7 +27,7 @@
                 <filtering>true</filtering>
             </testResource>
         </testResources>
-       <!-- <plugins>
+        <plugins>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -41,7 +41,7 @@
             <plugin>
                  <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
-        </plugins> -->
+        </plugins> 
     </build>
 
     <dependencies>

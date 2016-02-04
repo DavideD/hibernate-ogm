@@ -21,6 +21,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.hibernate.CacheMode;
 import org.hibernate.datastore.ogm.orientdb.jpa.BuyingOrder;
 import org.hibernate.datastore.ogm.orientdb.jpa.Customer;
+import org.hibernate.datastore.ogm.orientdb.jpa.Pizza;
 import org.hibernate.datastore.ogm.orientdb.util.MemoryDBUtil;
 import org.hibernate.search.MassIndexer;
 import org.hibernate.search.jpa.FullTextEntityManager;
@@ -55,6 +56,7 @@ public class OrientDBTest {
 
     @BeforeClass
     public static void setUpClass() {
+        LOG.log(Level.INFO, "start");
         classIdMap = MemoryDBUtil.prepareDb("memory:test");
         //classIdMap = MemoryDBUtil.prepareDb("remote:localhost/pizza");
         BasicConfigurator.configure();
@@ -66,6 +68,7 @@ public class OrientDBTest {
 
     @AfterClass
     public static void tearDownClass() {
+        LOG.log(Level.INFO, "start");
         if (em != null) {
             em.close();
             emf.close();
@@ -81,7 +84,8 @@ public class OrientDBTest {
     }
 
     @Test
-    public void test1Find() {
+    public void test1FindCustomer() {
+        LOG.log(Level.INFO, "start");
         try {
             em.getTransaction().begin();
             ORecordId id = classIdMap.get("Customer").get(0);
@@ -90,8 +94,21 @@ public class OrientDBTest {
             LOG.log(Level.INFO, "customer.getId():{0}", customer.getId());
             LOG.log(Level.INFO, "customer.getName(): {0}", customer.getName());
             assertEquals(id, customer.getId());
-            
-            List<BuyingOrder> orders = customer.getOrders();
+        } finally {
+            em.getTransaction().commit();
+        }
+    }
+
+    @Test
+    public void test1FindPizza() {
+        LOG.log(Level.INFO, "start");
+        try {
+            em.getTransaction().begin();
+            Pizza pizza = em.find(Pizza.class, Long.valueOf(1L));
+            LOG.log(Level.INFO, "read entity properties:");
+            LOG.log(Level.INFO, "customer.getBKey():{0}", pizza.getbKey());
+            LOG.log(Level.INFO, "customer.getName(): {0}", pizza.getName());
+            assertEquals(Long.valueOf(1L), pizza.getbKey());
         } finally {
             em.getTransaction().commit();
         }
@@ -100,6 +117,7 @@ public class OrientDBTest {
 
     @Test
     public void test2CreateNativeQuery() {
+        LOG.log(Level.INFO, "start");
         try {
             em.getTransaction().begin();
             LOG.log(Level.INFO, "query: select from Customer");
@@ -134,7 +152,7 @@ public class OrientDBTest {
 
     @Test
     public void test3InsertNewCustomer() throws Exception {
-        System.out.println("org.hibernate.datastore.ogm.orientdb.OrientDBTest.insertNewCustomer()");
+        LOG.log(Level.INFO, "start");
         try {
             em.getTransaction().begin();
             Customer newCustomer = new Customer();
@@ -150,17 +168,43 @@ public class OrientDBTest {
             Customer testCustomer = customers.get(0);
             assertNotNull("Customer with 'test' must be saved!", testCustomer);
             assertTrue("Customer with 'test' must have valid rid!", testCustomer.getId().isValid());
-
+            em.getTransaction().commit();
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Error", e);
+            em.getTransaction().rollback();
             throw e;
-        } finally {
-            em.getTransaction().commit();
         }
     }
 
     @Test
+    public void test3InsertNewPizza() throws Exception {
+        LOG.log(Level.INFO, "start");
+        try {
+            em.getTransaction().begin();
+            Pizza newPizza = new Pizza();
+            newPizza.setName("Marinero");
+            LOG.log(Level.INFO, "New Pizza ready for  persit");
+            em.persist(newPizza);
+            em.flush();
+            Query query = em.createNativeQuery("select from Pizza where name=:name", Pizza.class);
+            query.setParameter("name", "Marinero");
+            List<Pizza> pizzaList = query.getResultList();
+            LOG.log(Level.INFO, "pizzaList.size():" + pizzaList.size());
+            assertFalse("pizzaList must be not empty!", pizzaList.isEmpty());
+            Pizza testPizza = pizzaList.get(0);
+            assertNotNull("Customer with 'Marinero' must be saved!", testPizza);
+            //assertTrue("Customer with 'test' must have valid rid!", testCustomer.getId().isValid());
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Error", e);
+            em.getTransaction().rollback();
+            throw e;
+        }
+    }
+
+    //@Test
     public void test4UpdateCustomer() {
+        LOG.log(Level.INFO, "start");
         try {
             em.getTransaction().begin();
             ORecordId id = classIdMap.get("Customer").get(0);
@@ -177,16 +221,17 @@ public class OrientDBTest {
             int newVersion = newCustomer.getVersion();
             LOG.log(Level.INFO, "new version:{0}", newVersion);
             assertTrue("Version must be chanched", (newVersion > oldVersion));
+            em.getTransaction().commit();
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Error", e);
+            em.getTransaction().rollback();
             throw e;
-        } finally {
-            em.getTransaction().commit();
-        }
+        } 
     }
 
-   @Test
+    // @Test
     public void test5RemoveCustomer() {
+        LOG.log(Level.INFO, "start");
         try {
             em.getTransaction().begin();
             ORecordId id = classIdMap.get("Customer").get(0);
@@ -199,12 +244,12 @@ public class OrientDBTest {
 
             //assertEquals(customer.getId(), newCustomer.getId());
             //assertEquals("Ivahoe2", newCustomer.getName());
+            em.getTransaction().commit();
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Error", e);
+            em.getTransaction().rollback();
             throw e;
-        } finally {
-            em.getTransaction().commit();
-        }
+        } 
     }
 
     //@Test yet not work

@@ -26,91 +26,88 @@ import org.hibernate.search.annotations.Store;
 import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 
 /**
- *
  * @author chernolyassv
  */
 @Entity
 @Indexed(index = "Customer")
 @NamedQueries({
-    @NamedQuery(name = "Customer.findAll",
-            query = "SELECT c FROM Customer c"),
-    @NamedQuery(name = "Country.findByName",
-            query = "SELECT c FROM Customer c WHERE c.name = :name")})
+		@NamedQuery(name = "Customer.findAll", query = "SELECT c FROM Customer c"),
+		@NamedQuery(name = "Country.findByName", query = "SELECT c FROM Customer c WHERE c.name = :name") })
 public class Customer {
 
-    @Id
-    @Column(name = "@rid")
-    //@GeneratedValue(strategy=GenerationType.AUTO)
-    @FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-    private ORecordId id  =ORecordId.EMPTY_RECORD_ID;
-    @Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
-    private String name;
-    @OneToMany(mappedBy = "owner")
-    private List<BuyingOrder> orders;
-    
-    @Version
-    @Column(name = "@version")
-    private int version;
-    
-    public ORecordId getId() {
-        return id;
-    }
+	@Id
+	@Column(name = "@rid")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
+	private ORecordId id;
+	@Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
+	private String name;
+	@OneToMany(mappedBy = "owner")
+	private List<BuyingOrder> orders;
 
-    public void setId(ORecordId id) {
-        this.id = id;
-    }
+	@Version
+	@Column(name = "@version")
+	private int version;
 
-    public String getName() {
-        return name;
-    }
+	public ORecordId getId() {
+		return id;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setId(ORecordId id) {
+		this.id = id;
+	}
 
-    public List<BuyingOrder> getOrders() {
-        return orders;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setOrders(List<BuyingOrder> orders) {
-        this.orders = orders;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public int getVersion() {
-        return version;
-    }
+	public List<BuyingOrder> getOrders() {
+		return orders;
+	}
 
-    public void setVersion(int version) {
-        this.version = version;
-    }
+	public void setOrders(List<BuyingOrder> orders) {
+		this.orders = orders;
+	}
 
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 47 * hash + Objects.hashCode(this.id);
-        return hash;
-    }
+	public int getVersion() {
+		return version;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Customer other = (Customer) obj;
-        if (!Objects.equals(this.id, other.id)) {
-            return false;
-        }
-        return true;
-    }
+	public void setVersion(int version) {
+		this.version = version;
+	}
 
-    @Override
-    public String toString() {
-        return "Customer{" + "id=" + id + ", name=" + name + '}';
-    }
+	@Override
+	public int hashCode() {
+		int hash = 3;
+		hash = 47 * hash + Objects.hashCode( this.id );
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null ) {
+			return false;
+		}
+		if ( getClass() != obj.getClass() ) {
+			return false;
+		}
+		final Customer other = (Customer) obj;
+		if ( !Objects.equals( this.id, other.id ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "Customer{" + "id=" + id + ", name=" + name + '}';
+	}
 }

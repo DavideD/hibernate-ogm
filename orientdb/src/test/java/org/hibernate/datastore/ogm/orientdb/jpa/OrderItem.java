@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.Version;
@@ -29,8 +31,9 @@ import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 public class OrderItem {
     @Id
     @Column(name = "@rid")
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
     @FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-    private ORecordId id = ORecordId.EMPTY_RECORD_ID;
+    private ORecordId id;
     
     private BigDecimal cost;
     @ManyToOne

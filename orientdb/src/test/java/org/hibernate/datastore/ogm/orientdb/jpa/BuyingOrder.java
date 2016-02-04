@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
@@ -34,8 +36,9 @@ import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 public class BuyingOrder {
     @Id
     @Column(name = "@rid")
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
     @FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-    private ORecordId id = ORecordId.EMPTY_RECORD_ID;
+    private ORecordId id;
     @Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
     private String orderKey;
     @ManyToOne
