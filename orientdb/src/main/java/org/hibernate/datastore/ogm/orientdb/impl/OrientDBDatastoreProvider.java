@@ -97,7 +97,8 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 	@Override
 	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
 		LOG.info( "getSchemaDefinerType" );
-		return super.getSchemaDefinerType();
+		return OrientDBSchemaDefiner.class;
+		// return super.getSchemaDefinerType();
 	}
 
 }

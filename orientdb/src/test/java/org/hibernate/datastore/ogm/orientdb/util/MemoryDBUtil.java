@@ -28,35 +28,54 @@ import java.util.logging.Logger;
 public class MemoryDBUtil {
 
 	private static final Logger LOG = Logger.getLogger( MemoryDBUtil.class.getName() );
+        private static OrientGraphFactory factory;
 
+	private static void addCommonProperties(OrientGraphNoTx graph, OrientVertexType type) {
+		type.createProperty( "bKey", OType.LONG );
+		LOG.log( Level.INFO, "Create unique index like primary key for {0}", type.getName() );
+                String indexCommand = "CREATE INDEX " + type.getName() + "PrimaryIndex ON " + type.getName() + "(bKey) UNIQUE";
+                LOG.log( Level.INFO, "Command {0}", indexCommand );
+		graph.command( new OCommandSQL( indexCommand ) ).execute();
+		LOG.log( Level.INFO, "Create sequence for {0}", type.getName() );
+                String seqCommand = "CREATE SEQUENCE seq_" + type.getName().toLowerCase() + "_bkey TYPE ORDERED START 2";
+                LOG.log( Level.INFO, "Command {0}", seqCommand );
+		graph.command( new OCommandSQL( seqCommand ) ).execute();
+
+	}
+        
+        public static OrientGraphNoTx createInMemoryDB(String url) {
+                factory = new OrientGraphFactory( url );
+                //see https://github.com/orientechnologies/orientdb/issues/5688
+                factory.setStandardElementConstraints(false);
+                return  factory.getNoTx();
+        }
+        
+        @Deprecated
 	public static Map<String, List<ORecordId>> prepareDb(String url) {
 
 		Map<String, List<ORecordId>> idMap = new HashMap<>();
 		try {
 			// System.setProperty("ORIENTDB_HOME", "./target");
-			OrientGraphFactory factory = new OrientGraphFactory( url );
-
-			OrientGraphNoTx graph = factory.getNoTx();
+			OrientGraphNoTx graph = createInMemoryDB(url);
 
 			// vertex classes
 			OrientVertexType pizzaType = graph.createVertexType( "Pizza" );
-			pizzaType.createProperty( "bKey", OType.LONG );
+			addCommonProperties( graph, pizzaType );
 			pizzaType.createProperty( "name", OType.STRING );
 			for ( OProperty p : pizzaType.declaredProperties() ) {
 				LOG.log( Level.INFO, "Property: {0}", p );
 			}
-			LOG.log( Level.INFO, "Create unique index like primary key for Pizza" );
-			graph.command( new OCommandSQL( "CREATE INDEX pizzaPrimaryIndex ON Pizza(bKey) UNIQUE" ) ).execute();
-			LOG.log( Level.INFO, "Create sequence for Pizza" );
-			graph.command( new OCommandSQL( "CREATE SEQUENCE seq_pizza_bkey TYPE ORDERED START 2" ) ).execute();
+
 			// INSERT INTO Account SET id = sequence('mysequence').next()
 
 			OrientVertexType buyingOrderType = graph.createVertexType( "BuyingOrder" );
+			addCommonProperties( graph, buyingOrderType );
 			buyingOrderType.createProperty( "orderKey", OType.STRING );
 			OrientVertexType orderItemType = graph.createVertexType( "OrderItem" );
 			orderItemType.createProperty( "cost", OType.DECIMAL );
 
 			OrientVertexType customerType = graph.createVertexType( "Customer" );
+			addCommonProperties( graph, customerType );
 			customerType.createProperty( "name", OType.STRING );
 
 			// create vertex
@@ -69,7 +88,8 @@ public class MemoryDBUtil {
 			idMap.put( "Pizza", pizzaRids );
 
 			Vertex customer = graph.addVertex( "class:Customer" );
-			customer.setProperty( "name", "Ivahoe" );
+			customer.setProperty( "bKey", Long.valueOf( 1L ) );
+                        customer.setProperty( "name", "Ivahoe" );
 			System.out.println( "customer.getId():" + customer.getId() );
 			List<ORecordId> customerRids = new LinkedList<>();
 			customerRids.add( (ORecordId) customer.getId() );
@@ -77,12 +97,14 @@ public class MemoryDBUtil {
 
 			Vertex buyingOrder = graph.addVertex( "class:BuyingOrder" );
 			buyingOrder.setProperty( "orderKey", "2233" );
+                        buyingOrder.setProperty( "bKey", Long.valueOf( 1L ) );
 			System.out.println( "order.getId():" + buyingOrder.getId() );
 			List<ORecordId> orderRids = new LinkedList<>();
 			orderRids.add( (ORecordId) buyingOrder.getId() );
 			idMap.put( "BuyingOrder", orderRids );
 
 			Vertex orderItem = graph.addVertex( "class:OrderItem" );
+                        orderItem.setProperty( "orderKey", "2233" );
 			orderItem.setProperty( "cost", new BigDecimal( "10.2" ) );
 			System.out.println( "orderItem.getId():" + orderItem.getId() );
 			List<ORecordId> orderItemRids = new LinkedList<>();

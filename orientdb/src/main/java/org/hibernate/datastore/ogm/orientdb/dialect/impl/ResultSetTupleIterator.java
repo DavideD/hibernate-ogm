@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.datastore.map.impl.MapTupleSnapshot;
@@ -61,8 +62,10 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			int fieldNum = i + 1;
 			map.put( resultSet.getMetaData().getColumnName( fieldNum ), resultSet.getObject( fieldNum ) );
 		}
-		map.put( "@rid", resultSet.getObject( "@rid" ) );
-		map.put( "@version", resultSet.getObject( "@version" ) );
+		for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
+			map.put( systemField, resultSet.getObject( systemField ) );
+		}
+
 		log.info( "field map: " + map );
 		return new Tuple( new MapTupleSnapshot( map ) );
 	}

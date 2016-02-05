@@ -30,27 +30,39 @@ import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 public class OrderItem {
 
 	@Id
-	@Column(name = "@rid")
+	@Column(name = "bKey")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-	private ORecordId id;
+	private Long bKey;
+        @Version
+	@Column(name = "@version")
+	private int version;
+	@Column(name = "@rid")
+	private ORecordId rid;
 
 	private BigDecimal cost;
 	@ManyToOne
 	private BuyingOrder order;
 	@ManyToOne
 	private Pizza buying;
-	@Version
-	@Column(name = "@version")
-	private int version;
 
-	public ORecordId getId() {
-		return id;
-	}
+    public Long getbKey() {
+        return bKey;
+    }
 
-	public void setId(ORecordId id) {
-		this.id = id;
-	}
+    public void setbKey(Long bKey) {
+        this.bKey = bKey;
+    }
+
+    public ORecordId getRid() {
+        return rid;
+    }
+
+    public void setRid(ORecordId rid) {
+        this.rid = rid;
+    }
+	
+
+	
 
 	public BigDecimal getCost() {
 		return cost;
@@ -84,29 +96,31 @@ public class OrderItem {
 		this.version = version;
 	}
 
-	@Override
-	public int hashCode() {
-		int hash = 7;
-		hash = 97 * hash + Objects.hashCode( this.id );
-		return hash;
-	}
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 71 * hash + Objects.hashCode(this.bKey);
+        return hash;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if ( this == obj ) {
-			return true;
-		}
-		if ( obj == null ) {
-			return false;
-		}
-		if ( getClass() != obj.getClass() ) {
-			return false;
-		}
-		final OrderItem other = (OrderItem) obj;
-		if ( !Objects.equals( this.id, other.id ) ) {
-			return false;
-		}
-		return true;
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final OrderItem other = (OrderItem) obj;
+        if (!Objects.equals(this.bKey, other.bKey)) {
+            return false;
+        }
+        return true;
+    }
+
+	
 
 }

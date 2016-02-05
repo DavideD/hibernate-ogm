@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
@@ -60,11 +61,8 @@ public class OrientDBEntityQueries extends QueriesBase {
 				ORecordId rid = (ORecordId) dbKeyValue;
 				query.append( rid );
 			}
-			else if ( dbKeyValue instanceof Number ) {
-				// search by business key
-				Number businessKey = (Number) dbKeyValue;
-				query.append( entityKey.getTable() ).append( " WHERE " ).append( dbKeyName ).append( " = " ).append( businessKey );
-			}
+			query.append( entityKey.getTable() ).append( " WHERE " ).append( dbKeyName ).append( " = " );
+			EntityKeyUtil.setPrimaryKeyValue( query, dbKeyValue );
 		}
 		else {
 			// query.append(entityKeyMetadata.getTable());
@@ -76,9 +74,10 @@ public class OrientDBEntityQueries extends QueriesBase {
 		ResultSet rs = stmt.executeQuery( query.toString() );
 		if ( rs.next() ) {
 			ResultSetMetaData metadata = rs.getMetaData();
-			dbValues.put( "@rid", rs.getObject( "@rid" ) );
-			dbValues.put( "@version", rs.getObject( "@version" ) );
+			for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
+				dbValues.put( systemField, rs.getObject( systemField ) );
 
+			}
 			for ( int i = 0; i < rs.getMetaData().getColumnCount(); i++ ) {
 				int dbFieldNo = i + 1;
 				String dbColumnName = metadata.getColumnName( dbFieldNo );
@@ -86,6 +85,9 @@ public class OrientDBEntityQueries extends QueriesBase {
 				dbValues.put( dbColumnName, rs.getObject( dbColumnName ) );
 			}
 			LOG.info( " entiry values from db: " + dbValues );
+		}
+		else {
+			return null;
 		}
 		return dbValues;
 	}

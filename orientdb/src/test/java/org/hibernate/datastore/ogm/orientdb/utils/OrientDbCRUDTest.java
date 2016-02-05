@@ -11,6 +11,6 @@ import org.hibernate.ogm.backendtck.simpleentity.CRUDTest;
 /**
  * @author Davide D'Alto
  */
-public class OrientDBTest extends CRUDTest {
+public class OrientDbCRUDTest extends CRUDTest {
 
 }

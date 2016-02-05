@@ -36,25 +36,34 @@ import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 public class Customer {
 
 	@Id
-	@Column(name = "@rid")
+	@Column(name = "bKey")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@FieldBridge(impl = ORecordIdTwoWayStringBridge.class)
-	private ORecordId id;
+	private Long bKey;
+	@Version
+	@Column(name = "@version")
+	private int version;
+	@Column(name = "@rid")
+	private ORecordId rid;
+
 	@Field(index = Index.YES, analyze = Analyze.YES, store = Store.YES)
 	private String name;
 	@OneToMany(mappedBy = "owner")
 	private List<BuyingOrder> orders;
 
-	@Version
-	@Column(name = "@version")
-	private int version;
-
-	public ORecordId getId() {
-		return id;
+	public Long getbKey() {
+		return bKey;
 	}
 
-	public void setId(ORecordId id) {
-		this.id = id;
+	public void setbKey(Long bKey) {
+		this.bKey = bKey;
+	}
+
+	public ORecordId getRid() {
+		return rid;
+	}
+
+	public void setRid(ORecordId rid) {
+		this.rid = rid;
 	}
 
 	public String getName() {
@@ -83,8 +92,8 @@ public class Customer {
 
 	@Override
 	public int hashCode() {
-		int hash = 3;
-		hash = 47 * hash + Objects.hashCode( this.id );
+		int hash = 7;
+		hash = 97 * hash + Objects.hashCode( this.bKey );
 		return hash;
 	}
 
@@ -100,14 +109,10 @@ public class Customer {
 			return false;
 		}
 		final Customer other = (Customer) obj;
-		if ( !Objects.equals( this.id, other.id ) ) {
+		if ( !Objects.equals( this.bKey, other.bKey ) ) {
 			return false;
 		}
 		return true;
 	}
 
-	@Override
-	public String toString() {
-		return "Customer{" + "id=" + id + ", name=" + name + '}';
-	}
 }

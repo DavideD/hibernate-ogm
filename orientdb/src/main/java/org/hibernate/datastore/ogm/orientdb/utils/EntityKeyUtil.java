@@ -7,6 +7,7 @@
 
 package org.hibernate.datastore.ogm.orientdb.utils;
 
+import java.util.UUID;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.model.key.spi.EntityKey;
@@ -18,6 +19,15 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 public class EntityKeyUtil {
 
 	private static final Log log = LoggerFactory.getLogger();
+
+	public static void setPrimaryKeyValue(StringBuilder queryBuffer, Object dbKeyValue) {
+		if ( dbKeyValue instanceof String || dbKeyValue instanceof UUID ) {
+			queryBuffer.append( "'" ).append( dbKeyValue ).append( "'" );
+		}
+		else {
+			queryBuffer.append( dbKeyValue );
+		}
+	}
 
 	public static Object findPrimaryKeyValue(EntityKey key) {
 		Object dbKeyValue = null;

@@ -6,6 +6,7 @@
  */
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
+import com.orientechnologies.orient.core.id.ORecordId;
 import java.util.List;
 import java.util.Objects;
 import javax.persistence.Column;
@@ -34,6 +35,8 @@ public class Pizza {
 	@Version
 	@Column(name = "@version")
 	private int version;
+        @Column(name = "@rid")
+	private ORecordId rid;
 
 	public Long getbKey() {
 		return bKey;
@@ -66,6 +69,15 @@ public class Pizza {
 	public void setVersion(int version) {
 		this.version = version;
 	}
+
+        public ORecordId getRid() {
+                return rid;
+        }
+
+        public void setRid(ORecordId rid) {
+                this.rid = rid;
+        }
+        
 
 	@Override
 	public int hashCode() {

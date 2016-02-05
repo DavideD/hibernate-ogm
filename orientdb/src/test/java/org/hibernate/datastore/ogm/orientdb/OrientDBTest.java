@@ -7,12 +7,14 @@
 package org.hibernate.datastore.ogm.orientdb;
 
 import com.orientechnologies.orient.core.id.ORecordId;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
@@ -45,7 +47,7 @@ import org.junit.runners.MethodSorters;
 public class OrientDBTest {
 
 	private static final Logger LOG = Logger.getLogger( OrientDBTest.class.getName() );
-	private static Map<String, List<ORecordId>> classIdMap;
+	private static Map<String, List<ORecordId>> classRidMap;
 	private static EntityManager em;
 	private static EntityManagerFactory emf;
 
@@ -55,8 +57,10 @@ public class OrientDBTest {
 	@BeforeClass
 	public static void setUpClass() {
 		LOG.log( Level.INFO, "start" );
-		classIdMap = MemoryDBUtil.prepareDb( "memory:test" );
-		// classIdMap = MemoryDBUtil.prepareDb("remote:localhost/pizza");
+		//classRidMap = MemoryDBUtil.prepareDb( "memory:test" );
+                classRidMap = new HashMap<>();
+		// classIdMap = MemoryDBUtil.prepareDb("remote:localhost/pizza");                
+                MemoryDBUtil.createInMemoryDB("memory:test");
 		BasicConfigurator.configure();
 		emf = Persistence.createEntityManagerFactory( "hibernateOgmJpaUnit" );
 		em = emf.createEntityManager();
@@ -71,7 +75,6 @@ public class OrientDBTest {
 			em.close();
 			emf.close();
 		}
-		;
 	}
 
 	@Before
@@ -81,79 +84,9 @@ public class OrientDBTest {
 	@After
 	public void tearDown() {
 	}
-
-	@Test
-	public void test1FindCustomer() {
-		LOG.log( Level.INFO, "start" );
-		try {
-			em.getTransaction().begin();
-			ORecordId id = classIdMap.get( "Customer" ).get( 0 );
-			Customer customer = em.find( Customer.class, id );
-			LOG.log( Level.INFO, "read entity properties:" );
-			LOG.log( Level.INFO, "customer.getId():{0}", customer.getId() );
-			LOG.log( Level.INFO, "customer.getName(): {0}", customer.getName() );
-			assertEquals( id, customer.getId() );
-		}
-		finally {
-			em.getTransaction().commit();
-		}
-	}
-
-	@Test
-	public void test1FindPizza() {
-		LOG.log( Level.INFO, "start" );
-		try {
-			em.getTransaction().begin();
-			Pizza pizza = em.find( Pizza.class, Long.valueOf( 1L ) );
-			LOG.log( Level.INFO, "read entity properties:" );
-			LOG.log( Level.INFO, "customer.getBKey():{0}", pizza.getbKey() );
-			LOG.log( Level.INFO, "customer.getName(): {0}", pizza.getName() );
-			assertEquals( Long.valueOf( 1L ), pizza.getbKey() );
-		}
-		finally {
-			em.getTransaction().commit();
-		}
-
-	}
-
-	@Test
-	public void test2CreateNativeQuery() {
-		LOG.log( Level.INFO, "start" );
-		try {
-			em.getTransaction().begin();
-			LOG.log( Level.INFO, "query: select from Customer" );
-			Query query = em.createNativeQuery( "select from Customer", Customer.class );
-			List<Customer> customers = query.getResultList();
-			assertFalse( "Customers must be", customers.isEmpty() );
-			ORecordId id = classIdMap.get( "Customer" ).get( 0 );
-
-			assertEquals( id, customers.get( 0 ).getId() );
-
-			LOG.log( Level.INFO, "query: select from " + id.toString() );
-			query = em.createNativeQuery( "select from " + id.toString(), Customer.class );
-			customers = query.getResultList();
-			assertFalse( "Customers must be", customers.isEmpty() );
-
-			LOG.log( Level.INFO, "query: select from Customer where name=:name" );
-			query = em.createNativeQuery( "select from Customer where name=:name", Customer.class );
-			query.setParameter( "name", "Ivahoe" );
-			customers = query.getResultList();
-			assertFalse( "Customers must be", customers.isEmpty() );
-
-			LOG.log( Level.INFO, "query: select from Customer where name='Ivahoe'" );
-			query = em.createNativeQuery( "select from Customer where name='Ivahoe'", Customer.class );
-			customers = query.getResultList();
-			assertFalse( "Customers must be", customers.isEmpty() );
-
-		}
-		finally {
-			em.getTransaction().commit();
-		}
-
-	}
-
-	@Test
-	public void test3InsertNewCustomer() throws Exception {
+        
+        @Test
+	public void test1InsertNewCustomer() throws Exception {
 		LOG.log( Level.INFO, "start" );
 		try {
 			em.getTransaction().begin();
@@ -165,11 +98,10 @@ public class OrientDBTest {
 			Query query = em.createNativeQuery( "select from Customer where name=:name", Customer.class );
 			query.setParameter( "name", "test" );
 			List<Customer> customers = query.getResultList();
-			LOG.log( Level.INFO, "customers.size():" + customers.size() );
+			LOG.log( Level.INFO, "customers.size(): {0}" , customers.size() );
 			assertFalse( "Customers must be", customers.isEmpty() );
 			Customer testCustomer = customers.get( 0 );
 			assertNotNull( "Customer with 'test' must be saved!", testCustomer );
-			assertTrue( "Customer with 'test' must have valid rid!", testCustomer.getId().isValid() );
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
@@ -180,7 +112,7 @@ public class OrientDBTest {
 	}
 
 	@Test
-	public void test3InsertNewPizza() throws Exception {
+	public void test1InsertNewPizza() throws Exception {
 		LOG.log( Level.INFO, "start" );
 		try {
 			em.getTransaction().begin();
@@ -192,11 +124,10 @@ public class OrientDBTest {
 			Query query = em.createNativeQuery( "select from Pizza where name=:name", Pizza.class );
 			query.setParameter( "name", "Marinero" );
 			List<Pizza> pizzaList = query.getResultList();
-			LOG.log( Level.INFO, "pizzaList.size():" + pizzaList.size() );
+			LOG.log( Level.INFO, "pizzaList.size(): {0}", pizzaList.size() );
 			assertFalse( "pizzaList must be not empty!", pizzaList.isEmpty() );
 			Pizza testPizza = pizzaList.get( 0 );
-			assertNotNull( "Customer with 'Marinero' must be saved!", testPizza );
-			// assertTrue("Customer with 'test' must have valid rid!", testCustomer.getId().isValid());
+			assertNotNull( "Pizza with 'Marinero' must be saved!", testPizza );
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
@@ -205,23 +136,99 @@ public class OrientDBTest {
 			throw e;
 		}
 	}
+        
+        
+        @Test
+	public void test2FindCustomer() {
+		LOG.log( Level.INFO, "start" );
+		try {
+			em.getTransaction().begin();
+			Customer customer = em.find( Customer.class, Long.valueOf( 2L ) );
+                        em.refresh(customer);
+			LOG.log( Level.INFO, "read entity properties:" );
+			LOG.log( Level.INFO, "customer.getbKey():{0}", customer.getbKey() );
+			LOG.log( Level.INFO, "customer.getName(): {0}", customer.getName() );			
+                        LOG.log( Level.INFO, "customer.getRid(): {0}", customer.getRid() );
+                        assertEquals(Long.valueOf(2L),customer.getbKey() );
+                        assertNotNull( customer.getRid() );
+		}
+		finally {
+			em.getTransaction().commit();
+		}
+	}
 
-	// @Test
+	@Test
+	public void test2FindPizza() {
+		LOG.log( Level.INFO, "start" );
+		try {
+			em.getTransaction().begin();
+			Pizza pizza = em.find( Pizza.class, Long.valueOf( 2L ) );
+                        em.refresh(pizza);
+			LOG.log( Level.INFO, "read entity properties:" );
+			LOG.log( Level.INFO, "pizza.getBKey():{0}", pizza.getbKey() );
+			LOG.log( Level.INFO, "pizza.getName(): {0}", pizza.getName() );
+                        LOG.log( Level.INFO, "pizza.getbKey(): {0}", pizza.getbKey() );
+			assertEquals( Long.valueOf( 2L ), pizza.getbKey() );
+                        assertNotNull( pizza.getRid() );
+		}
+		finally {
+			em.getTransaction().commit();
+		}
+
+	}
+
+	@Test
+	public void test3CreateNativeQuery() {
+		LOG.log( Level.INFO, "start" );
+		try {
+			em.getTransaction().begin();
+			LOG.log( Level.INFO, "query: select from Customer" );
+			Query query = em.createNativeQuery( "select from Customer", Customer.class );
+			List<Customer> customers = query.getResultList();
+			assertFalse( "Customers must be", customers.isEmpty() );			
+			assertEquals( Long.valueOf( 2L ), customers.get( 0 ).getbKey() );
+
+			LOG.log( Level.INFO, "query: select from {0}", customers.get( 0 ).getRid().toString() );
+			query = em.createNativeQuery( "select from " + customers.get( 0 ).getRid().toString(), Customer.class );
+			customers = query.getResultList();
+			assertFalse( "Customers must be", customers.isEmpty() );
+
+			LOG.log( Level.INFO, "query: select from Customer where name=:name" );
+			query = em.createNativeQuery( "select from Customer where name=:name", Customer.class );
+			query.setParameter( "name", "test" );
+			customers = query.getResultList();
+			assertFalse( "Customers must be", customers.isEmpty() );
+
+			LOG.log( Level.INFO, "query: select from Customer where name='test'" );
+			query = em.createNativeQuery( "select from Customer where name='test'", Customer.class );
+			customers = query.getResultList();
+			assertFalse( "Customers must be", customers.isEmpty() );
+
+		}
+		finally {
+			em.getTransaction().commit();
+		}
+
+	}
+
+	
+
+	@Test
 	public void test4UpdateCustomer() {
 		LOG.log( Level.INFO, "start" );
 		try {
 			em.getTransaction().begin();
-			ORecordId id = classIdMap.get( "Customer" ).get( 0 );
+			Long id = Long.valueOf(2L);
 			Customer customer = em.find( Customer.class, id );
-			customer.setName( "Ivahoe2" );
+			customer.setName( "Ivahoe" );
 			int oldVersion = customer.getVersion();
 			LOG.log( Level.INFO, "old version:{0}", oldVersion );
 			em.merge( customer );
 			em.flush();
 			Customer newCustomer = em.find( Customer.class, id );
 			assertNotNull( "Must not be null", newCustomer );
-			assertEquals( customer.getId(), newCustomer.getId() );
-			assertEquals( "Ivahoe2", newCustomer.getName() );
+			assertEquals( customer.getRid(), newCustomer.getRid() );
+			assertEquals( "Ivahoe", newCustomer.getName() );
 			int newVersion = newCustomer.getVersion();
 			LOG.log( Level.INFO, "new version:{0}", newVersion );
 			assertTrue( "Version must be chanched", ( newVersion > oldVersion ) );
@@ -233,23 +240,51 @@ public class OrientDBTest {
 			throw e;
 		}
 	}
-
-	// @Test
-	public void test5RemoveCustomer() {
+        
+        
+        @Test
+	public void test5RefreshCustomer() {
 		LOG.log( Level.INFO, "start" );
 		try {
 			em.getTransaction().begin();
-			ORecordId id = classIdMap.get( "Customer" ).get( 0 );
+			Long id = Long.valueOf(2L);
+			Customer customer = em.find( Customer.class, id );
+			LOG.log( Level.INFO, "old rid:{0}", customer.getRid() );
+                        ORecordId oldRid = customer.getRid();
+			em.refresh(customer );			
+                        ORecordId newRid = customer.getRid();
+			assertNotNull( "Must not be null", customer );                        
+                        if (oldRid==null) {
+                            assertNotNull( "@Rid must be changed", newRid );                        
+                        } else {
+                            assertEquals("@Rid must not changed", newRid,oldRid );                        
+                        }
+			em.getTransaction().commit();
+		}
+		catch (Exception e) {
+			LOG.log( Level.SEVERE, "Error", e );
+			em.getTransaction().rollback();
+			throw e;
+		}
+	}
+
+	 @Test
+	public void test6RemoveCustomer() {
+		LOG.log( Level.INFO, "start" );
+		try {
+			em.getTransaction().begin();
+			Long id = Long.valueOf(2L);
 			Customer customer = em.find( Customer.class, id );
 			em.remove( customer );
 			em.flush();
-
+                        em.getTransaction().commit();
+                        
+                        em.getTransaction().begin();
 			Customer removedCustomer = em.find( Customer.class, id );
 			LOG.log( Level.INFO, "customer:{0}", removedCustomer );
-
-			// assertEquals(customer.getId(), newCustomer.getId());
-			// assertEquals("Ivahoe2", newCustomer.getName());
-			em.getTransaction().commit();
+                        assertNull("removedCustomer must be null!", removedCustomer);
+                        em.getTransaction().commit();
+			
 		}
 		catch (Exception e) {
 			LOG.log( Level.SEVERE, "Error", e );
@@ -286,8 +321,8 @@ public class OrientDBTest {
 			System.out.println( "2.customers.size(): " + customers.size() );
 
 			assertFalse( "Customers must be", customers.isEmpty() );
-			ORecordId id = classIdMap.get( "Customer" ).get( 0 );
-			assertEquals( id, customers.get( 0 ).getId() );
+			ORecordId rid = classRidMap.get( "Customer" ).get( 0 );
+			assertEquals( rid, customers.get( 0 ).getRid() );
 
 		}
 		finally {
