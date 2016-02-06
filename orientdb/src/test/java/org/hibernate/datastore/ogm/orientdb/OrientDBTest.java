@@ -150,12 +150,33 @@ public class OrientDBTest {
 			LOG.log( Level.INFO, "customer.getName(): {0}", customer.getName() );			
                         LOG.log( Level.INFO, "customer.getRid(): {0}", customer.getRid() );
                         assertEquals(Long.valueOf(2L),customer.getbKey() );
-                        assertNotNull( customer.getRid() );
+                        assertNotNull( customer.getRid() );                        
 		}
 		finally {
 			em.getTransaction().commit();
 		}
 	}
+        
+        //@Test
+	public void test2FindCustomerWithAssociation() {
+		LOG.log( Level.INFO, "start" );
+		try {
+			em.getTransaction().begin();
+			Customer customer = em.find( Customer.class, Long.valueOf( 2L ) );
+                        em.refresh(customer);
+			LOG.log( Level.INFO, "read entity properties:" );
+			LOG.log( Level.INFO, "customer.getbKey():{0}", customer.getbKey() );
+			LOG.log( Level.INFO, "customer.getName(): {0}", customer.getName() );			
+                        LOG.log( Level.INFO, "customer.getRid(): {0}", customer.getRid() );
+                        assertEquals(Long.valueOf(2L),customer.getbKey() );
+                        assertNotNull( customer.getRid() );
+                        customer.getOrders().size();
+		}
+		finally {
+			em.getTransaction().commit();
+		}
+	
+        }
 
 	@Test
 	public void test2FindPizza() {
@@ -292,6 +313,9 @@ public class OrientDBTest {
 			throw e;
 		}
 	}
+        
+        
+        
 
 	// @Test yet not work
 	public void createNamedQuery() throws Exception {

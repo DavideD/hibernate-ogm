@@ -164,11 +164,19 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		log.info( "primaryKey.getColumns().size(): " + primaryKey.getColumns().size() );
 		log.info( "primaryKey.getColumns().get(0).getValue().getType().getClass(): " + primaryKey.getColumns().get( 0 ).getValue().getType().getClass() );
 		if ( primaryKey.getColumns().size() == 1 && SEQ_TYPES.contains( primaryKey.getColumns().get( 0 ).getValue().getType().getClass() ) ) {
-			String seq = "CREATE SEQUENCE seq_" + primaryKey.getTable().getName().toLowerCase() + "_" + primaryKey.getColumns().get( 0 ).getName().toLowerCase()
-					+ " TYPE ORDERED START 1";
-			queries.add( seq );
+			StringBuilder seq = new StringBuilder( 100 );
+			seq.append( "CREATE SEQUENCE " );
+			seq.append( generateSeqName( primaryKey.getTable().getName(), primaryKey.getColumns().get( 0 ).getName() ) );
+			seq.append( " TYPE ORDERED START 1" );
+			queries.add( seq.toString() );
 		}
 		return queries;
+	}
+
+	public static String generateSeqName(String tableName, String primaryKeyName) {
+		StringBuilder buffer = new StringBuilder();
+		buffer.append( "seq_" ).append( tableName.toLowerCase() ).append( "_" ).append( primaryKeyName.toLowerCase() );
+		return buffer.toString();
 	}
 
 	@Override

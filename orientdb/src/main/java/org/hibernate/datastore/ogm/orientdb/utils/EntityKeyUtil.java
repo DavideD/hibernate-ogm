@@ -7,6 +7,10 @@
 
 package org.hibernate.datastore.ogm.orientdb.utils;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
@@ -52,6 +56,28 @@ public class EntityKeyUtil {
 			}
 		}
 		return null;
+	}
+        public static boolean existsPrimaryKeyInDB(Connection connection,EntityKey key) throws SQLException {
+		String dbKeyName = key.getColumnNames()[0];
+		Object dbKeyValue = key.getColumnValues()[0];
+
+		boolean exists = false;
+		Statement stmt = connection.createStatement();
+		StringBuilder buffer = new StringBuilder( "select count(" + dbKeyName + ") from " );
+		buffer.append( key.getTable() );
+		buffer.append( " where " );
+		buffer.append( dbKeyName );
+		buffer.append( " = " );
+		EntityKeyUtil.setPrimaryKeyValue( buffer, dbKeyValue );
+		log.info( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; query:" + buffer.toString() );
+
+		ResultSet rs = stmt.executeQuery( buffer.toString() );
+		if ( rs.next() ) {
+			long count = rs.getLong( 1 );
+			log.info( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; count:" + count );
+			exists = count > 0;
+		}
+		return exists;
 	}
 
 }

@@ -17,12 +17,15 @@ import java.util.Set;
 
 public class OrientDBConstant {
 
+	public static final String SYSTEM_VERSION = "@version";
+	public static final String SYSTEM_RID = "@rid";
+
 	public static final Set<String> SYSTEM_FIELDS;
 
 	static {
 		Set<String> set = new HashSet<>();
-		set.add( "@rid" );
-		set.add( "@version" );
+		set.add( SYSTEM_RID );
+		set.add( SYSTEM_VERSION );
 		SYSTEM_FIELDS = Collections.unmodifiableSet( set );
 	}
 }

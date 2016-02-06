@@ -9,6 +9,7 @@ package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
@@ -36,18 +37,24 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		this.associatedEntityKeyMetadata = associatedEntityKeyMetadata;
 		this.rolesByColumn = rolesByColumn;
 		this.entityKeyMetadata = entityKeyMetadata;
-		LOG.info( "dbNameValueMap:" + dbNameValueMap );
+		LOG.info( "1.dbNameValueMap:" + dbNameValueMap );
+                LOG.info( "1.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
 	}
 
-	public OrientDBTupleSnapshot(EntityKeyMetadata entityKeyMetadata) {
-		this( new HashMap<String, Object>(), null, null, entityKeyMetadata );
+	public OrientDBTupleSnapshot(Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
+			Map<String, String> rolesByColumn,
+			EntityKeyMetadata entityKeyMetadata) {
+		this( new HashMap<String, Object>(), associatedEntityKeyMetadata, rolesByColumn, entityKeyMetadata );
+		LOG.info( "2.dbNameValueMap:" + dbNameValueMap );
+                LOG.info( "2.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
 	}
 
 	@Override
 	public Object get(String targetColumnName) {
 		LOG.info( "targetColumnName: " + targetColumnName );
 		Object value = dbNameValueMap.get( targetColumnName );
-		if ( targetColumnName.equals( "@version" ) && !dbNameValueMap.containsKey( targetColumnName ) ) {
+		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) &&
+				!dbNameValueMap.containsKey( targetColumnName ) ) {
 			value = Integer.valueOf( 0 );
 		}
 		return value;

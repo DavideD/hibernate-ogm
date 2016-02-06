@@ -55,6 +55,7 @@ import java.sql.Statement;
 import java.util.List;
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.ResultSetTupleIterator;
+import org.hibernate.datastore.ogm.orientdb.impl.OrientDBSchemaDefiner;
 import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
 import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
 import org.hibernate.service.spi.ServiceRegistryAwareService;
@@ -79,7 +80,7 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
 	@Override
 	public Tuple getTuple(EntityKey key, TupleContext tupleContext) {
-		log.info( "getTuple:EntityKey:" + key + "; tupleContext" + tupleContext );
+		log.info( "getTuple:EntityKey:" + key + "; tupleContext" + tupleContext+" tupleContext.getClass():"+tupleContext.getClass());
 
 		try {
 			if ( !entityQueries.containsKey( key.getMetadata() ) ) {
@@ -101,39 +102,17 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
 	@Override
 	public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
-		log.info( "createTuple:EntityKey:" + key + "; tupleContext" + tupleContext );
-		return new Tuple( new OrientDBTupleSnapshot( key.getMetadata() ) );
+		log.info( "createTuple:EntityKey:" + key + "; tupleContext" + tupleContext+"; tupleContext.getClass():"+tupleContext.getClass() );
+		return new Tuple( new OrientDBTupleSnapshot( tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), key.getMetadata() ) );
 	}
 
 	@Override
 	public Tuple createTuple(EntityKeyMetadata entityKeyMetadata, TupleContext tupleContext) {
-		log.info( "createTuple:EntityKeyMetadata:" + entityKeyMetadata + "; tupleContext" + tupleContext );
-		// throw new UnsupportedOperationException("Not supported yet.");
-		return new Tuple( new OrientDBTupleSnapshot( entityKeyMetadata ) );
+		log.info( "createTuple:EntityKeyMetadata:" + entityKeyMetadata + "; tupleContext" + tupleContext+";tupleContext.getClass():"+tupleContext.getClass() );
+		return new Tuple( new OrientDBTupleSnapshot( tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), entityKeyMetadata ) );
 	}
 
-	private boolean existsPrimaryKeyInDB(EntityKey key) throws SQLException {
-		String dbKeyName = key.getColumnNames()[0];
-		Object dbKeyValue = key.getColumnValues()[0];
-
-		boolean exists = false;
-		Statement stmt = provider.getConnection().createStatement();
-		StringBuilder buffer = new StringBuilder( "select count(" + dbKeyName + ") from " );
-		buffer.append( key.getTable() );
-		buffer.append( " where " );
-		buffer.append( dbKeyName );
-		buffer.append( " = " );
-		EntityKeyUtil.setPrimaryKeyValue( buffer, dbKeyValue );
-		log.info( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; query:" + buffer.toString() );
-
-		ResultSet rs = stmt.executeQuery( buffer.toString() );
-		if ( rs.next() ) {
-			long count = rs.getLong( 1 );
-			log.info( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; count:" + count );
-			exists = count > 0;
-		}
-		return exists;
-	}
+	
 
 	@Override
 	public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
@@ -150,7 +129,7 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 			log.info( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
 		}
 		try {
-			boolean existsPrimaryKey = existsPrimaryKeyInDB( key );
+			boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB(provider.getConnection(), key );
 			log.info( "insertOrUpdateTuple:Key:" + dbKeyName + " exists in database ? " + existsPrimaryKey );
 
 			if ( existsPrimaryKey ) {
@@ -203,20 +182,19 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 		String dbKeyName = entityKeyMetadata.getColumnNames()[0];
 		Long dbKeyValue = null;
 		Connection connection = provider.getConnection();
-		boolean useBusinessKey = false;
-		if ( dbKeyName.equals( "@rid" ) ) {
+		
+		if ( dbKeyName.equals( OrientDBConstant.SYSTEM_RID ) ) {
 			// use @RID for key
+                        throw new UnsupportedOperationException("Can not use @RID as primary key!");
 		}
 		else {
 			// use business key. get new id from sequence
-			useBusinessKey = true;
-			StringBuilder seqName = new StringBuilder( "seq_" );
-			seqName.append( entityKeyMetadata.getTable().toLowerCase() ).append( "_" );
-			seqName.append( dbKeyName.toLowerCase() );
+			
+			String seqName = OrientDBSchemaDefiner.generateSeqName(entityKeyMetadata.getTable(), dbKeyName);
 			log.info( "insertTuple:seq name :" + seqName );
 			try {
 				Statement stmt = connection.createStatement();
-				ResultSet rs = stmt.executeQuery( "select sequence('" + seqName.toString() + "').next()" );
+				ResultSet rs = stmt.executeQuery( "select sequence('" + seqName + "').next()" );
 				if ( rs.next() ) {
 					dbKeyValue = rs.getLong( "sequence" );
 					tuple.put( dbKeyName, dbKeyValue );
@@ -288,22 +266,22 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
 	@Override
 	public Association getAssociation(AssociationKey key, AssociationContext associationContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+		throw new UnsupportedOperationException( "getAssociation Not supported yet." );
 	}
 
 	@Override
 	public Association createAssociation(AssociationKey key, AssociationContext associationContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+		throw new UnsupportedOperationException( "createAssociation Not supported yet." );
 	}
 
 	@Override
 	public void insertOrUpdateAssociation(AssociationKey key, Association association, AssociationContext associationContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+		throw new UnsupportedOperationException( "insertOrUpdateAssociation Not supported yet." );
 	}
 
 	@Override
 	public void removeAssociation(AssociationKey key, AssociationContext associationContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+		throw new UnsupportedOperationException( "removeAssociation Not supported yet." );
 	}
 
 	@Override
@@ -315,12 +293,12 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 	public Number nextValue(NextValueRequest request) {
 		log.info( "NextValueRequest:" + request + "; " );
 		// return ORecordId.EMPTY_RECORD_ID.getClusterPosition();
-		throw new UnsupportedOperationException( "Not supported yet." );
+		throw new UnsupportedOperationException( "nextValue Not supported yet." );
 	}
 
 	@Override
 	public boolean supportsSequences() {
-		return super.supportsSequences(); // To change body of generated methods, choose Tools | Templates.
+		return true;
 	}
 
 	@Override
@@ -415,9 +393,11 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 
 	@Override
 	public void sessionFactoryCreated(SessionFactoryImplementor sessionFactoryImplementor) {
-
+            
 		this.associationQueries = initializeAssociationQueries( sessionFactoryImplementor );
 		this.entityQueries = initializeEntityQueries( sessionFactoryImplementor, associationQueries );
+                log.info( "entityQueries:"+entityQueries);
+                log.info( "sessionFactoryCreated");
 	}
 
 	private Map<EntityKeyMetadata, OrientDBEntityQueries> initializeEntityQueries(SessionFactoryImplementor sessionFactoryImplementor,
@@ -451,8 +431,11 @@ public class OrientDBDialect extends BaseGridDialect implements MultigetGridDial
 		for ( CollectionPersister collectionPersister : collectionPersisters ) {
 			if ( collectionPersister instanceof OgmCollectionPersister ) {
 				OgmCollectionPersister ogmCollectionPersister = (OgmCollectionPersister) collectionPersister;
+                                log.info( "initializeAssociationQueries: ogmCollectionPersister :" + ogmCollectionPersister );
 				EntityKeyMetadata ownerEntityKeyMetadata = ( (OgmEntityPersister) ( ogmCollectionPersister.getOwnerEntityPersister() ) ).getEntityKeyMetadata();
+                                log.info( "initializeAssociationQueries: ownerEntityKeyMetadata :" + ownerEntityKeyMetadata );
 				AssociationKeyMetadata associationKeyMetadata = ogmCollectionPersister.getAssociationKeyMetadata();
+                                log.info( "initializeAssociationQueries: associationKeyMetadata :" + associationKeyMetadata );
 				queryMap.put( associationKeyMetadata, new OrientDBAssociationQueries( ownerEntityKeyMetadata, associationKeyMetadata ) );
 			}
 		}
