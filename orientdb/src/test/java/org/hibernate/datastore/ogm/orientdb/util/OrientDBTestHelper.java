@@ -34,7 +34,7 @@ public class OrientDBTestHelper implements TestableGridDialect {
 	public OrientDBTestHelper() {
 		BasicConfigurator.configure();
 		// create OrientDB in memory
-		MemoryDBUtil.createInMemoryDB("memory:test" );
+		MemoryDBUtil.createDbFactory( "memory:test" );
 
 	}
 

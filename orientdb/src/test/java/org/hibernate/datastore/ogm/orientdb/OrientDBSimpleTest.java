@@ -7,30 +7,18 @@
 package org.hibernate.datastore.ogm.orientdb;
 
 import com.orientechnologies.orient.core.id.ORecordId;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 import org.apache.log4j.BasicConfigurator;
-import org.hibernate.CacheMode;
 import org.hibernate.datastore.ogm.orientdb.jpa.Customer;
 import org.hibernate.datastore.ogm.orientdb.jpa.Pizza;
 import org.hibernate.datastore.ogm.orientdb.util.MemoryDBUtil;
-import org.hibernate.search.MassIndexer;
-import org.hibernate.search.jpa.FullTextEntityManager;
-import org.hibernate.search.jpa.FullTextQuery;
-import org.hibernate.search.jpa.Search;
-import org.hibernate.search.query.DatabaseRetrievalMethod;
-import org.hibernate.search.query.ObjectLookupMethod;
-import org.hibernate.search.query.dsl.QueryBuilder;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -41,26 +29,22 @@ import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 
 /**
+ * Test checks CRUD for simple entities (without links with other entities)
+ * 
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class OrientDBTest {
+public class OrientDBSimpleTest {
 
-	private static final Logger LOG = Logger.getLogger( OrientDBTest.class.getName() );
-	private static Map<String, List<ORecordId>> classRidMap;
+	private static final Logger LOG = Logger.getLogger( OrientDBSimpleTest.class.getName() );
 	private static EntityManager em;
 	private static EntityManagerFactory emf;
-
-	public OrientDBTest() {
-	}
 
 	@BeforeClass
 	public static void setUpClass() {
 		LOG.log( Level.INFO, "start" );
-		//classRidMap = MemoryDBUtil.prepareDb( "memory:test" );
-                classRidMap = new HashMap<>();
-		// classIdMap = MemoryDBUtil.prepareDb("remote:localhost/pizza");                
-                MemoryDBUtil.createInMemoryDB("memory:test");
+		// MemoryDBUtil.prepareDb("remote:localhost/pizza");
+		MemoryDBUtil.createDbFactory( "memory:test" );
 		BasicConfigurator.configure();
 		emf = Persistence.createEntityManagerFactory( "hibernateOgmJpaUnit" );
 		em = emf.createEntityManager();
@@ -74,7 +58,9 @@ public class OrientDBTest {
 		if ( em != null ) {
 			em.close();
 			emf.close();
+
 		}
+		MemoryDBUtil.getOrientGraphFactory().close();
 	}
 
 	@Before
@@ -83,9 +69,10 @@ public class OrientDBTest {
 
 	@After
 	public void tearDown() {
+		em.clear();
 	}
-        
-        @Test
+
+	@Test
 	public void test1InsertNewCustomer() throws Exception {
 		LOG.log( Level.INFO, "start" );
 		try {
@@ -98,7 +85,7 @@ public class OrientDBTest {
 			Query query = em.createNativeQuery( "select from Customer where name=:name", Customer.class );
 			query.setParameter( "name", "test" );
 			List<Customer> customers = query.getResultList();
-			LOG.log( Level.INFO, "customers.size(): {0}" , customers.size() );
+			LOG.log( Level.INFO, "customers.size(): {0}", customers.size() );
 			assertFalse( "Customers must be", customers.isEmpty() );
 			Customer testCustomer = customers.get( 0 );
 			assertNotNull( "Customer with 'test' must be saved!", testCustomer );
@@ -136,47 +123,25 @@ public class OrientDBTest {
 			throw e;
 		}
 	}
-        
-        
-        @Test
+
+	@Test
 	public void test2FindCustomer() {
 		LOG.log( Level.INFO, "start" );
 		try {
 			em.getTransaction().begin();
 			Customer customer = em.find( Customer.class, Long.valueOf( 2L ) );
-                        em.refresh(customer);
+			em.refresh( customer );
 			LOG.log( Level.INFO, "read entity properties:" );
 			LOG.log( Level.INFO, "customer.getbKey():{0}", customer.getbKey() );
-			LOG.log( Level.INFO, "customer.getName(): {0}", customer.getName() );			
-                        LOG.log( Level.INFO, "customer.getRid(): {0}", customer.getRid() );
-                        assertEquals(Long.valueOf(2L),customer.getbKey() );
-                        assertNotNull( customer.getRid() );                        
+			LOG.log( Level.INFO, "customer.getName(): {0}", customer.getName() );
+			LOG.log( Level.INFO, "customer.getRid(): {0}", customer.getRid() );
+			assertEquals( Long.valueOf( 2L ), customer.getbKey() );
+			assertNotNull( customer.getRid() );
 		}
 		finally {
 			em.getTransaction().commit();
 		}
 	}
-        
-        //@Test
-	public void test2FindCustomerWithAssociation() {
-		LOG.log( Level.INFO, "start" );
-		try {
-			em.getTransaction().begin();
-			Customer customer = em.find( Customer.class, Long.valueOf( 2L ) );
-                        em.refresh(customer);
-			LOG.log( Level.INFO, "read entity properties:" );
-			LOG.log( Level.INFO, "customer.getbKey():{0}", customer.getbKey() );
-			LOG.log( Level.INFO, "customer.getName(): {0}", customer.getName() );			
-                        LOG.log( Level.INFO, "customer.getRid(): {0}", customer.getRid() );
-                        assertEquals(Long.valueOf(2L),customer.getbKey() );
-                        assertNotNull( customer.getRid() );
-                        customer.getOrders().size();
-		}
-		finally {
-			em.getTransaction().commit();
-		}
-	
-        }
 
 	@Test
 	public void test2FindPizza() {
@@ -184,13 +149,13 @@ public class OrientDBTest {
 		try {
 			em.getTransaction().begin();
 			Pizza pizza = em.find( Pizza.class, Long.valueOf( 2L ) );
-                        em.refresh(pizza);
+			em.refresh( pizza );
 			LOG.log( Level.INFO, "read entity properties:" );
 			LOG.log( Level.INFO, "pizza.getBKey():{0}", pizza.getbKey() );
 			LOG.log( Level.INFO, "pizza.getName(): {0}", pizza.getName() );
-                        LOG.log( Level.INFO, "pizza.getbKey(): {0}", pizza.getbKey() );
+			LOG.log( Level.INFO, "pizza.getbKey(): {0}", pizza.getbKey() );
 			assertEquals( Long.valueOf( 2L ), pizza.getbKey() );
-                        assertNotNull( pizza.getRid() );
+			assertNotNull( pizza.getRid() );
 		}
 		finally {
 			em.getTransaction().commit();
@@ -206,7 +171,7 @@ public class OrientDBTest {
 			LOG.log( Level.INFO, "query: select from Customer" );
 			Query query = em.createNativeQuery( "select from Customer", Customer.class );
 			List<Customer> customers = query.getResultList();
-			assertFalse( "Customers must be", customers.isEmpty() );			
+			assertFalse( "Customers must be", customers.isEmpty() );
 			assertEquals( Long.valueOf( 2L ), customers.get( 0 ).getbKey() );
 
 			LOG.log( Level.INFO, "query: select from {0}", customers.get( 0 ).getRid().toString() );
@@ -232,14 +197,12 @@ public class OrientDBTest {
 
 	}
 
-	
-
 	@Test
 	public void test4UpdateCustomer() {
 		LOG.log( Level.INFO, "start" );
 		try {
 			em.getTransaction().begin();
-			Long id = Long.valueOf(2L);
+			Long id = Long.valueOf( 2L );
 			Customer customer = em.find( Customer.class, id );
 			customer.setName( "Ivahoe" );
 			int oldVersion = customer.getVersion();
@@ -261,25 +224,25 @@ public class OrientDBTest {
 			throw e;
 		}
 	}
-        
-        
-        @Test
+
+	@Test
 	public void test5RefreshCustomer() {
 		LOG.log( Level.INFO, "start" );
 		try {
 			em.getTransaction().begin();
-			Long id = Long.valueOf(2L);
+			Long id = Long.valueOf( 2L );
 			Customer customer = em.find( Customer.class, id );
 			LOG.log( Level.INFO, "old rid:{0}", customer.getRid() );
-                        ORecordId oldRid = customer.getRid();
-			em.refresh(customer );			
-                        ORecordId newRid = customer.getRid();
-			assertNotNull( "Must not be null", customer );                        
-                        if (oldRid==null) {
-                            assertNotNull( "@Rid must be changed", newRid );                        
-                        } else {
-                            assertEquals("@Rid must not changed", newRid,oldRid );                        
-                        }
+			ORecordId oldRid = customer.getRid();
+			em.refresh( customer );
+			ORecordId newRid = customer.getRid();
+			assertNotNull( "Must not be null", customer );
+			if ( oldRid == null ) {
+				assertNotNull( "@Rid must be changed", newRid );
+			}
+			else {
+				assertEquals( "@Rid must not changed", newRid, oldRid );
+			}
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
@@ -289,70 +252,29 @@ public class OrientDBTest {
 		}
 	}
 
-	 @Test
+	@Test
 	public void test6RemoveCustomer() {
 		LOG.log( Level.INFO, "start" );
 		try {
 			em.getTransaction().begin();
-			Long id = Long.valueOf(2L);
+			Long id = Long.valueOf( 2L );
 			Customer customer = em.find( Customer.class, id );
 			em.remove( customer );
 			em.flush();
-                        em.getTransaction().commit();
-                        
-                        em.getTransaction().begin();
+			em.getTransaction().commit();
+
+			em.getTransaction().begin();
 			Customer removedCustomer = em.find( Customer.class, id );
 			LOG.log( Level.INFO, "customer:{0}", removedCustomer );
-                        assertNull("removedCustomer must be null!", removedCustomer);
-                        em.getTransaction().commit();
-			
+			assertNull( "removedCustomer must be null!", removedCustomer );
+			em.getTransaction().commit();
+
 		}
 		catch (Exception e) {
 			LOG.log( Level.SEVERE, "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
-	}
-        
-        
-        
-
-	// @Test yet not work
-	public void createNamedQuery() throws Exception {
-		System.out.println( "org.hibernate.datastore.ogm.orientdb.OrientDBTestIT.createNamedQuery()" );
-		try {
-			em.getTransaction().begin();
-			FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager( em );
-			MassIndexer indexer = fullTextEntityManager.createIndexer();
-			indexer.cacheMode( CacheMode.REFRESH );
-			indexer.startAndWait();
-
-			System.out.println( "entities has indexed" );
-
-			System.out.println( "named query: Customer.findAll" );
-			TypedQuery<Customer> query = em.createNamedQuery( "Customer.findAll", Customer.class );
-			List<Customer> customers = query.getResultList();
-			System.out.println( "1.customers.size(): " + customers.size() );
-
-			QueryBuilder qb = fullTextEntityManager.getSearchFactory()
-					.buildQueryBuilder().forEntity( Customer.class ).get();
-
-			org.apache.lucene.search.Query luceneQuery = qb.all().createQuery();
-			FullTextQuery jpaQuery = fullTextEntityManager.createFullTextQuery( luceneQuery, Customer.class );
-			jpaQuery.initializeObjectsWith( ObjectLookupMethod.PERSISTENCE_CONTEXT, DatabaseRetrievalMethod.QUERY );
-
-			customers = jpaQuery.getResultList();
-			System.out.println( "2.customers.size(): " + customers.size() );
-
-			assertFalse( "Customers must be", customers.isEmpty() );
-			ORecordId rid = classRidMap.get( "Customer" ).get( 0 );
-			assertEquals( rid, customers.get( 0 ).getRid() );
-
-		}
-		finally {
-			em.getTransaction().commit();
-		}
-
 	}
 
 }

@@ -38,7 +38,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		this.rolesByColumn = rolesByColumn;
 		this.entityKeyMetadata = entityKeyMetadata;
 		LOG.info( "1.dbNameValueMap:" + dbNameValueMap );
-                LOG.info( "1.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
+		LOG.info( "1.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
 	}
 
 	public OrientDBTupleSnapshot(Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
@@ -46,16 +46,20 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 			EntityKeyMetadata entityKeyMetadata) {
 		this( new HashMap<String, Object>(), associatedEntityKeyMetadata, rolesByColumn, entityKeyMetadata );
 		LOG.info( "2.dbNameValueMap:" + dbNameValueMap );
-                LOG.info( "2.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
+		LOG.info( "2.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
 	}
 
 	@Override
 	public Object get(String targetColumnName) {
 		LOG.info( "targetColumnName: " + targetColumnName );
 		Object value = dbNameValueMap.get( targetColumnName );
-		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) &&
-				!dbNameValueMap.containsKey( targetColumnName ) ) {
+		LOG.info( "targetColumnName: " + targetColumnName + "; value: " + value );
+		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) && value == null ) {
 			value = Integer.valueOf( 0 );
+		}
+		else if ( associatedEntityKeyMetadata.containsKey( targetColumnName ) ) {
+			LOG.info( "associated targetColumnName: " + targetColumnName );
+			// return readPropertyOnOtherNode( column );
 		}
 		return value;
 	}
@@ -70,6 +74,15 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	public Set<String> getColumnNames() {
 		LOG.info( "getColumnNames" );
 		return dbNameValueMap.keySet();
+	}
+
+	/**
+	 * Whether this snapshot has been newly created (meaning it doesn't have an actual {@link Node} yet) or not. A node
+	 * will be in the "new" state between the {@code createTuple()} call and the next {@code insertOrUpdateTuple()}
+	 * call.
+	 */
+	public boolean isNew() {
+		return dbNameValueMap == null || ( dbNameValueMap != null && dbNameValueMap.isEmpty() );
 	}
 
 }

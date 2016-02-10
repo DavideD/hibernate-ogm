@@ -33,7 +33,6 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 	@Override
 	public boolean hasNext() {
 		try {
-			log.info( "3.hasNext. resultSet.isLast():" + resultSet.isLast() );
 			return !resultSet.isLast();
 		}
 		catch (SQLException e) {
@@ -44,8 +43,6 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 
 	@Override
 	public Tuple next() {
-		log.info( "call next()" );
-
 		try {
 			resultSet.next();
 			return convert();

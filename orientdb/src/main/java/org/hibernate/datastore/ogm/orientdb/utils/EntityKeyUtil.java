@@ -7,11 +7,13 @@
 
 package org.hibernate.datastore.ogm.orientdb.utils;
 
+import com.orientechnologies.orient.core.id.ORecordId;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.model.key.spi.EntityKey;
@@ -57,7 +59,8 @@ public class EntityKeyUtil {
 		}
 		return null;
 	}
-        public static boolean existsPrimaryKeyInDB(Connection connection,EntityKey key) throws SQLException {
+
+	public static boolean existsPrimaryKeyInDB(Connection connection, EntityKey key) throws SQLException {
 		String dbKeyName = key.getColumnNames()[0];
 		Object dbKeyValue = key.getColumnValues()[0];
 
@@ -80,4 +83,21 @@ public class EntityKeyUtil {
 		return exists;
 	}
 
+	public static ORecordId findRid(Connection connection, String className, String businessKeyName, Object businessKeyValue) throws SQLException {
+		log.info( "findRid:className:" + className + " ; businessKeyName:" + businessKeyName + "; businessKeyValue:" + businessKeyValue );
+		StringBuilder buffer = new StringBuilder( "select from " );
+		buffer.append( className );
+		buffer.append( " where " );
+		buffer.append( businessKeyName );
+		buffer.append( " = " );
+		EntityKeyUtil.setPrimaryKeyValue( buffer, businessKeyValue );
+		log.info( "findRid:className:" + buffer.toString() );
+		ORecordId rid = null;
+		ResultSet rs = connection.createStatement().executeQuery( buffer.toString() );
+		if ( rs.next() ) {
+			log.info( "findRid: find" );
+			rid = (ORecordId) rs.getObject( OrientDBConstant.SYSTEM_RID );
+		}
+		return rid;
+	}
 }

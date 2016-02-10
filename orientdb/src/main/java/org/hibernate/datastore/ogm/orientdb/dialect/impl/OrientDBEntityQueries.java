@@ -6,20 +6,32 @@
  */
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
+import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.id.ORecordId;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
+import org.hibernate.datastore.ogm.orientdb.dto.Edge;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.datastore.ogm.orientdb.utils.AssociationUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
+import org.hibernate.ogm.dialect.spi.AssociationContext;
+import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
+import org.hibernate.ogm.model.key.spi.RowKey;
+import org.hibernate.ogm.model.spi.Tuple;
+import org.hibernate.ogm.options.spi.OptionsContext;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
@@ -90,6 +102,80 @@ public class OrientDBEntityQueries extends QueriesBase {
 			return null;
 		}
 		return dbValues;
+	}
+
+	public List<Edge> findAssociation(Connection connection, AssociationKey associationKey, AssociationContext associationContext) throws SQLException {
+		List<Edge> edges = new LinkedList<>();
+		LOG.info( "findAssociation: associationKey:" + associationKey + "; associationContext:" + associationContext );
+		String edgeName = AssociationUtil.getMappedByFieldName( associationContext );
+		LOG.info( "findAssociation: mappedByFieldName: " + edgeName );
+		// EntityKey entityKey = associationKey.getEntityKey();
+		StringBuilder query = new StringBuilder( 100 );
+		Tuple mappedByOwnerTupe = associationContext.getEntityTuple();
+		ORidBag mappedByRids = (ORidBag) mappedByOwnerTupe.get( "out_".concat( edgeName ) );
+		if ( mappedByRids != null ) {
+			LOG.info( "findAssociation: mappedByRids: " + mappedByRids.toString() );
+		}
+
+		ORecordId rid = extractRid( associationContext );
+		if ( rid != null ) {
+			// Entity has field '@rid'. Nice!
+			query.append( "SELECT FROM " ).append( edgeName ).append( " WHERE out = " ).append( extractRid( associationContext ) );
+		}
+		else {
+			throw new UnsupportedOperationException( "findAssociation without @rid not supported yet!" );
+		}
+		LOG.info( "findAssociation: query:" + query );
+
+		Statement stmt = connection.createStatement();
+		try {
+			ResultSet rs = stmt.executeQuery( query.toString() );
+			while ( rs.next() ) {
+				Edge edge = new Edge();
+				Object in = rs.getObject( "in" );
+				Object out = rs.getObject( "out" );
+				edge.setIn( (ODocument) in );
+				edge.setOut( (ODocument) out );
+				edges.add( edge );
+			}
+			LOG.info( "findAssociation: edges:" + edges.size() );
+
+		}
+		catch (SQLException sqle) {
+			if ( isClassNotFoundInDB( sqle ) ) {
+				return edges;
+			}
+			else {
+				throw sqle;
+			}
+		}
+		return edges;
+	}
+
+	private ORecordId extractRid(AssociationContext associationContext) {
+		Tuple tuple = associationContext.getEntityTuple();
+		return (ORecordId) tuple.get( OrientDBConstant.SYSTEM_RID );
+	}
+
+	private String getRelationshipType(AssociationContext associationContext) {
+		return associationContext.getAssociationTypeContext().getRoleOnMainSide();
+	}
+
+	/**
+	 * no links of the type (class) in DB. this is not error
+	 * 
+	 * @param sqle
+	 * @return
+	 */
+	private boolean isClassNotFoundInDB(SQLException sqle) {
+		boolean result = false;
+		for ( Iterator<Throwable> iterator = sqle.iterator(); ( iterator.hasNext() || result ); ) {
+			Throwable t = iterator.next();
+			// LOG.info( "findAssociation: Throwable message :"+t.getMessage());
+			result = t.getMessage().contains( "was not found in database" );
+		}
+
+		return result;
 	}
 
 	private String findColumnByName(String name) {

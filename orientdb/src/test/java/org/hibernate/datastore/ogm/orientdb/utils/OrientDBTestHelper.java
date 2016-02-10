@@ -36,7 +36,7 @@ public class OrientDBTestHelper implements TestableGridDialect {
 	public OrientDBTestHelper() {
 		BasicConfigurator.configure();
 		// create OrientDB in memory
-		org.hibernate.datastore.ogm.orientdb.util.MemoryDBUtil.createInMemoryDB("jdbc:orient:memory:test" );
+		org.hibernate.datastore.ogm.orientdb.util.MemoryDBUtil.createDbFactory( "jdbc:orient:memory:test" );
 	}
 
 	@Override
