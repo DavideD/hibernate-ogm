@@ -6,15 +6,16 @@
  */
 package org.hibernate.ogm.datastore.redis.test.id;
 
+import static org.fest.assertions.Assertions.assertThat;
+
 import org.hibernate.Transaction;
 import org.hibernate.ogm.OgmSession;
+import org.hibernate.ogm.backendtck.id.GuitarPlayer;
+import org.hibernate.ogm.backendtck.id.PianoPlayer;
 import org.hibernate.ogm.datastore.redis.impl.RedisDatastoreProvider;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
 import org.hibernate.ogm.utils.OgmTestCase;
-
 import org.junit.Test;
-
-import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * Tests for id generators in Redis
@@ -38,8 +39,8 @@ public class TableGeneratorTest extends OgmTestCase {
 		tx.commit();
 		session.clear();
 		tx = session.beginTransaction();
-		ken = (PianoPlayer) session.load( PianoPlayer.class, ken.getId() );
-		buck = (GuitarPlayer) session.load( GuitarPlayer.class, buck.getId() );
+		ken = session.load( PianoPlayer.class, ken.getId() );
+		buck = session.load( GuitarPlayer.class, buck.getId() );
 
 		// then
 		assertThat( ken.getId() ).isEqualTo( 1L );

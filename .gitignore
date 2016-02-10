@@ -23,6 +23,11 @@ bin/
 
 # NetBeans specific files/directories
 .nbattrs
+**/nbactions.xml
+**/nb-configuration.xml                                                               
+**/nbproject/*
+nb-configuration.xml
+
 
 #build
 target/
@@ -30,4 +35,6 @@ target/
 #test output
 test-output/
 transaction.log
+**/transaction.log
 infinispan.log
+
