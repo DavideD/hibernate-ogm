@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
  ~ Hibernate OGM, Domain model persistence for NoSQL datastores
  ~
@@ -40,7 +41,7 @@
             <plugin>
                  <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
-        </plugins>
+        </plugins> 
     </build>
 
     <dependencies>
@@ -70,14 +71,18 @@
             <groupId>com.orientechnologies</groupId>
             <artifactId>orientdb-jdbc</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.parboiled</groupId>
+            <artifactId>parboiled-java</artifactId>
+        </dependency>
 
         <!-- Testing -->
         <!-- //TODO Remove this -->
         <dependency>
             <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-search-orm</artifactId>
-            <scope>test</scope>
+            <artifactId>hibernate-search-orm</artifactId>            
         </dependency>
+        
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
