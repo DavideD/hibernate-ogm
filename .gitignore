@@ -23,7 +23,7 @@ bin/
 
 # NetBeans specific files/directories
 .nbattrs
-
+licenseheader.txt
 #build
 target/
 
@@ -31,3 +31,4 @@ target/
 test-output/
 transaction.log
 infinispan.log
+/orientdb/nbproject/

@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 /**
  * @author chernolyassv
  */
+@Deprecated
 public class MemoryDBUtil {
 
 	private static final Logger LOG = Logger.getLogger( MemoryDBUtil.class.getName() );

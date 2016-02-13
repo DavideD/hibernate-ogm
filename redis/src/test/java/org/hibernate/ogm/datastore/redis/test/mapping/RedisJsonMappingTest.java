@@ -6,13 +6,15 @@
  */
 package org.hibernate.ogm.datastore.redis.test.mapping;
 
-import static org.fest.assertions.Assertions.assertThat;
-
 import org.hibernate.ogm.OgmSession;
 import org.hibernate.ogm.datastore.redis.test.RedisOgmTestCase;
-import org.json.JSONException;
+import org.hibernate.ogm.utils.GridDialectType;
+import org.hibernate.ogm.utils.SkipByGridDialect;
+
 import org.junit.Before;
 import org.junit.Test;
+
+import org.json.JSONException;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
@@ -21,65 +23,12 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
  *
  * @author Mark Paluch
  */
+@SkipByGridDialect(GridDialectType.REDIS_HASH)
 public class RedisJsonMappingTest extends RedisOgmTestCase {
 
 	@Before
 	public void before() throws Exception {
 		getConnection().flushall();
-	}
-
-	@Test
-	public void canStoreAndLoadEntitiesWithIdGeneratorAndAssociation() {
-		OgmSession session = openSession();
-		session.getTransaction().begin();
-
-		// given
-		Plant ficus = new Plant( 181 );
-		session.persist( ficus );
-
-		Family family = new Family( "family-1", "Moraceae", ficus );
-		session.persist( family );
-
-		session.getTransaction().commit();
-
-		// when
-		session.getTransaction().begin();
-		Family loadedFamily = (Family) session.get( Family.class, "family-1" );
-
-		// then
-		assertThat( loadedFamily ).isNotNull();
-		assertThat( loadedFamily.getMembers() ).onProperty( "height" ).containsExactly( 181 );
-
-		session.getTransaction().commit();
-
-		session.close();
-	}
-
-	@Test
-	public void canStoreAndLoadEntities() {
-		OgmSession session = openSession();
-		session.getTransaction().begin();
-
-		// given
-		Donut donut = new Donut( "homers-donut", 7.5, Donut.Glaze.Pink, "pink-donut" );
-		session.persist( donut );
-
-
-		session.getTransaction().commit();
-
-		// when
-		session.getTransaction().begin();
-		Donut loadedDonut = (Donut) session.get( Donut.class, "homers-donut" );
-
-		// then
-		assertThat( loadedDonut ).isNotNull();
-		assertThat( loadedDonut.getId() ).isEqualTo( "homers-donut" );
-		assertThat( loadedDonut.getGlaze() ).isEqualTo( Donut.Glaze.Pink );
-		assertThat( loadedDonut.getAlias() ).isEqualTo( "pink-donut" );
-
-		session.getTransaction().commit();
-
-		session.close();
 	}
 
 	@Test
@@ -94,10 +43,48 @@ public class RedisJsonMappingTest extends RedisOgmTestCase {
 		session.getTransaction().commit();
 
 		// when
-		String representation = new String( getConnection().get( "Donut:homers-donut") );
+		String representation = getConnection().get( "Donut:homers-donut" );
 
 		// then
-		JSONAssert.assertEquals( "{'alias':'pink-donut','radius':7.5,'glaze':2}", representation, JSONCompareMode.STRICT );
+		JSONAssert.assertEquals(
+				"{'alias':'pink-donut','radius':7.5,'glaze':2}",
+				representation,
+				JSONCompareMode.STRICT
+		);
+
+		session.close();
+	}
+
+	@Test
+	public void canStoreAndLoadEntitiesWithIdGeneratorAndAssociation() throws JSONException {
+		OgmSession session = openSession();
+		session.getTransaction().begin();
+
+		// given
+		Plant ficus = new Plant( 181 );
+		session.persist( ficus );
+
+		Family family = new Family( "family-1", "Moraceae", ficus );
+		session.persist( family );
+
+		session.getTransaction().commit();
+
+		// when
+		String familyRepresentation = getConnection().get( "Family:family-1" );
+		String plantRepresentation = getConnection().get( "Plant:1" );
+
+		// then
+		JSONAssert.assertEquals(
+				"{\"members\":[1],\"name\":\"Moraceae\"}",
+				familyRepresentation,
+				JSONCompareMode.STRICT
+		);
+
+		JSONAssert.assertEquals(
+				"{\"height\":181}",
+				plantRepresentation,
+				JSONCompareMode.STRICT
+		);
 
 		session.close();
 	}
