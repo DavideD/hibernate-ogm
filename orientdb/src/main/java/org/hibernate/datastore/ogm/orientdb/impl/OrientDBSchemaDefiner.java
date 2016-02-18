@@ -18,6 +18,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.hibernate.boot.model.relational.Namespace;
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
@@ -105,7 +107,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	@Override
 	public void initializeSchema(SchemaDefinitionContext context) {
-		log.info( "start" );
 		SessionFactoryImplementor sessionFactoryImplementor = context.getSessionFactory();
 		ServiceRegistryImplementor registry = sessionFactoryImplementor.getServiceRegistry();
 		provider = (OrientDBDatastoreProvider) registry.getService( DatastoreProvider.class );
@@ -114,7 +115,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		}
 		catch (SQLException e) {
 			log.error( "Can not initialize schema!", e );
-			throw new RuntimeException( "Can not initialize schema!", e );
+                        throw new RuntimeException( "Can not initialize schema!", e );
 		}
 	}
 
@@ -140,15 +141,25 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 					else if ( RELATIONS_TYPES.contains( column.getValue().getType().getClass() ) ) {
 						// @TODO refactor it
 						Value value = column.getValue();
-						Class mappedByClass = searchMappedByReturnedClass( context, namespace.getTables(),(EntityType) value.getType(), column );
-                                                String propertyQuery = createValueProperyQuery( table, column, RETURNED_CLASS_TYPE_MAPPING.get(mappedByClass) );
-						log.info( "create foreign key property query: " + propertyQuery );
-						provider.getConnection().createStatement().execute( propertyQuery );
+                                                log.info( "column name:" + column.getName()+"; column.getCanonicalName():"+column.getCanonicalName() );
+                                                
+                                                if (isEmbeddedColumn(column)) {
+                                                    
+                                                        
+                                                    
+                                                } else {                                                
+                                                        Class mappedByClass = searchMappedByReturnedClass( context, namespace.getTables(),(EntityType) value.getType(), column );
+                                                        String propertyQuery = createValueProperyQuery( table, column, RETURNED_CLASS_TYPE_MAPPING.get(mappedByClass) );
+                                                        log.info( "create foreign key property query: " + propertyQuery );
+                                                        provider.getConnection().createStatement().execute( propertyQuery );
+                                                }
+                                                //@TODO  use Links as foreign keys. see http://orientdb.com/docs/last/SQL-Create-Link.html
+                                                
                                                 
                                                 //@TODO support fields 'in_' and 'out_' for native queries 
-                                                String mappedByName = searchMappedByName( context, namespace.getTables(), (EntityType) value.getType(), column );
-                                                log.info( "create edge query: " + createEdgeType( mappedByName ) );
-						provider.getConnection().createStatement().execute( createEdgeType( mappedByName ) );
+                                                //String mappedByName = searchMappedByName( context, namespace.getTables(), (EntityType) value.getType(), column );
+                                                //log.info( "create edge query: " + createEdgeType( mappedByName ) );
+						//provider.getConnection().createStatement().execute( createEdgeType( mappedByName ) );
 
 					}
 					else {
@@ -170,13 +181,51 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
                                         }
                                 }
 			}
-		}
-                //@TODO  create default sequence for hibernate
+		}                
                 provider.getConnection().createStatement().execute( "CREATE SEQUENCE HIBERNATE_SEQUENCE TYPE ORDERED START 1" );
 	}
         
-        private boolean isMapingTable(Table table) {
+        private boolean isEmbeddedColumn(Column column) {
+            return column.getValue().getType().getClass().equals(ManyToOneType.class) && column.getName().contains(".");
+        }
+        
+        private EmbedColumnName prepareColumnNames(Column column) {
+            EmbedColumnName names = null;
+            String columnName = column.getName();
+            Matcher matcher = PATTERN.matcher(columnName);
+            if (matcher.find()) {
+                String mainFieldName = matcher.group(1);
+                String emdeddedFieldName = matcher.group(2);
+                names = new EmbedColumnName(mainFieldName, emdeddedFieldName);
+            }
+            return names;
+        }
+        
+        private static final Pattern PATTERN = Pattern.compile("directed([a-zA-Z_0-9])\\.(.+)");
+        
+        
+        private class EmbedColumnName{
+            private String mainFieldName;
+            private String emdeddedFieldName;
+
+        public EmbedColumnName(String mainFieldName, String emdeddedFieldName) {
+            this.mainFieldName = mainFieldName;
+            this.emdeddedFieldName = emdeddedFieldName;
+        }
+
+        public String getMainFieldName() {
+            return mainFieldName;
+        }
+
+        public String getEmdeddedFieldName() {
+            return emdeddedFieldName;
+        }
             
+            
+        }
+        
+        
+        private boolean isMapingTable(Table table) {            
             int tableColumns = 0;
             for (Iterator iterator = table.getColumnIterator(); iterator.hasNext();) {
                 Object next = iterator.next();
