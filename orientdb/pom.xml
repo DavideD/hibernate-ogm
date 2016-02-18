@@ -63,21 +63,25 @@
 
         <dependency>
             <groupId>com.orientechnologies</groupId>
-            <artifactId>orientdb-core</artifactId>
+            <artifactId>orientdb-core</artifactId>            
         </dependency>
 
         <dependency>
             <groupId>com.orientechnologies</groupId>
             <artifactId>orientdb-jdbc</artifactId>
         </dependency>
-
-        <!-- Testing -->
-        <!-- //TODO Remove this -->
+        <dependency>
+            <groupId>org.parboiled</groupId>
+            <artifactId>parboiled-java</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-search-orm</artifactId>
-            <scope>test</scope>
+            <artifactId>hibernate-search-engine</artifactId>
+            <type>jar</type>
         </dependency>
+
+        <!-- Testing -->
+        
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -129,15 +133,15 @@
             <artifactId>takari-cpsuite</artifactId>
             <scope>test</scope>
         </dependency>
+        
+         <dependency>
+            <groupId>org.hibernate.hql</groupId>
+            <artifactId>hibernate-hql-parser</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.hibernate.hql</groupId>
             <artifactId>hibernate-hql-lucene</artifactId>
-            <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.hibernate.hql</groupId>
-            <artifactId>hibernate-hql-parser</artifactId>
-            <scope>test</scope>
-        </dependency>
+        
     </dependencies>
 </project>
