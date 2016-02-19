@@ -21,7 +21,9 @@ import java.util.UUID;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.ogm.backendtck.type.Bookmark.Classifier;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -158,6 +160,7 @@ public class BuiltInTypeTest extends OgmTestCase {
 	}
 
 	// byte arrays
+        @SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void testByteArrayAsLobSupport() throws Exception {
 		byte[] testData = new byte[200];
@@ -168,6 +171,7 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertArrayEquals( "Original and loaded data do not match!", testData, loadedBookmark.getLob() );
 	}
 
+        @SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void testLongAsLobSupport() throws Exception {
 		bookmark.setLobWithLong( Long.MIN_VALUE );
@@ -176,6 +180,7 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "Original and loaded data do not match!", (Long) Long.MIN_VALUE, (Long) loadedBookmark.getLobWithLong() );
 	}
 
+        @SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void testStringAsLobSupport() throws Exception {
 		String text = "Very long text ...";
@@ -185,6 +190,7 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "Original and loaded data do not match!", text, loadedBookmark.getLobWithString() );
 	}
 
+        @SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void testByteArraySupport() throws Exception {
 		byte[] testData = new byte[200];
@@ -270,12 +276,13 @@ public class BuiltInTypeTest extends OgmTestCase {
 
 	@Test
 	public void testDatePersistedAsTemporalTypeTimestampSupport() throws Exception {
-		Date destructionDate = new Date();
-		bookmark.setDestructionDate( destructionDate );
-
-		Bookmark loadedBookmark = saveAndGet( bookmark );
-
-		assertEquals( "Year value does not match", bookmark.getDestructionDate(), loadedBookmark.getDestructionDate() );
+		Calendar destructionDate = Calendar.getInstance();                
+		bookmark.setDestructionDate( destructionDate.getTime() );
+		Bookmark loadedBookmark = saveAndGet( bookmark );                
+                
+                Calendar c2 = Calendar.getInstance();
+                c2.setTime( loadedBookmark.getDestructionDate() );
+		assertEquals( "Year value does not match",destructionDate.get( Calendar.YEAR ), c2.get( Calendar.YEAR ) );
 	}
 
 	@Test
@@ -340,6 +347,7 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "BigDecimal value does not match", bookmark.getSiteWeight(), loadedBookmark.getSiteWeight() );
 	}
 
+        @SkipByGridDialect(value = { GridDialectType.ORIENTDB},comment = "see issue https://github.com/orientechnologies/orientdb/issues/5753")
 	@Test
 	public void testBigIntegerSupport() throws Exception {
 		bookmark.setVisitCount( new BigInteger( "444" ) );
