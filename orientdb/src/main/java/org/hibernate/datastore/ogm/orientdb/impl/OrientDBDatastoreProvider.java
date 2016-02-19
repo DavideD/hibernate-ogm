@@ -9,9 +9,11 @@ package org.hibernate.datastore.ogm.orientdb.impl;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import org.hibernate.datastore.ogm.orientdb.OrientDBDialect;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
@@ -62,7 +64,7 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
                                 createInMemoryDB(jdbcUrl);
 
 				connection = DriverManager.getConnection( jdbcUrl, info );
-
+                                setDateFormats(connection);
 			}
 
 		}
@@ -70,6 +72,12 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 			throw LOG.unableToStartDatastoreProvider( e );
 		}
 	}
+        
+        
+        private void setDateFormats(Connection connection) throws SQLException {
+            connection.createStatement().execute("ALTER DATABASE DATETIMEFORMAT \""+OrientDBConstant.DATETIME_FORMAT+"\"");
+            connection.createStatement().execute("ALTER DATABASE DATEFORMAT \""+OrientDBConstant.DATE_FORMAT+"\"");
+        }
         
         
         private static void createInMemoryDB(String jdbcUrl) {

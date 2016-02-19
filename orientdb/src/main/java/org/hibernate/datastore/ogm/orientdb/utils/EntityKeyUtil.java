@@ -28,7 +28,7 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 public class EntityKeyUtil {
 
 	private static final Log log = LoggerFactory.getLogger();
-        private static final String ORIENTDB_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+        
 
 	public static void setFieldValue(StringBuilder queryBuffer, Object dbKeyValue) {
                 if (dbKeyValue!=null) {
@@ -37,12 +37,16 @@ public class EntityKeyUtil {
                 }
 		if ( dbKeyValue instanceof String || dbKeyValue instanceof UUID || dbKeyValue instanceof Character ) {
 			queryBuffer.append( "'" ).append( dbKeyValue ).append( "'" );
-		} else if ( dbKeyValue instanceof Date ) {
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.setTime((Date) dbKeyValue);
-                        String formattedStr = (new SimpleDateFormat(ORIENTDB_DATE_FORMAT)).format(calendar.getTime());
-			queryBuffer.append( "date('" ).append( formattedStr ).append( "','")
-                                .append(ORIENTDB_DATE_FORMAT).append("')" );
+		} else if ( dbKeyValue instanceof Date || dbKeyValue instanceof Calendar) {
+                        Calendar calendar = null;
+                        if (dbKeyValue instanceof Date ) {
+                            calendar = Calendar.getInstance();
+                            calendar.setTime((Date) dbKeyValue);
+                        } else if (dbKeyValue instanceof Calendar ) {
+                            calendar = (Calendar) dbKeyValue;
+                        }
+                        String formattedStr = (new SimpleDateFormat(OrientDBConstant.DATETIME_FORMAT)).format(calendar.getTime());
+			queryBuffer.append( "'" ).append( formattedStr ).append( "'" );
 		}
 		else {
 			queryBuffer.append( dbKeyValue );

@@ -7,6 +7,7 @@
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
 import com.orientechnologies.orient.core.id.ORecordId;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -100,6 +101,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 				dbValues.put( dbColumnName, dbValue );
 
 			}
+                        reCastValues(dbValues);
 			LOG.info( " entiry values from db: " + dbValues );
 		}
 		else {
@@ -108,6 +110,19 @@ public class OrientDBEntityQueries extends QueriesBase {
 
 		return dbValues;
 	}
+        
+        private void reCastValues(Map<String, Object> map) {
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value instanceof BigDecimal) {
+                    BigDecimal bd = (BigDecimal) value;
+                    entry.setValue(bd.toString());
+                }
+                
+            }
+        }
+        
 
 	private boolean isLinkedProperty(String propertyName) {
 		for ( String linkFieldStarts : OrientDBConstant.LINK_FIELDS ) {

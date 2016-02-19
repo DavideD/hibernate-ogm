@@ -74,7 +74,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		} */
 		else {
 			value = dbNameValueMap.get( targetColumnName );
-			LOG.info( "targetColumnName: " + targetColumnName + "; value: " + value );
+			LOG.info( "targetColumnName: " + targetColumnName + "; value: " + value +"; class :"+(value!=null ? value.getClass() : null));
 		}
 		return value;
 	}

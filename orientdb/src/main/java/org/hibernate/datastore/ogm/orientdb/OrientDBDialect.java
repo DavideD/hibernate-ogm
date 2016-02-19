@@ -8,6 +8,8 @@ package org.hibernate.datastore.ogm.orientdb;
 
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.id.ORecordId;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -55,6 +57,9 @@ import org.hibernate.type.Type;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.EntityNotFoundException;
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
@@ -69,8 +74,11 @@ import org.hibernate.datastore.ogm.orientdb.utils.SequenceUtil;
 import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
 import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata.IdSourceType;
 import org.hibernate.ogm.model.key.spi.RowKey;
+import org.hibernate.ogm.type.impl.Iso8601StringCalendarType;
+import org.hibernate.ogm.type.impl.Iso8601StringDateType;
 import org.hibernate.service.spi.ServiceRegistryAwareService;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
+import org.hibernate.type.StandardBasicTypes;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
@@ -154,6 +162,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		try {
 			boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( provider.getConnection(), key );
 			log.info( "insertOrUpdateTuple:Key:" + dbKeyName + " exists in database ? " + existsPrimaryKey );
+                        LinkedList<Object> preparedStatementParams = new LinkedList<>();
 
 			if ( existsPrimaryKey ) {
 				// it is update
@@ -165,9 +174,18 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 					}
 					// @TODO correct type
 					queryBuffer.append( " " ).append( columnName ).append( "=" );
-                                        EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
+                                        if (tuple.get(columnName) instanceof byte[]) {
+                                            queryBuffer.append(":").append(columnName);
+                                            preparedStatementParams.add(tuple.get( columnName ));
+                                        } else {
+                                            EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
+                                            
+                                        }
 					queryBuffer.append( "," );
 				}
+                                if (queryBuffer.indexOf(",")>-1) {
+                                        queryBuffer.setLength( queryBuffer.length() - 1 );
+                                }
 				queryBuffer.setLength( queryBuffer.length() - 1 );
 				queryBuffer.append( " WHERE " ).append( dbKeyName ).append( "=" );
 				EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
@@ -177,20 +195,44 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				log.info( "insertOrUpdateTuple:Key:" + dbKeyName + " is new! Insert new record!" );
 				queryBuffer.append( "insert into " ).append( key.getTable() ).append( "  set " );
 				for ( String columnName : tuple.getColumnNames() ) {
-					if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) ) {
+					if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) || dbKeyName.equals(columnName) ) {
 						continue;
 					}
 					// @TODO correct type
+                                        log.info( "insertOrUpdateTuple: Set value for column " + columnName );
 					queryBuffer.append( " " ).append( columnName ).append( "=" );
-					EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
+                                        if (tuple.get(columnName) instanceof byte[]) {
+                                            queryBuffer.append(":").append(columnName);
+                                            preparedStatementParams.add(tuple.get( columnName ));
+                                        } else if (tuple.get(columnName) instanceof BigInteger) {
+                                            queryBuffer.append(":").append(columnName);
+                                            BigInteger bi = (BigInteger) tuple.get( columnName );                                            
+                                            preparedStatementParams.add(bi.toByteArray());
+                                        } else if (tuple.get(columnName) instanceof BigDecimal) {
+                                            queryBuffer.append(":").append(columnName);
+                                            preparedStatementParams.add(tuple.get( columnName ));
+                                        } else {
+                                            EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
+                                            
+                                        }
 					queryBuffer.append( "," );
 				}
-				queryBuffer.append( dbKeyName ).append( " = " );
-				EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
+                                //queryBuffer.setLength( queryBuffer.length() - 1 );
+                                queryBuffer.append(" ").append( dbKeyName ).append( "=" );
+                                EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
+                                
 			}
 
 			log.info( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + ").  query:" + queryBuffer.toString() );
 			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
+                        for (int i = 0; i < preparedStatementParams.size(); i++) {
+                                Object value = preparedStatementParams.get(i);
+                                if (value instanceof byte[]) {
+                                    pstmt.setBytes(i, (byte[]) value);
+                                } else {
+                                    pstmt.setObject(i, value);
+                                }
+                        }
 			log.info( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). inserted or updated: " + pstmt.executeUpdate() );
 		}
 		catch (SQLException e) {
@@ -546,13 +588,29 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 	@Override
 	public GridType overrideType(Type type) {
-		log.info( "overrideType:" + type.getName() + ";" + type.getReturnedClass() );
+		log.info( "overrideType:" + type.getName() + ";" + type.getReturnedClass()+";" );
 		GridType gridType = null;
                 if ( type.getName().equals(ORecordId.class.getName() ) ) {
 			gridType = ORecordIdGridType.INSTANCE;
 		} else if ( type.getName().equals( ORidBag.class.getName() ) ) {
 			gridType = ORidBagGridType.INSTANCE;
+		}// persist calendars as ISO8601 strings, including TZ info
+		/*else if ( type == StandardBasicTypes.CALENDAR ) {
+			return Iso8601StringCalendarType.DATE_TIME;
 		}
+		else if ( type == StandardBasicTypes.CALENDAR_DATE ) {
+			return Iso8601StringCalendarType.DATE;
+		} */
+		// persist date as ISO8601 strings, in UTC, without TZ info
+		/*else if ( type == StandardBasicTypes.DATE ) {
+			return Iso8601StringDateType.DATE;
+		}
+		else if ( type == StandardBasicTypes.TIME ) {
+			return Iso8601StringDateType.TIME;
+		}
+		else if ( type == StandardBasicTypes.TIMESTAMP ) {
+			return Iso8601StringDateType.DATE_TIME;
+		} */
 		else {
 			gridType = super.overrideType( type );
 		}

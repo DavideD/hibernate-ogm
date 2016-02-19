@@ -34,6 +34,7 @@ import org.hibernate.ogm.datastore.spi.BaseSchemaDefiner;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.type.BigDecimalType;
+import org.hibernate.type.BigIntegerType;
 import org.hibernate.type.BooleanType;
 import org.hibernate.type.DoubleType;
 import org.hibernate.type.FloatType;
@@ -44,12 +45,23 @@ import org.hibernate.type.ShortType;
 import org.hibernate.type.DateType;
 import org.hibernate.type.BinaryType;
 import org.hibernate.type.ByteType;
+import org.hibernate.type.CalendarDateType;
+import org.hibernate.type.CalendarType;
+import org.hibernate.type.CharacterType;
 import org.hibernate.type.CustomType;
 import org.hibernate.type.EntityType;
 import org.hibernate.type.EnumType;
 import org.hibernate.type.ManyToOneType;
+import org.hibernate.type.MaterializedBlobType;
+import org.hibernate.type.MaterializedClobType;
+import org.hibernate.type.NumericBooleanType;
 import org.hibernate.type.OneToOneType;
+import org.hibernate.type.SerializableToBlobType;
+import org.hibernate.type.TimeType;
 import org.hibernate.type.TimestampType;
+import org.hibernate.type.TrueFalseType;
+import org.hibernate.type.UUIDBinaryType;
+import org.hibernate.type.UrlType;
 import org.hibernate.type.YesNoType;
 import org.hibernate.usertype.UserType;
 
@@ -69,18 +81,30 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 	static {
 		Map<Class, String> map = new HashMap<>();
 
-		map.put( ByteType.class, "byte" );
+		map.put( NumericBooleanType.class, "string" );
+                map.put( ByteType.class, "byte" );
                 map.put( IntegerType.class, "integer" );
 		map.put( ShortType.class, "short" );
 		map.put( LongType.class, "long" );
 		map.put( FloatType.class, "float" );
 		map.put( DoubleType.class, "double" );
 		map.put( DateType.class, "date" );
-                map.put( TimestampType.class, "datetime" );
+                map.put( CalendarDateType.class, "date" );
+                map.put( TimestampType.class, "datetime" );                
+                map.put( CalendarType.class, "datetime" );
+                map.put( TimeType.class, "datetime" );
 		map.put( BooleanType.class, "boolean" );
+                map.put( TrueFalseType.class, "string" );
                 map.put( YesNoType.class, "string" );
 		map.put( StringType.class, "string" );
+                map.put( UrlType.class, "string" );
+                map.put( MaterializedClobType.class, "string" );
+                map.put( CharacterType.class, "string" );
 		map.put( BinaryType.class, "binary" ); // byte[]
+                map.put( MaterializedBlobType.class, "binary" ); // byte[]
+                map.put( SerializableToBlobType.class, "binary" ); // byte[]
+                map.put( UUIDBinaryType.class, "binary" ); 
+                map.put( BigIntegerType.class, "binary" );
 		map.put( BigDecimalType.class, "decimal" );
 
 		TYPE_MAPPING = Collections.unmodifiableMap( map );
