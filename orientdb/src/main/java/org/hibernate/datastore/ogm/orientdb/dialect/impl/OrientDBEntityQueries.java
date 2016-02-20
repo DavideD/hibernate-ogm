@@ -13,6 +13,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -99,7 +101,11 @@ public class OrientDBEntityQueries extends QueriesBase {
                                 LOG.info( i + " dbColumnName " + dbColumnName + "; dbValue class:" + (dbValue!=null ? dbValue.getClass() : null) );
                                 LOG.info( i + " dbColumnName " + dbColumnName + "; sql type:" + rs.getMetaData().getColumnTypeName(dbFieldNo));
 				dbValues.put( dbColumnName, dbValue );
-
+                                if (dbValue!=null && dbValue.getClass().equals(Date.class)) {
+                                    String format = rs.getMetaData().getColumnTypeName(dbFieldNo).equals("DATETIME") 
+                                            ? OrientDBConstant.DATETIME_FORMAT : OrientDBConstant.DATE_FORMAT;
+                                    dbValues.put( dbColumnName, new SimpleDateFormat(format).format(dbValue));
+                                }
 			}
                         reCastValues(dbValues);
 			LOG.info( " entiry values from db: " + dbValues );

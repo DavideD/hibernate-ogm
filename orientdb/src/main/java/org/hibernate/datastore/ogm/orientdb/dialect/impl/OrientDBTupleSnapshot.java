@@ -14,7 +14,6 @@ import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.utils.AssociationUtil;
-import org.hibernate.datastore.ogm.orientdb.utils.ORidBagUtil;
 import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
@@ -41,6 +40,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		this.entityKeyMetadata = entityKeyMetadata;
 		LOG.info( "1.dbNameValueMap:" + dbNameValueMap );
 		LOG.info( "1.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
+                LOG.info( "1.rolesByColumn:" + rolesByColumn );
 	}
 
 	public OrientDBTupleSnapshot(Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
@@ -49,6 +49,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		this( new HashMap<String, Object>(), associatedEntityKeyMetadata, rolesByColumn, entityKeyMetadata );
 		LOG.info( "2.dbNameValueMap:" + dbNameValueMap );
 		LOG.info( "2.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
+                LOG.info( "2.rolesByColumn:" + rolesByColumn );
 	}
 
 	@Override

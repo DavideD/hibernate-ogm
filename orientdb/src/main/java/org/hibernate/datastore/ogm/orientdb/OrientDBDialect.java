@@ -27,7 +27,6 @@ import org.hibernate.datastore.ogm.orientdb.query.impl.OrientDBParameterMetadata
 import org.hibernate.datastore.ogm.orientdb.type.spi.ORecordIdGridType;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.dialect.identity.spi.IdentityColumnAwareGridDialect;
-import org.hibernate.ogm.dialect.multiget.spi.MultigetGridDialect;
 import org.hibernate.ogm.dialect.query.spi.BackendQuery;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
@@ -55,20 +54,14 @@ import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.type.Type;
 
 import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import javax.persistence.EntityNotFoundException;
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationSnapshot;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleAssociationSnapshot;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.ResultSetTupleIterator;
 import org.hibernate.datastore.ogm.orientdb.impl.OrientDBSchemaDefiner;
 import org.hibernate.datastore.ogm.orientdb.type.spi.ORidBagGridType;
-import org.hibernate.datastore.ogm.orientdb.utils.AssociationUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.SequenceUtil;
 import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
@@ -76,8 +69,10 @@ import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata.IdSourceType;
 import org.hibernate.ogm.model.key.spi.RowKey;
 import org.hibernate.ogm.type.impl.Iso8601StringCalendarType;
 import org.hibernate.ogm.type.impl.Iso8601StringDateType;
+import org.hibernate.ogm.type.impl.SerializableAsStringType;
 import org.hibernate.service.spi.ServiceRegistryAwareService;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
+import org.hibernate.type.SerializableToBlobType;
 import org.hibernate.type.StandardBasicTypes;
 
 /**
@@ -213,7 +208,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
                                             preparedStatementParams.add(tuple.get( columnName ));
                                         } else {
                                             EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
-                                            
                                         }
 					queryBuffer.append( "," );
 				}
@@ -588,7 +582,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 	@Override
 	public GridType overrideType(Type type) {
-		log.info( "overrideType:" + type.getName() + ";" + type.getReturnedClass()+";" );
+		log.info( "overrideType:" + type.getName() + ";" + type.getReturnedClass()+";");
 		GridType gridType = null;
                 if ( type.getName().equals(ORecordId.class.getName() ) ) {
 			gridType = ORecordIdGridType.INSTANCE;
@@ -596,13 +590,30 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			gridType = ORidBagGridType.INSTANCE;
 		}// persist calendars as ISO8601 strings, including TZ info
 		/*else if ( type == StandardBasicTypes.CALENDAR ) {
+			gridType = Iso8601CalendarGridType.DATETIME_INSTANCE;
+		}
+		else if ( type == StandardBasicTypes.CALENDAR_DATE ) {
+			gridType = Iso8601CalendarGridType.DATE_INSTANCE;
+		} 
+		else if ( type == StandardBasicTypes.DATE ) {
+			return Iso8601DateGridType.DATE_INSTANCE;
+		}
+		else if ( type == StandardBasicTypes.TIME ) {
+			return Iso8601DateGridType.DATETIME_INSTANCE;
+		}
+		else if ( type == StandardBasicTypes.TIMESTAMP ) {
+			return Iso8601DateGridType.DATETIME_INSTANCE;
+		} */
+                
+                // persist calendars as ISO8601 strings, including TZ info
+		else if ( type == StandardBasicTypes.CALENDAR ) {
 			return Iso8601StringCalendarType.DATE_TIME;
 		}
 		else if ( type == StandardBasicTypes.CALENDAR_DATE ) {
 			return Iso8601StringCalendarType.DATE;
-		} */
+		}
 		// persist date as ISO8601 strings, in UTC, without TZ info
-		/*else if ( type == StandardBasicTypes.DATE ) {
+		else if ( type == StandardBasicTypes.DATE ) {
 			return Iso8601StringDateType.DATE;
 		}
 		else if ( type == StandardBasicTypes.TIME ) {
@@ -610,7 +621,11 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		}
 		else if ( type == StandardBasicTypes.TIMESTAMP ) {
 			return Iso8601StringDateType.DATE_TIME;
-		} */
+		}
+                else if ( type instanceof SerializableToBlobType ) {
+			SerializableToBlobType<?> exposedType = (SerializableToBlobType<?>) type;
+			return new SerializableAsStringType<>( exposedType.getJavaTypeDescriptor() );
+		}
 		else {
 			gridType = super.overrideType( type );
 		}

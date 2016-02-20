@@ -80,10 +80,10 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	static {
 		Map<Class, String> map = new HashMap<>();
-
-		map.put( NumericBooleanType.class, "string" );
+		
                 map.put( ByteType.class, "byte" );
                 map.put( IntegerType.class, "integer" );
+                map.put( NumericBooleanType.class, "short" );
 		map.put( ShortType.class, "short" );
 		map.put( LongType.class, "long" );
 		map.put( FloatType.class, "float" );
@@ -93,18 +93,22 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
                 map.put( TimestampType.class, "datetime" );                
                 map.put( CalendarType.class, "datetime" );
                 map.put( TimeType.class, "datetime" );
-		map.put( BooleanType.class, "boolean" );
+		
+                map.put( BooleanType.class, "boolean" );
+                
                 map.put( TrueFalseType.class, "string" );
                 map.put( YesNoType.class, "string" );
 		map.put( StringType.class, "string" );
                 map.put( UrlType.class, "string" );
                 map.put( MaterializedClobType.class, "string" );
                 map.put( CharacterType.class, "string" );
-		map.put( BinaryType.class, "binary" ); // byte[]
+                map.put( UUIDBinaryType.class, "string" ); 
+		
+                map.put( BinaryType.class, "binary" ); // byte[]
                 map.put( MaterializedBlobType.class, "binary" ); // byte[]
-                map.put( SerializableToBlobType.class, "binary" ); // byte[]
-                map.put( UUIDBinaryType.class, "binary" ); 
+                map.put( SerializableToBlobType.class, "binary" ); // byte[]                
                 map.put( BigIntegerType.class, "binary" );
+                
 		map.put( BigDecimalType.class, "decimal" );
 
 		TYPE_MAPPING = Collections.unmodifiableMap( map );

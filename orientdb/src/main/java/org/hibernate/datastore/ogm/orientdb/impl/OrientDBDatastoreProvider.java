@@ -35,7 +35,8 @@ import org.hibernate.service.spi.Stoppable;
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
-	private static Log LOG = LoggerFactory.getLogger();
+	private static boolean isInmemoryDB = false;
+        private static Log LOG = LoggerFactory.getLogger();
         private static OrientGraphFactory factory;
 	private ConfigurationPropertyReader propertyReader;
 	private ServiceRegistryImplementor registry;
@@ -75,8 +76,12 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
         
         
         private void setDateFormats(Connection connection) throws SQLException {
-            connection.createStatement().execute("ALTER DATABASE DATETIMEFORMAT \""+OrientDBConstant.DATETIME_FORMAT+"\"");
-            connection.createStatement().execute("ALTER DATABASE DATEFORMAT \""+OrientDBConstant.DATE_FORMAT+"\"");
+            connection.createStatement().execute("ALTER DATABASE DATETIMEFORMAT "+OrientDBConstant.DATETIME_FORMAT+"");
+            connection.createStatement().execute("ALTER DATABASE DATEFORMAT "+OrientDBConstant.DATE_FORMAT+"");
+            //@TODO Don't forget remove the code!! It is for test only!!!!
+            if (isInmemoryDB) {
+                connection.createStatement().execute("ALTER DATABASE TIMEZONE GMT+0");
+            }
         }
         
         
@@ -84,6 +89,7 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
             String orientDbUrl = jdbcUrl.substring("jdbc:orient:".length());
             
             if (orientDbUrl.startsWith("memory") ) {
+                isInmemoryDB = true;
                 MemoryDBUtil.createDbFactory(orientDbUrl);
             }
             

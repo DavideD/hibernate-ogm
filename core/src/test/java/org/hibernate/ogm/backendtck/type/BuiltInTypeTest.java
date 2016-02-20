@@ -249,7 +249,8 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "Time zones doe not match", expectedTimeZoneOffset, actualTimeZoneOffset );
 	}
 
-	@Test
+        @Test
+        @SkipByGridDialect(value = { GridDialectType.ORIENTDB},comment = "OrientDB has not type for storing time. Either date or datetime")
 	public void testDatePersistedAsTemporalTypeTimeSupport() throws Exception {
 		Date updateTime = new Date();
 		bookmark.setUpdateTime( updateTime );
