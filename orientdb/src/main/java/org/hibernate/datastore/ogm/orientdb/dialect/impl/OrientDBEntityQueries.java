@@ -6,7 +6,6 @@
  */
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
-import com.orientechnologies.orient.core.id.ORecordId;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -20,16 +19,19 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
+import org.hibernate.ogm.model.impl.DefaultEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.Tuple;
-import org.hibernate.ogm.model.impl.DefaultEntityKeyMetadata;
+
+import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
@@ -94,20 +96,21 @@ public class OrientDBEntityQueries extends QueriesBase {
 			for ( int i = 0; i < rs.getMetaData().getColumnCount(); i++ ) {
 				int dbFieldNo = i + 1;
 				String dbColumnName = metadata.getColumnName( dbFieldNo );
-				/*if ( isLinkedProperty( dbColumnName ) ) {
-					continue;
-				} */
+				/*
+				 * if ( isLinkedProperty( dbColumnName ) ) { continue; }
+				 */
 				Object dbValue = rs.getObject( dbColumnName );
-                                LOG.info( i + " dbColumnName " + dbColumnName + "; dbValue class:" + (dbValue!=null ? dbValue.getClass() : null) );
-                                LOG.info( i + " dbColumnName " + dbColumnName + "; sql type:" + rs.getMetaData().getColumnTypeName(dbFieldNo));
+				LOG.info( i + " dbColumnName " + dbColumnName + "; dbValue class:" + ( dbValue != null ? dbValue.getClass() : null ) );
+				LOG.info( i + " dbColumnName " + dbColumnName + "; sql type:" + rs.getMetaData().getColumnTypeName( dbFieldNo ) );
 				dbValues.put( dbColumnName, dbValue );
-                                if (dbValue!=null && dbValue.getClass().equals(Date.class)) {
-                                    String format = rs.getMetaData().getColumnTypeName(dbFieldNo).equals("DATETIME") 
-                                            ? OrientDBConstant.DATETIME_FORMAT : OrientDBConstant.DATE_FORMAT;
-                                    dbValues.put( dbColumnName, new SimpleDateFormat(format).format(dbValue));
-                                }
+				if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
+					String format = rs.getMetaData().getColumnTypeName( dbFieldNo ).equals( "DATETIME" )
+							? OrientDBConstant.DATETIME_FORMAT
+							: OrientDBConstant.DATE_FORMAT;
+					dbValues.put( dbColumnName, new SimpleDateFormat( format ).format( dbValue ) );
+				}
 			}
-                        reCastValues(dbValues);
+			reCastValues( dbValues );
 			LOG.info( " entiry values from db: " + dbValues );
 		}
 		else {
@@ -116,19 +119,18 @@ public class OrientDBEntityQueries extends QueriesBase {
 
 		return dbValues;
 	}
-        
-        private void reCastValues(Map<String, Object> map) {
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
-                String key = entry.getKey();
-                Object value = entry.getValue();
-                if (value instanceof BigDecimal) {
-                    BigDecimal bd = (BigDecimal) value;
-                    entry.setValue(bd.toString());
-                }
-                
-            }
-        }
-        
+
+	private void reCastValues(Map<String, Object> map) {
+		for ( Map.Entry<String, Object> entry : map.entrySet() ) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+			if ( value instanceof BigDecimal ) {
+				BigDecimal bd = (BigDecimal) value;
+				entry.setValue( bd.toString() );
+			}
+
+		}
+	}
 
 	private boolean isLinkedProperty(String propertyName) {
 		for ( String linkFieldStarts : OrientDBConstant.LINK_FIELDS ) {
@@ -154,7 +156,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 			String name = associationKey.getColumnNames()[i];
 			Object value = associationKey.getColumnValues()[i];
 			query.append( name ).append( "=" );
-                        EntityKeyUtil.setFieldValue(query, value);
+			EntityKeyUtil.setFieldValue( query, value );
 		}
 
 		LOG.info( "findAssociation: query:" + query );
@@ -196,7 +198,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 
 	/**
 	 * no links of the type (class) in DB. this is not error
-	 * 
+	 *
 	 * @param sqle
 	 * @return
 	 */

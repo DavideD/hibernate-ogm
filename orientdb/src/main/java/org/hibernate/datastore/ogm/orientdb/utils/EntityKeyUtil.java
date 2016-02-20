@@ -1,9 +1,9 @@
 /*
-* Hibernate OGM, Domain model persistence for NoSQL datastores
-* 
-* License: GNU Lesser General Public License (LGPL), version 2.1 or later
-* See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
-*/
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+ */
 
 package org.hibernate.datastore.ogm.orientdb.utils;
 
@@ -28,31 +28,31 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 public class EntityKeyUtil {
 
 	private static final Log log = LoggerFactory.getLogger();
-        
 
 	public static void setFieldValue(StringBuilder queryBuffer, Object dbKeyValue) {
-                if (dbKeyValue!=null) {
-                    //@TODO not forget remove the code!
-                    log.info("dbKeyValue class;"+dbKeyValue.getClass());
-                }
+		if ( dbKeyValue != null ) {
+			// @TODO not forget remove the code!
+			log.info( "dbKeyValue class;" + dbKeyValue.getClass() );
+		}
 		if ( dbKeyValue instanceof String || dbKeyValue instanceof UUID || dbKeyValue instanceof Character ) {
 			queryBuffer.append( "'" ).append( dbKeyValue ).append( "'" );
-		} else if ( dbKeyValue instanceof Date || dbKeyValue instanceof Calendar) {
-                        Calendar calendar = null;
-                        if (dbKeyValue instanceof Date ) {
-                            calendar = Calendar.getInstance();
-                            calendar.setTime((Date) dbKeyValue);
-                        } else if (dbKeyValue instanceof Calendar ) {
-                            calendar = (Calendar) dbKeyValue;
-                        }
-                        String formattedStr = (new SimpleDateFormat(OrientDBConstant.DATETIME_FORMAT)).format(calendar.getTime());
+		}
+		else if ( dbKeyValue instanceof Date || dbKeyValue instanceof Calendar ) {
+			Calendar calendar = null;
+			if ( dbKeyValue instanceof Date ) {
+				calendar = Calendar.getInstance();
+				calendar.setTime( (Date) dbKeyValue );
+			}
+			else if ( dbKeyValue instanceof Calendar ) {
+				calendar = (Calendar) dbKeyValue;
+			}
+			String formattedStr = ( new SimpleDateFormat( OrientDBConstant.DATETIME_FORMAT ) ).format( calendar.getTime() );
 			queryBuffer.append( "'" ).append( formattedStr ).append( "'" );
 		}
 		else {
 			queryBuffer.append( dbKeyValue );
 		}
 	}
-        
 
 	public static Object findPrimaryKeyValue(EntityKey key) {
 		Object dbKeyValue = null;
@@ -116,7 +116,7 @@ public class EntityKeyUtil {
 		if ( rs.next() ) {
 			log.info( "findRid: find" );
 			rid = (ORecordId) rs.getObject( OrientDBConstant.SYSTEM_RID );
-                        log.info( "findRid: rid: "+rid );
+			log.info( "findRid: rid: " + rid );
 		}
 		return rid;
 	}

@@ -6,8 +6,9 @@
  */
 package org.hibernate.datastore.ogm.orientdb.utils;
 
-import org.apache.log4j.BasicConfigurator;
 import static org.hibernate.datastore.ogm.orientdb.OrientDBSimpleTest.MEMORY_TEST;
+
+import org.apache.log4j.BasicConfigurator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.extensions.cpsuite.ClasspathSuite;
@@ -31,7 +32,7 @@ public class OrientDBBackendTckHelper {
 	}
 
 	@AfterClass
-	public static void tearDownClass() {		
-		MemoryDBUtil.recrateInMemoryDn(MEMORY_TEST);
+	public static void tearDownClass() {
+		MemoryDBUtil.recrateInMemoryDn( MEMORY_TEST );
 	}
 }

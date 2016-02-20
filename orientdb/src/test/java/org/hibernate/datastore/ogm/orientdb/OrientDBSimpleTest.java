@@ -6,16 +6,22 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
-import com.orientechnologies.orient.core.id.ORecordId;
-import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
+
 import org.apache.log4j.BasicConfigurator;
 import org.hibernate.datastore.ogm.orientdb.jpa.Customer;
 import org.hibernate.datastore.ogm.orientdb.jpa.Pizza;
@@ -25,14 +31,16 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.FixMethodOrder;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
+
+import com.orientechnologies.orient.core.id.ORecordId;
+import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
 
 /**
  * Test checks CRUD for simple entities (without links with other entities)
- * 
+ *
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

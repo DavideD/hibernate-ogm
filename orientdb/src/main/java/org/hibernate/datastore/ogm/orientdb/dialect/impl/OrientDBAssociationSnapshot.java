@@ -1,9 +1,9 @@
 /*
-* Hibernate OGM, Domain model persistence for NoSQL datastores
-* 
-* License: GNU Lesser General Public License (LGPL), version 2.1 or later
-* See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
-*/
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+ */
 
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
@@ -30,6 +30,12 @@ public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 	}
 
 	@Override
+	public boolean containsKey(RowKey rowKey) {
+		LOG.info( "containsKey: rowKey :" + rowKey );
+		return tuples.containsKey( rowKey );
+	}
+
+	@Override
 	public Tuple get(RowKey rowKey) {
 		LOG.info( "get: rowKey :" + rowKey );
 		Tuple tuple = tuples.get( rowKey );
@@ -37,19 +43,13 @@ public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 	}
 
 	@Override
-	public boolean containsKey(RowKey rowKey) {
-		LOG.info( "containsKey: rowKey :" + rowKey );
-		return tuples.containsKey( rowKey );
+	public Set<RowKey> getRowKeys() {
+		return tuples.keySet();
+
 	}
 
 	@Override
 	public int size() {
 		return tuples.size();
-	}
-
-	@Override
-	public Set<RowKey> getRowKeys() {
-		return tuples.keySet();
-
 	}
 }

@@ -40,7 +40,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		this.entityKeyMetadata = entityKeyMetadata;
 		LOG.info( "1.dbNameValueMap:" + dbNameValueMap );
 		LOG.info( "1.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
-                LOG.info( "1.rolesByColumn:" + rolesByColumn );
+		LOG.info( "1.rolesByColumn:" + rolesByColumn );
 	}
 
 	public OrientDBTupleSnapshot(Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
@@ -49,7 +49,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		this( new HashMap<String, Object>(), associatedEntityKeyMetadata, rolesByColumn, entityKeyMetadata );
 		LOG.info( "2.dbNameValueMap:" + dbNameValueMap );
 		LOG.info( "2.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
-                LOG.info( "2.rolesByColumn:" + rolesByColumn );
+		LOG.info( "2.rolesByColumn:" + rolesByColumn );
 	}
 
 	@Override
@@ -59,23 +59,19 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) && value == null ) {
 			value = Integer.valueOf( 0 );
 		}
-		/*else if ( associatedEntityKeyMetadata.containsKey( targetColumnName ) ) {
-			LOG.info( "associated targetColumnName: " + targetColumnName );
-			String mappedByName = AssociationUtil.getMappedByFieldName( associatedEntityKeyMetadata.get( targetColumnName ) );
-			String inOrientDbField = "in_".concat( mappedByName );
-			Map<String, Object> associatedEntity = loadAssociatedEntity( associatedEntityKeyMetadata.get( targetColumnName ), targetColumnName );
-			if ( associatedEntity != null ) {
-				for ( Map.Entry<String, Object> entry : associatedEntity.entrySet() ) {
-					LOG.info( "name: " + entry.getKey() + "; value:" + entry.getValue() );
-				}
-				String string = (String) associatedEntity.get( inOrientDbField );
-				value = ORidBagUtil.convertStringToORidBag( string );
-				dbNameValueMap.remove( targetColumnName );
-			}
-		} */
+		/*
+		 * else if ( associatedEntityKeyMetadata.containsKey( targetColumnName ) ) { LOG.info(
+		 * "associated targetColumnName: " + targetColumnName ); String mappedByName =
+		 * AssociationUtil.getMappedByFieldName( associatedEntityKeyMetadata.get( targetColumnName ) ); String
+		 * inOrientDbField = "in_".concat( mappedByName ); Map<String, Object> associatedEntity = loadAssociatedEntity(
+		 * associatedEntityKeyMetadata.get( targetColumnName ), targetColumnName ); if ( associatedEntity != null ) {
+		 * for ( Map.Entry<String, Object> entry : associatedEntity.entrySet() ) { LOG.info( "name: " + entry.getKey() +
+		 * "; value:" + entry.getValue() ); } String string = (String) associatedEntity.get( inOrientDbField ); value =
+		 * ORidBagUtil.convertStringToORidBag( string ); dbNameValueMap.remove( targetColumnName ); } }
+		 */
 		else {
 			value = dbNameValueMap.get( targetColumnName );
-			LOG.info( "targetColumnName: " + targetColumnName + "; value: " + value +"; class :"+(value!=null ? value.getClass() : null));
+			LOG.info( "targetColumnName: " + targetColumnName + "; value: " + value + "; class :" + ( value != null ? value.getClass() : null ) );
 		}
 		return value;
 	}

@@ -47,7 +47,8 @@ public class PhoneNumber {
 	}
 
 	@Embeddable
-	public static class PhoneNumberId implements Serializable {
+	public static class PhoneNumberId implements Serializable {		
+		private static final long serialVersionUID = 1L;
 		private String countryCode;
 		private long number;
 

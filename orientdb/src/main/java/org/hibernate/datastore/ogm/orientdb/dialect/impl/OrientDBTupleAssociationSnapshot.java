@@ -1,6 +1,6 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
- * 
+ *
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
@@ -10,12 +10,13 @@ package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
-import org.hibernate.ogm.model.key.spi.AssociationKey;
-import org.hibernate.ogm.model.spi.TupleSnapshot;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
+import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.key.spi.AssociationKind;
+import org.hibernate.ogm.model.spi.TupleSnapshot;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
@@ -24,10 +25,11 @@ import org.hibernate.ogm.model.key.spi.AssociationKind;
 public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 
 	private static Log log = LoggerFactory.getLogger();
-	private Map<String, Object> relationship;
-	private AssociationKey associationKey;
 	private AssociationContext associationContext;
+	private AssociationKey associationKey;
 	private final Map<String, Object> properties;
+
+	private Map<String, Object> relationship;
 
 	public OrientDBTupleAssociationSnapshot(Map<String, Object> relationship, AssociationKey associationKey, AssociationContext associationContext) {
 		log.info( "OrientDBTupleAssociationSnapshot: AssociationKey:" + associationKey + "; AssociationContext" + associationContext );
@@ -80,14 +82,16 @@ public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 		return properties;
 	}
 
-	private static boolean isEmbeddedCollection(AssociationKey associationKey) {
-		return associationKey.getMetadata().getAssociationKind() == AssociationKind.EMBEDDED_COLLECTION;
-	}
-
 	@Override
 	public Object get(String column) {
 		log.info( "targetColumnName: " + column );
 		return properties.get( column );
+	}
+
+	@Override
+	public Set<String> getColumnNames() {
+		log.info( "getColumnNames " );
+		return properties.keySet();
 	}
 
 	@Override
@@ -96,10 +100,8 @@ public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 		return properties.isEmpty();
 	}
 
-	@Override
-	public Set<String> getColumnNames() {
-		log.info( "getColumnNames " );
-		return properties.keySet();
+	private static boolean isEmbeddedCollection(AssociationKey associationKey) {
+		return associationKey.getMetadata().getAssociationKind() == AssociationKind.EMBEDDED_COLLECTION;
 	}
 
 }
