@@ -1,14 +1,14 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
- * 
+ *
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
-import com.orientechnologies.orient.core.id.ORecordId;
 import java.util.List;
 import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -17,7 +17,10 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.Version;
+
 import org.hibernate.search.annotations.Indexed;
+
+import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
@@ -33,10 +36,10 @@ public class Pizza {
 	private String name;
 	@OneToMany(mappedBy = "buying")
 	private List<OrderItem> orderItems;
-        
-        @ManyToMany
-        private List<Product> products;
-        
+
+	@ManyToMany
+	private List<Product> products;
+
 	@Version
 	@Column(name = "@version")
 	private int version;
@@ -83,14 +86,13 @@ public class Pizza {
 		this.rid = rid;
 	}
 
-        public List<Product> getProducts() {
-            return products;
-        }
+	public List<Product> getProducts() {
+		return products;
+	}
 
-        public void setProducts(List<Product> products) {
-              this.products = products;
-        }
-        
+	public void setProducts(List<Product> products) {
+		this.products = products;
+	}
 
 	@Override
 	public int hashCode() {

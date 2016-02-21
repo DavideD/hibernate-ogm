@@ -72,12 +72,36 @@ import org.hibernate.usertype.UserType;
 
 public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
-	private static final Log log = LoggerFactory.getLogger();
-	private static final Map<Class, String> TYPE_MAPPING;
-	private static final Map<Class, Class> RETURNED_CLASS_TYPE_MAPPING;
-	private static final Set<Class> SEQ_TYPES;
-	private static final Set<Class> RELATIONS_TYPES;
+	private class EmbedColumnName {
+
+		private String emdeddedFieldName;
+		private String mainFieldName;
+
+		public EmbedColumnName(String mainFieldName, String emdeddedFieldName) {
+			this.mainFieldName = mainFieldName;
+			this.emdeddedFieldName = emdeddedFieldName;
+		}
+
+		public String getEmdeddedFieldName() {
+			return emdeddedFieldName;
+		}
+
+		public String getMainFieldName() {
+			return mainFieldName;
+		}
+
+	}
 	private static final String CREATE_PROPERTY_TEMPLATE = "create property {0}.{1} {2}";
+	private static final Log log = LoggerFactory.getLogger();
+	private static final Pattern PATTERN = Pattern.compile( "directed([a-zA-Z_0-9])\\.(.+)" );
+	private static final Set<Class> RELATIONS_TYPES;
+	private static final Map<Class, Class> RETURNED_CLASS_TYPE_MAPPING;
+
+	private static final Set<Class> SEQ_TYPES;
+
+	private static final Map<Class, String> TYPE_MAPPING;
+
+	private OrientDBDatastoreProvider provider;
 
 	static {
 		Map<Class, String> map = new HashMap<>();
@@ -132,20 +156,13 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	}
 
-	private OrientDBDatastoreProvider provider;
+	private String createClassQuery(Table table) {
+		return MessageFormat.format( "create class {0} extends V", table.getName() );
+	}
 
-	@Override
-	public void initializeSchema(SchemaDefinitionContext context) {
-		SessionFactoryImplementor sessionFactoryImplementor = context.getSessionFactory();
-		ServiceRegistryImplementor registry = sessionFactoryImplementor.getServiceRegistry();
-		provider = (OrientDBDatastoreProvider) registry.getService( DatastoreProvider.class );
-		try {
-			createEntities( context );
-		}
-		catch (SQLException e) {
-			log.error( "Can not initialize schema!", e );
-			throw new RuntimeException( "Can not initialize schema!", e );
-		}
+	private String createEdgeType(String edgeType) {
+		return MessageFormat.format( "CREATE CLASS {0} EXTENDS E",
+				edgeType );
 	}
 
 	private void createEntities(SchemaDefinitionContext context) throws SQLException {
@@ -214,89 +231,31 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		provider.getConnection().createStatement().execute( "CREATE SEQUENCE HIBERNATE_SEQUENCE TYPE ORDERED START 1" );
 	}
 
-	private boolean isEmbeddedColumn(Column column) {
-		return column.getValue().getType().getClass().equals( ManyToOneType.class ) && column.getName().contains( "." );
-	}
+	private List<String> createPrimaryKey(PrimaryKey primaryKey) {
+		List<String> queries = new ArrayList<>( 2 );
 
-	private EmbedColumnName prepareColumnNames(Column column) {
-		EmbedColumnName names = null;
-		String columnName = column.getName();
-		Matcher matcher = PATTERN.matcher( columnName );
-		if ( matcher.find() ) {
-			String mainFieldName = matcher.group( 1 );
-			String emdeddedFieldName = matcher.group( 2 );
-			names = new EmbedColumnName( mainFieldName, emdeddedFieldName );
+		String table = primaryKey.getTable().getName();
+		StringBuilder columns = new StringBuilder();
+		StringBuilder uniqueIndexQuery = new StringBuilder( 100 );
+		uniqueIndexQuery.append( "CREATE INDEX " ).append( table ).append( "_" );
+		String firstColumn = primaryKey.getColumn( 0 ).getName();
+		for ( Iterator<Column> iterator = primaryKey.getColumnIterator(); iterator.hasNext(); ) {
+			Column indexColumn = iterator.next();
+			columns.append( indexColumn.getName() ).append( "," );
 		}
-		return names;
-	}
+		columns.setLength( columns.length() - 1 );
+		uniqueIndexQuery.append( firstColumn ).append( "_pk ON " ).append( table ).append( " (" ).append( columns ).append( ") UNIQUE" );
+		queries.add( uniqueIndexQuery.toString() );
 
-	private static final Pattern PATTERN = Pattern.compile( "directed([a-zA-Z_0-9])\\.(.+)" );
-
-	private class EmbedColumnName {
-
-		private String mainFieldName;
-		private String emdeddedFieldName;
-
-		public EmbedColumnName(String mainFieldName, String emdeddedFieldName) {
-			this.mainFieldName = mainFieldName;
-			this.emdeddedFieldName = emdeddedFieldName;
+		log.info( "primaryKey.getColumns().get(0).getValue().getType().getClass(): " + primaryKey.getColumns().get( 0 ).getValue().getType().getClass() );
+		if ( primaryKey.getColumns().size() == 1 && SEQ_TYPES.contains( primaryKey.getColumns().get( 0 ).getValue().getType().getClass() ) ) {
+			StringBuilder seq = new StringBuilder( 100 );
+			seq.append( "CREATE SEQUENCE " );
+			seq.append( generateSeqName( primaryKey.getTable().getName(), primaryKey.getColumns().get( 0 ).getName() ) );
+			seq.append( " TYPE ORDERED START 1" );
+			queries.add( seq.toString() );
 		}
-
-		public String getMainFieldName() {
-			return mainFieldName;
-		}
-
-		public String getEmdeddedFieldName() {
-			return emdeddedFieldName;
-		}
-
-	}
-
-	private boolean isMapingTable(Table table) {
-		int tableColumns = 0;
-		for ( Iterator iterator = table.getColumnIterator(); iterator.hasNext(); ) {
-			Object next = iterator.next();
-			log.info( "column: " + next );
-			tableColumns++;
-		}
-		log.info( "table columns: " + tableColumns );
-		return table.getPrimaryKey() == null && tableColumns == 2;
-	}
-
-	private Class searchMappedByReturnedClass(SchemaDefinitionContext context, Collection<Table> tables, EntityType type, Column currentColumn) {
-		String tableName = type.getAssociatedJoinable( context.getSessionFactory() ).getTableName();
-
-		Class primaryKeyClass = null;
-		for ( Table table : tables ) {
-			if ( table.getName().equals( tableName ) ) {
-				log.info( "primary key type: " + table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass() );
-				primaryKeyClass = table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass();
-			}
-		}
-		return primaryKeyClass;
-	}
-
-	private String searchMappedByName(SchemaDefinitionContext context, Collection<Table> tables, EntityType type, Column currentColumn) {
-		String columnName = currentColumn.getName();
-		String tableName = type.getAssociatedJoinable( context.getSessionFactory() ).getTableName();
-
-		String primaryKeyName = null;
-		for ( Table table : tables ) {
-			if ( table.getName().equals( tableName ) ) {
-				primaryKeyName = table.getPrimaryKey().getColumn( 0 ).getName();
-			}
-		}
-		return columnName.replace( "_" + primaryKeyName, "" );
-
-	}
-
-	private String createClassQuery(Table table) {
-		return MessageFormat.format( "create class {0} extends V", table.getName() );
-	}
-
-	private String createEdgeType(String edgeType) {
-		return MessageFormat.format( "CREATE CLASS {0} EXTENDS E",
-				edgeType );
+		return queries;
 	}
 
 	private String createValueProperyQuery(Table table, Column column) {
@@ -336,43 +295,84 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	}
 
-	private List<String> createPrimaryKey(PrimaryKey primaryKey) {
-		List<String> queries = new ArrayList<>( 2 );
-
-		String table = primaryKey.getTable().getName();
-		StringBuilder columns = new StringBuilder();
-		StringBuilder uniqueIndexQuery = new StringBuilder( 100 );
-		uniqueIndexQuery.append( "CREATE INDEX " ).append( table ).append( "_" );
-		String firstColumn = primaryKey.getColumn( 0 ).getName();
-		for ( Iterator<Column> iterator = primaryKey.getColumnIterator(); iterator.hasNext(); ) {
-			Column indexColumn = iterator.next();
-			columns.append( indexColumn.getName() ).append( "," );
+	@Override
+	public void initializeSchema(SchemaDefinitionContext context) {
+		SessionFactoryImplementor sessionFactoryImplementor = context.getSessionFactory();
+		ServiceRegistryImplementor registry = sessionFactoryImplementor.getServiceRegistry();
+		provider = (OrientDBDatastoreProvider) registry.getService( DatastoreProvider.class );
+		try {
+			createEntities( context );
 		}
-		columns.setLength( columns.length() - 1 );
-		uniqueIndexQuery.append( firstColumn ).append( "_pk ON " ).append( table ).append( " (" ).append( columns ).append( ") UNIQUE" );
-		queries.add( uniqueIndexQuery.toString() );
-
-		log.info( "primaryKey.getColumns().get(0).getValue().getType().getClass(): " + primaryKey.getColumns().get( 0 ).getValue().getType().getClass() );
-		if ( primaryKey.getColumns().size() == 1 && SEQ_TYPES.contains( primaryKey.getColumns().get( 0 ).getValue().getType().getClass() ) ) {
-			StringBuilder seq = new StringBuilder( 100 );
-			seq.append( "CREATE SEQUENCE " );
-			seq.append( generateSeqName( primaryKey.getTable().getName(), primaryKey.getColumns().get( 0 ).getName() ) );
-			seq.append( " TYPE ORDERED START 1" );
-			queries.add( seq.toString() );
+		catch (SQLException e) {
+			log.error( "Can not initialize schema!", e );
+			throw new RuntimeException( "Can not initialize schema!", e );
 		}
-		return queries;
 	}
 
-	public static String generateSeqName(String tableName, String primaryKeyName) {
-		StringBuilder buffer = new StringBuilder();
-		buffer.append( "seq_" ).append( tableName.toLowerCase() ).append( "_" ).append( primaryKeyName.toLowerCase() );
-		return buffer.toString();
+	private boolean isEmbeddedColumn(Column column) {
+		return column.getValue().getType().getClass().equals( ManyToOneType.class ) && column.getName().contains( "." );
+	}
+
+	private boolean isMapingTable(Table table) {
+		int tableColumns = 0;
+		for ( Iterator iterator = table.getColumnIterator(); iterator.hasNext(); ) {
+			Object next = iterator.next();
+			log.info( "column: " + next );
+			tableColumns++;
+		}
+		log.info( "table columns: " + tableColumns );
+		return table.getPrimaryKey() == null && tableColumns == 2;
+	}
+
+	private EmbedColumnName prepareColumnNames(Column column) {
+		EmbedColumnName names = null;
+		String columnName = column.getName();
+		Matcher matcher = PATTERN.matcher( columnName );
+		if ( matcher.find() ) {
+			String mainFieldName = matcher.group( 1 );
+			String emdeddedFieldName = matcher.group( 2 );
+			names = new EmbedColumnName( mainFieldName, emdeddedFieldName );
+		}
+		return names;
+	}
+
+	private String searchMappedByName(SchemaDefinitionContext context, Collection<Table> tables, EntityType type, Column currentColumn) {
+		String columnName = currentColumn.getName();
+		String tableName = type.getAssociatedJoinable( context.getSessionFactory() ).getTableName();
+
+		String primaryKeyName = null;
+		for ( Table table : tables ) {
+			if ( table.getName().equals( tableName ) ) {
+				primaryKeyName = table.getPrimaryKey().getColumn( 0 ).getName();
+			}
+		}
+		return columnName.replace( "_" + primaryKeyName, "" );
+
+	}
+
+	private Class searchMappedByReturnedClass(SchemaDefinitionContext context, Collection<Table> tables, EntityType type, Column currentColumn) {
+		String tableName = type.getAssociatedJoinable( context.getSessionFactory() ).getTableName();
+
+		Class primaryKeyClass = null;
+		for ( Table table : tables ) {
+			if ( table.getName().equals( tableName ) ) {
+				log.info( "primary key type: " + table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass() );
+				primaryKeyClass = table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass();
+			}
+		}
+		return primaryKeyClass;
 	}
 
 	@Override
 	public void validateMapping(SchemaDefinitionContext context) {
 		log.info( "start" );
 		super.validateMapping( context ); // To change body of generated methods, choose Tools | Templates.
+	}
+
+	public static String generateSeqName(String tableName, String primaryKeyName) {
+		StringBuilder buffer = new StringBuilder();
+		buffer.append( "seq_" ).append( tableName.toLowerCase() ).append( "_" ).append( primaryKeyName.toLowerCase() );
+		return buffer.toString();
 	}
 
 }
