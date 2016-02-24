@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 import org.hibernate.SessionFactory;
 import org.hibernate.datastore.ogm.orientdb.OrientDB;
 import org.hibernate.datastore.ogm.orientdb.OrientDBDialect;
@@ -34,17 +34,13 @@ import org.hibernate.ogm.utils.TestableGridDialect;
  */
 public class OrientDBTestHelper implements TestableGridDialect {
 
-	private static final Logger LOG = Logger.getLogger( OrientDBTestHelper.class.getName() );
+	private static final Logger log = Logger.getLogger( OrientDBTestHelper.class.getName() );
 
 	private static final String JDBC_URL = "jdbc:orient:".concat( OrientDBSimpleTest.MEMORY_TEST );
 	private static OrientGraphNoTx graphNoTx;
 
-	public OrientDBTestHelper() {
-		LOG.info( "call me" );
-		// BasicConfigurator.configure();
-		// create OrientDB in memory
+	public OrientDBTestHelper() {		
 		graphNoTx = MemoryDBUtil.createDbFactory( OrientDBSimpleTest.MEMORY_TEST );
-
 	}
 
 	@Override
@@ -82,7 +78,7 @@ public class OrientDBTestHelper implements TestableGridDialect {
 
 	@Override
 	public void dropSchemaAndDatabase(SessionFactory sessionFactory) {
-		LOG.info( "call dropSchemaAndDatabase! vertices: " + graphNoTx.countVertices() );
+		log.debug( "call dropSchemaAndDatabase! vertices: " + graphNoTx.countVertices() );
 		if ( graphNoTx.countVertices() > 0 ) {
 			MemoryDBUtil.recrateInMemoryDn( OrientDBSimpleTest.MEMORY_TEST );
 		}
@@ -101,7 +97,7 @@ public class OrientDBTestHelper implements TestableGridDialect {
 			Map<String, String> props = new HashMap<>();
 			for ( Map.Entry<Object, Object> entry : hibProperties.entrySet() ) {
 				props.put( String.valueOf( entry.getKey() ), String.valueOf( entry.getValue() ) );
-				LOG.info( entry.toString() );
+				log.debug( entry.toString() );
 			}
 			return Collections.unmodifiableMap( props );
 		}

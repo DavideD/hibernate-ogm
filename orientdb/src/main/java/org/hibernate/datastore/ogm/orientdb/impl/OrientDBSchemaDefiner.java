@@ -167,27 +167,27 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	private void createEntities(SchemaDefinitionContext context) throws SQLException {
 		for ( Namespace namespace : context.getDatabase().getNamespaces() ) {
-			log.info( "namespace: " + namespace.getName() );
+			log.debug( "namespace: " + namespace.getName() );
 			for ( Table table : namespace.getTables() ) {
-				log.info( "table: " + table );
-				log.info( "tableName: " + table.getName() );
+				log.debug( "table: " + table );
+				log.debug( "tableName: " + table.getName() );
 				boolean isMappingTable = isMapingTable( table );
 				String classQuery = createClassQuery( table );
-				log.info( "create class query: " + classQuery );
+				log.debug( "create class query: " + classQuery );
 				provider.getConnection().createStatement().execute( classQuery );
 				Iterator<Column> columnIterator = table.getColumnIterator();
 
 				while ( columnIterator.hasNext() ) {
 					Column column = columnIterator.next();
-					log.info( "relation type: " + column.getValue().getType().getClass() );
-					log.info( "column.getName(): " + column.getName() );
+					log.debug( "relation type: " + column.getValue().getType().getClass() );
+					log.debug( "column.getName(): " + column.getName() );
 					if ( OrientDBConstant.SYSTEM_FIELDS.contains( column.getName() ) ) {
 						continue;
 					}
 					else if ( RELATIONS_TYPES.contains( column.getValue().getType().getClass() ) ) {
 						// @TODO refactor it
 						Value value = column.getValue();
-						log.info( "column name:" + column.getName() + "; column.getCanonicalName():" + column.getCanonicalName() );
+						log.debug( "column name:" + column.getName() + "; column.getCanonicalName():" + column.getCanonicalName() );
 
 						if ( isEmbeddedColumn( column ) ) {
 
@@ -195,7 +195,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						else {
 							Class mappedByClass = searchMappedByReturnedClass( context, namespace.getTables(), (EntityType) value.getType(), column );
 							String propertyQuery = createValueProperyQuery( table, column, RETURNED_CLASS_TYPE_MAPPING.get( mappedByClass ) );
-							log.info( "create foreign key property query: " + propertyQuery );
+							log.debug( "create foreign key property query: " + propertyQuery );
 							provider.getConnection().createStatement().execute( propertyQuery );
 						}
 						// @TODO use Links as foreign keys. see http://orientdb.com/docs/last/SQL-Create-Link.html
@@ -203,27 +203,27 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						// @TODO support fields 'in_' and 'out_' for native queries
 						// String mappedByName = searchMappedByName( context, namespace.getTables(), (EntityType)
 						// value.getType(), column );
-						// log.info( "create edge query: " + createEdgeType( mappedByName ) );
+						// log.debug( "create edge query: " + createEdgeType( mappedByName ) );
 						// provider.getConnection().createStatement().execute( createEdgeType( mappedByName ) );
 
 					}
 					else {
 						String propertyQuery = createValueProperyQuery( table, column );
-						log.info( "create property query: " + propertyQuery );
+						log.debug( "create property query: " + propertyQuery );
 						provider.getConnection().createStatement().execute( propertyQuery );
 					}
 				}
 				if ( !isMappingTable ) {
 					PrimaryKey primaryKey = table.getPrimaryKey();
 					if ( primaryKey != null ) {
-						log.info( "primaryKey: " + primaryKey );
+						log.debug( "primaryKey: " + primaryKey );
 						for ( String primaryKeyQuery : createPrimaryKey( primaryKey ) ) {
-							log.info( "primary key query: " + primaryKeyQuery );
+							log.debug( "primary key query: " + primaryKeyQuery );
 							provider.getConnection().createStatement().execute( primaryKeyQuery );
 						}
 					}
 					else {
-						log.info( "Table " + table.getName() + " has not primary key" );
+						log.debug( "Table " + table.getName() + " has not primary key" );
 					}
 				}
 			}
@@ -247,7 +247,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		uniqueIndexQuery.append( firstColumn ).append( "_pk ON " ).append( table ).append( " (" ).append( columns ).append( ") UNIQUE" );
 		queries.add( uniqueIndexQuery.toString() );
 
-		log.info( "primaryKey.getColumns().get(0).getValue().getType().getClass(): " + primaryKey.getColumns().get( 0 ).getValue().getType().getClass() );
+		log.debug( "primaryKey.getColumns().get(0).getValue().getType().getClass(): " + primaryKey.getColumns().get( 0 ).getValue().getType().getClass() );
 		if ( primaryKey.getColumns().size() == 1 && SEQ_TYPES.contains( primaryKey.getColumns().get( 0 ).getValue().getType().getClass() ) ) {
 			StringBuilder seq = new StringBuilder( 100 );
 			seq.append( "CREATE SEQUENCE " );
@@ -266,12 +266,12 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 	private String createValueProperyQuery(Table table, Column column, Class targetTypeClass) {
 
 		Value value = column.getValue();
-		log.info( "1.Column " + column.getName() + " :" + targetTypeClass );
+		log.debug( "1.Column " + column.getName() + " :" + targetTypeClass );
 		String query = null;
 
 		if ( targetTypeClass.equals( CustomType.class ) ) {
 			CustomType type = (CustomType) value.getType();
-			log.info( "2.Column " + column.getName() + " :" + type.getUserType() );
+			log.debug( "2.Column " + column.getName() + " :" + type.getUserType() );
 			UserType userType = type.getUserType();
 			if ( userType instanceof EnumType ) {
 				EnumType enumType = (EnumType) type.getUserType();
@@ -317,10 +317,10 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		int tableColumns = 0;
 		for ( Iterator iterator = table.getColumnIterator(); iterator.hasNext(); ) {
 			Object next = iterator.next();
-			log.info( "column: " + next );
+			log.debug( "column: " + next );
 			tableColumns++;
 		}
-		log.info( "table columns: " + tableColumns );
+		log.debug( "table columns: " + tableColumns );
 		return table.getPrimaryKey() == null && tableColumns == 2;
 	}
 
@@ -356,7 +356,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		Class primaryKeyClass = null;
 		for ( Table table : tables ) {
 			if ( table.getName().equals( tableName ) ) {
-				log.info( "primary key type: " + table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass() );
+				log.debug( "primary key type: " + table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass() );
 				primaryKeyClass = table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass();
 			}
 		}
@@ -365,7 +365,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	@Override
 	public void validateMapping(SchemaDefinitionContext context) {
-		log.info( "start" );
+		log.debug( "start" );
 		super.validateMapping( context ); // To change body of generated methods, choose Tools | Templates.
 	}
 

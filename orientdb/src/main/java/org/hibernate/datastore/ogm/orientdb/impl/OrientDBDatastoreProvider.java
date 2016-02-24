@@ -38,7 +38,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
 	private static boolean isInmemoryDB = false;
-	private static Log LOG = LoggerFactory.getLogger();
+	private static Log log = LoggerFactory.getLogger();
 	private static OrientGraphFactory factory;
 	private ConfigurationPropertyReader propertyReader;
 	private ServiceRegistryImplementor registry;
@@ -54,12 +54,12 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public void start() {
-		LOG.info( "start" );
+		log.debug( "start" );
 		try {
 			PropertyReaderContext<String> jdbcUrlPropery = propertyReader.property( "javax.persistence.jdbc.url", String.class );
 			if ( jdbcUrlPropery != null ) {
 				String jdbcUrl = jdbcUrlPropery.getValue();
-				LOG.warn( "jdbcUrl:" + jdbcUrl );
+				log.warn( "jdbcUrl:" + jdbcUrl );
 				Class.forName( propertyReader.property( "javax.persistence.jdbc.driver", String.class ).getValue() ).newInstance();
 				Properties info = new Properties();
 				info.put( "user", propertyReader.property( "javax.persistence.jdbc.user", String.class ).getValue() );
@@ -72,17 +72,13 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 		}
 		catch (Exception e) {
-			throw LOG.unableToStartDatastoreProvider( e );
+			throw log.unableToStartDatastoreProvider( e );
 		}
 	}
 
 	private void setDateFormats(Connection connection) throws SQLException {
 		connection.createStatement().execute( "ALTER DATABASE DATETIMEFORMAT " + OrientDBConstant.DATETIME_FORMAT + "" );
-		connection.createStatement().execute( "ALTER DATABASE DATEFORMAT " + OrientDBConstant.DATE_FORMAT + "" );
-		// @TODO Don't forget remove the code!! It is for test only!!!!
-		if ( isInmemoryDB ) {
-			connection.createStatement().execute( "ALTER DATABASE TIMEZONE GMT+0" );
-		}
+		connection.createStatement().execute( "ALTER DATABASE DATEFORMAT " + OrientDBConstant.DATE_FORMAT + "" );		
 	}
 
 	private static void createInMemoryDB(String jdbcUrl) {
@@ -105,7 +101,7 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public void stop() {
-		LOG.info( "stop" );
+		log.debug( "stop" );
 		if ( MemoryDBUtil.getOrientGraphFactory() != null ) {
 			if ( MemoryDBUtil.getOrientGraphFactory().exists() ) {
 				MemoryDBUtil.getOrientGraphFactory().close();
@@ -116,7 +112,7 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public void configure(Map cfg) {
-		LOG.info( "config map:" + cfg.toString() );
+		log.debug( "config map:" + cfg.toString() );
 		propertyReader = new ConfigurationPropertyReader( cfg );
 
 	}

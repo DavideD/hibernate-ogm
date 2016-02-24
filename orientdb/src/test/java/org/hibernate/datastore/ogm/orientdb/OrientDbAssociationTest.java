@@ -16,9 +16,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import org.apache.log4j.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
@@ -41,6 +39,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
+import java.text.MessageFormat;
 
 /**
  * Test checks CRUD for entities with associations (with links with other entities)
@@ -50,16 +49,17 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OrientDbAssociationTest {
 
-	private static final Logger LOG = Logger.getLogger( OrientDbAssociationTest.class.getName() );
+	private static final Logger log = Logger.getLogger( OrientDbAssociationTest.class.getName() );
 	private static EntityManager em;
 	private static EntityManagerFactory emf;
 	private static OrientGraphNoTx graphNoTx;
 
 	@BeforeClass
 	public static void setUpClass() {
-		LOG.log( Level.INFO, "start" );
+		log.debug( "start" );
 		// MemoryDBUtil.prepareDb("remote:localhost/pizza");
 		graphNoTx = MemoryDBUtil.createDbFactory( OrientDBSimpleTest.MEMORY_TEST );
+                MemoryDBUtil.setDataFormats(graphNoTx);
 		BasicConfigurator.configure();
 		emf = Persistence.createEntityManagerFactory( "hibernateOgmJpaUnit" );
 		em = emf.createEntityManager();
@@ -69,7 +69,7 @@ public class OrientDbAssociationTest {
 
 	@AfterClass
 	public static void tearDownClass() {
-		LOG.log( Level.INFO, "start" );
+		log.debug(  "start" );
 		if ( em != null ) {
 			em.close();
 			emf.close();
@@ -93,7 +93,7 @@ public class OrientDbAssociationTest {
 
 	@Test
 	public void test1LinkAllAssociations() throws Exception {
-		LOG.log( Level.INFO, "start" );
+		log.debug(  "start" );
 
 		try {
 			em.getTransaction().begin();
@@ -170,7 +170,7 @@ public class OrientDbAssociationTest {
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
-			LOG.log( Level.SEVERE, "Error", e );
+			log.error( "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
@@ -178,7 +178,7 @@ public class OrientDbAssociationTest {
 
 	@Test
 	public void test2AddNewAssociations() throws Exception {
-		LOG.log( Level.INFO, "start" );
+		log.debug(  "start" );
 		try {
 			em.getTransaction().begin();
 			BuyingOrder buyingOrder3 = new BuyingOrder();
@@ -207,7 +207,7 @@ public class OrientDbAssociationTest {
 
 		}
 		catch (Exception e) {
-			LOG.log( Level.SEVERE, "Error", e );
+			log.error(  "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
@@ -215,7 +215,7 @@ public class OrientDbAssociationTest {
 
 	@Test
 	public void test3RemoveAssociations() throws Exception {
-		LOG.log( Level.INFO, "start" );
+		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
 			List<BuyingOrder> list = null;
@@ -231,10 +231,10 @@ public class OrientDbAssociationTest {
 				}
 				else {
 					removeOrder = buyingOrder;
-					LOG.log( Level.INFO, "RemovedOrder: {0}", removeOrder.getbKey() );
+					log.debug( "RemovedOrder: "+ removeOrder.getbKey() );
 				}
 			}
-			LOG.log( Level.INFO, "Orders size. old: {0}; new:{1}", new Object[]{ customer.getOrders().size(), list.size() } );
+			log.debug(  MessageFormat.format("Orders size. old: {0}; new:{1}",customer.getOrders().size(), list.size() ));
 			customer.setOrders( list );
 			em.merge( customer );
 			removeOrder.setOwner( null );
@@ -251,7 +251,7 @@ public class OrientDbAssociationTest {
 
 		}
 		catch (Exception e) {
-			LOG.log( Level.SEVERE, "Error", e );
+			log.error(  "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
@@ -259,26 +259,26 @@ public class OrientDbAssociationTest {
 
 	@Test
 	public void test4ReadAllAssociations() throws Exception {
-		LOG.log( Level.INFO, "start" );
+		log.debug(  "start" );
 		try {
 			em.getTransaction().begin();
 			Query query = em.createNativeQuery( "select from Customer where name='Ivahoe'", Customer.class );
 			List<Customer> customers = query.getResultList();
-			LOG.log( Level.INFO, "customers.size(): {0}", customers.size() );
+			log.debug(  "customers.size(): "+ customers.size() );
 			assertFalse( "Customers must be", customers.isEmpty() );
 			Customer customer = customers.get( 0 );
-			LOG.log( Level.INFO, "use Customer with id {0} ( rid: {1} )", new Object[]{ customer.getbKey(), customer.getRid() } );
+			log.debug(  MessageFormat.format( "use Customer with id {0} ( rid: {1} )",customer.getbKey(), customer.getRid() ) );
 			assertNotNull( "Customer with 'Ivahoe' must be saved!", customer );
 			assertFalse( "Customer must to have orders!", customer.getOrders().isEmpty() );
 			// assertFalse("Customer must to have phones!", customer.getPhones().isEmpty());
 			Set<String> orderKeySet = new HashSet<>();
-			LOG.log( Level.INFO, "orders :{0}", customer.getOrders().size() );
+			log.debug(  "orders :"+ customer.getOrders().size() );
 			for ( BuyingOrder order : customer.getOrders() ) {
-				LOG.log( Level.INFO, "order.orderKey:{0}; id: {1}",
-						new Object[]{ order.getOrderKey(), order.getbKey() } );
+				log.debug(  MessageFormat.format(  "order.orderKey:{0}; id: {1}",
+						order.getOrderKey(), order.getbKey() ) );
 				orderKeySet.add( order.getOrderKey() );
 			}
-			LOG.log( Level.INFO, "OrderKeys : {0}", orderKeySet );
+			log.debug( "OrderKeys : "+ orderKeySet );
 			assertTrue( "OrderKey 2233 must be linked!", orderKeySet.contains( "2233" ) );
 
 			BuyingOrder order = customer.getOrders().get( 0 );
@@ -287,7 +287,7 @@ public class OrientDbAssociationTest {
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
-			LOG.log( Level.SEVERE, "Error", e );
+			log.error( "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}

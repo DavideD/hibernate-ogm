@@ -32,7 +32,7 @@ public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 	private Map<String, Object> relationship;
 
 	public OrientDBTupleAssociationSnapshot(Map<String, Object> relationship, AssociationKey associationKey, AssociationContext associationContext) {
-		log.info( "OrientDBTupleAssociationSnapshot: AssociationKey:" + associationKey + "; AssociationContext" + associationContext );
+		log.debug( "OrientDBTupleAssociationSnapshot: AssociationKey:" + associationKey + "; AssociationContext" + associationContext );
 		this.relationship = relationship;
 		this.associationKey = associationKey;
 		this.associationContext = associationContext;
@@ -46,13 +46,13 @@ public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 		// Index columns
 		for ( int i = 0; i < rowKeyColumnNames.length; i++ ) {
 			String rowKeyColumn = rowKeyColumnNames[i];
-			log.info( "rowKeyColumn: " + rowKeyColumn + ";" );
+			log.debug( "rowKeyColumn: " + rowKeyColumn + ";" );
 
 			for ( int i1 = 0; i1 < associationKey.getColumnNames().length; i1++ ) {
 				String columnName = associationKey.getColumnNames()[i1];
-				log.info( "columnName: " + columnName + ";" );
+				log.debug( "columnName: " + columnName + ";" );
 				if ( rowKeyColumn.equals( columnName ) ) {
-					log.info( "column value : " + associationKey.getColumnValue( columnName ) + ";" );
+					log.debug( "column value : " + associationKey.getColumnValue( columnName ) + ";" );
 					properties.put( rowKeyColumn, associationKey.getColumnValue( columnName ) );
 				}
 			}
@@ -60,7 +60,7 @@ public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 		}
 		properties.putAll( relationship );
 
-		log.info( "1.collectProperties: " + properties );
+		log.debug( "1.collectProperties: " + properties );
 
 		// Properties stored in the target side of the association
 		/*
@@ -78,25 +78,25 @@ public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 		 * associationKey.getEntityKey().getColumnNames()[i] ) ) { properties.put( associationKey.getColumnNames()[i],
 		 * ownerNode.getOriginalValue(associationKey.getEntityKey().getColumnNames()[i] ) ); } }
 		 */
-		log.info( "collectProperties: " + properties );
+		log.debug( "collectProperties: " + properties );
 		return properties;
 	}
 
 	@Override
 	public Object get(String column) {
-		log.info( "targetColumnName: " + column );
+		log.debug( "targetColumnName: " + column );
 		return properties.get( column );
 	}
 
 	@Override
 	public Set<String> getColumnNames() {
-		log.info( "getColumnNames " );
+		log.debug( "getColumnNames " );
 		return properties.keySet();
 	}
 
 	@Override
 	public boolean isEmpty() {
-		log.info( "isEmpty " );
+		log.debug( "isEmpty " );
 		return properties.isEmpty();
 	}
 

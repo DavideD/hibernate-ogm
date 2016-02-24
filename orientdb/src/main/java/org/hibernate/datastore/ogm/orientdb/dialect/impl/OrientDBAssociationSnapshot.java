@@ -22,7 +22,7 @@ import org.hibernate.ogm.model.spi.Tuple;
 
 public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 
-	private static Log LOG = LoggerFactory.getLogger();
+	private static Log log = LoggerFactory.getLogger();
 	private final Map<RowKey, Tuple> tuples;
 
 	public OrientDBAssociationSnapshot(Map<RowKey, Tuple> tuples) {
@@ -31,13 +31,13 @@ public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 
 	@Override
 	public boolean containsKey(RowKey rowKey) {
-		LOG.info( "containsKey: rowKey :" + rowKey );
+		log.debug( "containsKey: rowKey :" + rowKey );
 		return tuples.containsKey( rowKey );
 	}
 
 	@Override
 	public Tuple get(RowKey rowKey) {
-		LOG.info( "get: rowKey :" + rowKey );
+		log.debug( "get: rowKey :" + rowKey );
 		Tuple tuple = tuples.get( rowKey );
 		return tuple;
 	}

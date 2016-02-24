@@ -22,6 +22,7 @@ import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
 import com.tinkerpop.blueprints.impls.orient.OrientVertexType;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
@@ -52,6 +53,11 @@ public class MemoryDBUtil {
 		graph.command( new OCommandSQL( seqCommand ) ).execute();
 
 	}
+        
+        public static void setDataFormats(OrientGraphNoTx graph) {
+                graph.command( new OCommandSQL( "ALTER DATABASE DATETIMEFORMAT " + OrientDBConstant.DATETIME_FORMAT + "" ) ).execute();
+                graph.command( new OCommandSQL( "ALTER DATABASE DATEFORMAT " + OrientDBConstant.DATE_FORMAT + "" ) ).execute();
+        }
 
 	public static OrientGraphNoTx createDbFactory(String url) {
 		factory = new OrientGraphFactory( url );

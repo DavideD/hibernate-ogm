@@ -38,7 +38,7 @@ import com.orientechnologies.orient.core.id.ORecordId;
  */
 public class OrientDBEntityQueries extends QueriesBase {
 
-	private static Log LOG = LoggerFactory.getLogger();
+	private static Log log = LoggerFactory.getLogger();
 
 	private final EntityKeyMetadata entityKeyMetadata;
 
@@ -46,7 +46,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 		this.entityKeyMetadata = entityKeyMetadata;
 		for ( int i = 0; i < entityKeyMetadata.getColumnNames().length; i++ ) {
 			String columnName = entityKeyMetadata.getColumnNames()[i];
-			LOG.info( "column number:" + i + "; column name:" + columnName );
+			log.debug( "column number:" + i + "; column name:" + columnName );
 		}
 
 	}
@@ -85,7 +85,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 			throw new UnsupportedOperationException( "Not supported yet." );
 		}
 
-		LOG.info( "find entiry query: " + query.toString() );
+		log.debug( "find entiry query: " + query.toString() );
 
 		ResultSet rs = stmt.executeQuery( query.toString() );
 		if ( rs.next() ) {
@@ -100,8 +100,8 @@ public class OrientDBEntityQueries extends QueriesBase {
 				 * if ( isLinkedProperty( dbColumnName ) ) { continue; }
 				 */
 				Object dbValue = rs.getObject( dbColumnName );
-				LOG.info( i + " dbColumnName " + dbColumnName + "; dbValue class:" + ( dbValue != null ? dbValue.getClass() : null ) );
-				LOG.info( i + " dbColumnName " + dbColumnName + "; sql type:" + rs.getMetaData().getColumnTypeName( dbFieldNo ) );
+				log.debug( i + " dbColumnName " + dbColumnName + "; dbValue class:" + ( dbValue != null ? dbValue.getClass() : null ) );
+				log.debug( i + " dbColumnName " + dbColumnName + "; sql type:" + rs.getMetaData().getColumnTypeName( dbFieldNo ) );
 				dbValues.put( dbColumnName, dbValue );
 				if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
 					String format = rs.getMetaData().getColumnTypeName( dbFieldNo ).equals( "DATETIME" )
@@ -111,7 +111,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 				}
 			}
 			reCastValues( dbValues );
-			LOG.info( " entiry values from db: " + dbValues );
+			log.debug( " entiry values from db: " + dbValues );
 		}
 		else {
 			return null;
@@ -148,7 +148,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 	public List<Map<String, Object>> findAssociation(Connection connection, AssociationKey associationKey, AssociationContext associationContext)
 			throws SQLException {
 		List<Map<String, Object>> association = new LinkedList<>();
-		LOG.info( "findAssociation: associationKey:" + associationKey + "; associationContext:" + associationContext );
+		log.debug( "findAssociation: associationKey:" + associationKey + "; associationContext:" + associationContext );
 
 		StringBuilder query = new StringBuilder( 100 );
 		query.append( "SELECT FROM " ).append( associationKey.getTable() ).append( " WHERE " );
@@ -159,7 +159,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 			EntityKeyUtil.setFieldValue( query, value );
 		}
 
-		LOG.info( "findAssociation: query:" + query );
+		log.debug( "findAssociation: query:" + query );
 
 		Statement stmt = connection.createStatement();
 
@@ -179,10 +179,10 @@ public class OrientDBEntityQueries extends QueriesBase {
 				Object dbValue = rs.getObject( dbColumnName );
 				dbValues.put( dbColumnName, dbValue );
 			}
-			LOG.info( " entiry values from db: " + dbValues );
+			log.debug( " entiry values from db: " + dbValues );
 			association.add( dbValues );
 		}
-		LOG.info( "findAssociation: edges:" + association.size() );
+		log.debug( "findAssociation: edges:" + association.size() );
 
 		return association;
 	}
@@ -206,7 +206,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 		boolean result = false;
 		for ( Iterator<Throwable> iterator = sqle.iterator(); ( iterator.hasNext() || result ); ) {
 			Throwable t = iterator.next();
-			// LOG.info( "findAssociation: Throwable message :"+t.getMessage());
+			// log.debug( "findAssociation: Throwable message :"+t.getMessage());
 			result = t.getMessage().contains( "was not found in database" );
 		}
 

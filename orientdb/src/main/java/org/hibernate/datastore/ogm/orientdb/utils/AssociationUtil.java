@@ -36,7 +36,7 @@ public class AssociationUtil {
 		StringBuilder query = new StringBuilder( 100 );
 		query.append( "delete edge " ).append( edgeClassName ).append( " where out=" ).append( outRid );
 		query.append( " and in=" ).append( inRid );
-		log.info( "removeAssociations: query :" + query.toString() );
+		log.debug( "removeAssociations: query :" + query.toString() );
 		return connection.createStatement().executeUpdate( query.toString() );
 	}
 
@@ -45,7 +45,7 @@ public class AssociationUtil {
 		StringBuilder query = new StringBuilder( 100 );
 		query.append( "create edge " ).append( edgeClassName ).append( " from " ).append( outRid );
 		query.append( " to " ).append( inRid );
-		log.info( "insertAssociation: query :" + query.toString() );
+		log.debug( "insertAssociation: query :" + query.toString() );
 		return connection.createStatement().executeUpdate( query.toString() );
 
 	}

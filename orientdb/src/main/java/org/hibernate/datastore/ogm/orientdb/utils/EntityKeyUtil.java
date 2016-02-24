@@ -32,7 +32,7 @@ public class EntityKeyUtil {
 	public static void setFieldValue(StringBuilder queryBuffer, Object dbKeyValue) {
 		if ( dbKeyValue != null ) {
 			// @TODO not forget remove the code!
-			log.info( "dbKeyValue class;" + dbKeyValue.getClass() );
+			log.debug( "dbKeyValue class:"+dbKeyValue+"; class :" + dbKeyValue.getClass() );
 		}
 		if ( dbKeyValue instanceof String || dbKeyValue instanceof UUID || dbKeyValue instanceof Character ) {
 			queryBuffer.append( "'" ).append( dbKeyValue ).append( "'" );
@@ -52,6 +52,8 @@ public class EntityKeyUtil {
 		else {
 			queryBuffer.append( dbKeyValue );
 		}
+                queryBuffer.append(" ");
+                
 	}
 
 	public static Object findPrimaryKeyValue(EntityKey key) {
@@ -59,9 +61,9 @@ public class EntityKeyUtil {
 		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
 			String columnName = key.getColumnNames()[i];
 			Object columnValue = key.getColumnValues()[i];
-			log.info( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
+			log.debug( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
 			if ( key.getMetadata().isKeyColumn( columnName ) ) {
-				log.info( "EntityKey: columnName: " + columnName + " is primary key!" );
+				log.debug( "EntityKey: columnName: " + columnName + " is primary key!" );
 				dbKeyValue = columnValue;
 			}
 		}
@@ -72,7 +74,7 @@ public class EntityKeyUtil {
 		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
 			String columnName = key.getColumnNames()[i];
 			if ( key.getMetadata().isKeyColumn( columnName ) ) {
-				log.info( "EntityKey: columnName: " + columnName + " is primary key!" );
+				log.debug( "EntityKey: columnName: " + columnName + " is primary key!" );
 				return columnName;
 			}
 		}
@@ -91,32 +93,32 @@ public class EntityKeyUtil {
 		buffer.append( dbKeyName );
 		buffer.append( " = " );
 		EntityKeyUtil.setFieldValue( buffer, dbKeyValue );
-		log.info( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; query:" + buffer.toString() );
+		log.debug( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; query:" + buffer.toString() );
 
 		ResultSet rs = stmt.executeQuery( buffer.toString() );
 		if ( rs.next() ) {
 			long count = rs.getLong( 1 );
-			log.info( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; count:" + count );
+			log.debug( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; count:" + count );
 			exists = count > 0;
 		}
 		return exists;
 	}
 
 	public static ORecordId findRid(Connection connection, String className, String businessKeyName, Object businessKeyValue) throws SQLException {
-		log.info( "findRid:className:" + className + " ; businessKeyName:" + businessKeyName + "; businessKeyValue:" + businessKeyValue );
+		log.debug( "findRid:className:" + className + " ; businessKeyName:" + businessKeyName + "; businessKeyValue:" + businessKeyValue );
 		StringBuilder buffer = new StringBuilder( "select from " );
 		buffer.append( className );
 		buffer.append( " where " );
 		buffer.append( businessKeyName );
 		buffer.append( " = " );
 		EntityKeyUtil.setFieldValue( buffer, businessKeyValue );
-		log.info( "findRid:className:" + buffer.toString() );
+		log.debug( "findRid:className:" + buffer.toString() );
 		ORecordId rid = null;
 		ResultSet rs = connection.createStatement().executeQuery( buffer.toString() );
 		if ( rs.next() ) {
-			log.info( "findRid: find" );
+			log.debug( "findRid: find" );
 			rid = (ORecordId) rs.getObject( OrientDBConstant.SYSTEM_RID );
-			log.info( "findRid: rid: " + rid );
+			log.debug( "findRid: rid: " + rid );
 		}
 		return rid;
 	}

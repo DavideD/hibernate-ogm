@@ -11,7 +11,7 @@
 			<param name="ConversionPattern" value="aa %p %c: %m%n" />
 		</layout>
 	</appender>
-	<!--Корневой logger -->
+	<!--Root logger -->
 	<root>
 		<priority value="debug" />
 		<appender-ref ref="console" />

@@ -8,6 +8,8 @@ package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
@@ -57,13 +59,21 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 		Map<String, Object> map = new HashMap<>();
 		for ( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ ) {
 			int fieldNum = i + 1;
-			map.put( resultSet.getMetaData().getColumnName( fieldNum ), resultSet.getObject( fieldNum ) );
+                        Object dbValue = resultSet.getObject( fieldNum );
+                        if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
+					String format = resultSet.getMetaData().getColumnTypeName( fieldNum ).equals( "DATETIME" )
+							? OrientDBConstant.DATETIME_FORMAT
+							: OrientDBConstant.DATE_FORMAT;
+					dbValue= new SimpleDateFormat( format ).format( dbValue ) ;
+				}
+                        
+			map.put( resultSet.getMetaData().getColumnName( fieldNum ),dbValue  );
 		}
 		for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
 			map.put( systemField, resultSet.getObject( systemField ) );
 		}
 
-		log.info( "field map: " + map );
+		log.debug( "field map: " + map );
 		return new Tuple( new MapTupleSnapshot( map ) );
 	}
 
