@@ -91,6 +91,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		}
 
 	}
+
 	private static final String CREATE_PROPERTY_TEMPLATE = "create property {0}.{1} {2}";
 	private static final Log log = LoggerFactory.getLogger();
 	private static final Pattern PATTERN = Pattern.compile( "directed([a-zA-Z_0-9])\\.(.+)" );

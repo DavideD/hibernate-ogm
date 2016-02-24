@@ -39,7 +39,7 @@ public class OrientDBTestHelper implements TestableGridDialect {
 	private static final String JDBC_URL = "jdbc:orient:".concat( OrientDBSimpleTest.MEMORY_TEST );
 	private static OrientGraphNoTx graphNoTx;
 
-	public OrientDBTestHelper() {		
+	public OrientDBTestHelper() {
 		graphNoTx = MemoryDBUtil.createDbFactory( OrientDBSimpleTest.MEMORY_TEST );
 	}
 

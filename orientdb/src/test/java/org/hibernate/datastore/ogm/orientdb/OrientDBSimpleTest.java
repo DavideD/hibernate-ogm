@@ -20,7 +20,6 @@ import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 
-import org.apache.log4j.BasicConfigurator;
 import org.hibernate.datastore.ogm.orientdb.jpa.Customer;
 import org.hibernate.datastore.ogm.orientdb.jpa.Pizza;
 import org.hibernate.datastore.ogm.orientdb.jpa.Status;
@@ -55,7 +54,7 @@ public class OrientDBSimpleTest {
 	@BeforeClass
 	public static void setUpClass() {
 		graphNoTx = MemoryDBUtil.createDbFactory( MEMORY_TEST );
-                emf = Persistence.createEntityManagerFactory( "hibernateOgmJpaUnit" );
+		emf = Persistence.createEntityManagerFactory( "hibernateOgmJpaUnit" );
 		em = emf.createEntityManager();
 		em.setFlushMode( FlushModeType.COMMIT );
 	}
@@ -73,20 +72,20 @@ public class OrientDBSimpleTest {
 
 	@Before
 	public void setUp() {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
+		if ( em.getTransaction().isActive() ) {
+			em.getTransaction().rollback();
+		}
 	}
 
 	@After
 	public void tearDown() {
-                
+
 		em.clear();
 	}
 
 	@Test
-	public void test1InsertNewCustomer()  {
-		log.debug("start" );
+	public void test1InsertNewCustomer() {
+		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
 			Customer newCustomer = new Customer();
@@ -98,14 +97,14 @@ public class OrientDBSimpleTest {
 			Query query = em.createNativeQuery( "select from Customer where name=:name", Customer.class );
 			query.setParameter( "name", "test" );
 			List<Customer> customers = query.getResultList();
-                        log.debug( MessageFormat.format("customers.size(): {0}", customers.size()) );
+			log.debug( MessageFormat.format( "customers.size(): {0}", customers.size() ) );
 			assertFalse( "Customers must be", customers.isEmpty() );
 			Customer testCustomer = customers.get( 0 );
 			assertNotNull( "Customer with 'test' must be saved!", testCustomer );
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
-			log.error("Error", e );
+			log.error( "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
@@ -129,7 +128,7 @@ public class OrientDBSimpleTest {
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
-			log.error("Error", e );
+			log.error( "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
@@ -140,14 +139,14 @@ public class OrientDBSimpleTest {
 		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
-			Customer customer = em.find( Customer.class,  2L );
+			Customer customer = em.find( Customer.class, 2L );
 			em.refresh( customer );
 			log.debug( "read entity properties:" );
-			log.debug( "customer.getbKey():"+ customer.getbKey() );
-			log.debug( "customer.getName(): "+ customer.getName() );
-			log.debug( "customer.getRid(): "+ customer.getRid() );
-			log.debug( "customer.isBlocked(): "+ customer.isBlocked() );
-			log.debug( "customer.getCreatedDate(): "+ customer.getCreatedDate() );
+			log.debug( "customer.getbKey():" + customer.getbKey() );
+			log.debug( "customer.getName(): " + customer.getName() );
+			log.debug( "customer.getRid(): " + customer.getRid() );
+			log.debug( "customer.isBlocked(): " + customer.isBlocked() );
+			log.debug( "customer.getCreatedDate(): " + customer.getCreatedDate() );
 			assertEquals( Long.valueOf( 2L ), customer.getbKey() );
 			assertNotNull( customer.getRid() );
 		}
@@ -161,12 +160,12 @@ public class OrientDBSimpleTest {
 		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
-			Pizza pizza = em.find( Pizza.class,  2L );
+			Pizza pizza = em.find( Pizza.class, 2L );
 			em.refresh( pizza );
 			log.debug( "read entity properties:" );
-			log.debug( "pizza.getBKey():"+ pizza.getbKey() );
-			log.debug( "pizza.getName(): "+ pizza.getName() );
-			log.debug( "pizza.getbKey(): {0}"+ pizza.getbKey() );
+			log.debug( "pizza.getBKey():" + pizza.getbKey() );
+			log.debug( "pizza.getName(): " + pizza.getName() );
+			log.debug( "pizza.getbKey(): {0}" + pizza.getbKey() );
 			assertEquals( Long.valueOf( 2L ), pizza.getbKey() );
 			assertNotNull( pizza.getRid() );
 		}
@@ -215,11 +214,11 @@ public class OrientDBSimpleTest {
 		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
-			Long id =  2L ;
+			Long id = 2L;
 			Customer customer = em.find( Customer.class, id );
 			customer.setName( "Ivahoe" );
 			int oldVersion = customer.getVersion();
-			log.debug( "old version:"+ oldVersion );
+			log.debug( "old version:" + oldVersion );
 			em.merge( customer );
 			em.flush();
 			Customer newCustomer = em.find( Customer.class, id );
@@ -243,7 +242,7 @@ public class OrientDBSimpleTest {
 		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
-			Long id =  2L;
+			Long id = 2L;
 			Customer customer = em.find( Customer.class, id );
 			log.debug( "old rid:{0}" + customer.getRid() );
 			ORecordId oldRid = customer.getRid();
@@ -270,7 +269,7 @@ public class OrientDBSimpleTest {
 		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
-			Long id = 2L ;
+			Long id = 2L;
 			Customer customer = em.find( Customer.class, id );
 			em.remove( customer );
 			em.flush();

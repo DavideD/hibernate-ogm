@@ -106,7 +106,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 				if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
 					String format = rs.getMetaData().getColumnTypeName( dbFieldNo ).equals( "DATETIME" )
 							? OrientDBConstant.DATETIME_FORMAT
-							: OrientDBConstant.DATE_FORMAT;
+									: OrientDBConstant.DATE_FORMAT;
 					dbValues.put( dbColumnName, new SimpleDateFormat( format ).format( dbValue ) );
 				}
 			}

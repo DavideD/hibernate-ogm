@@ -23,7 +23,6 @@ import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 
-import org.apache.log4j.BasicConfigurator;
 import org.hibernate.datastore.ogm.orientdb.jpa.BuyingOrder;
 import org.hibernate.datastore.ogm.orientdb.jpa.Customer;
 import org.hibernate.datastore.ogm.orientdb.jpa.Pizza;
@@ -87,7 +86,7 @@ public class OrientDbAssociationTest {
 
 	@Test
 	public void test1LinkAllAssociations() throws Exception {
-		log.debug(  "start" );
+		log.debug( "start" );
 
 		try {
 			em.getTransaction().begin();
@@ -172,7 +171,7 @@ public class OrientDbAssociationTest {
 
 	@Test
 	public void test2AddNewAssociations() throws Exception {
-		log.debug(  "start" );
+		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
 			BuyingOrder buyingOrder3 = new BuyingOrder();
@@ -201,7 +200,7 @@ public class OrientDbAssociationTest {
 
 		}
 		catch (Exception e) {
-			log.error(  "Error", e );
+			log.error( "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
@@ -225,10 +224,10 @@ public class OrientDbAssociationTest {
 				}
 				else {
 					removeOrder = buyingOrder;
-					log.debug( "RemovedOrder: "+ removeOrder.getbKey() );
+					log.debug( "RemovedOrder: " + removeOrder.getbKey() );
 				}
 			}
-			log.debug(  MessageFormat.format("Orders size. old: {0}; new:{1}",customer.getOrders().size(), list.size() ));
+			log.debug( MessageFormat.format( "Orders size. old: {0}; new:{1}", customer.getOrders().size(), list.size() ) );
 			customer.setOrders( list );
 			em.merge( customer );
 			removeOrder.setOwner( null );
@@ -245,7 +244,7 @@ public class OrientDbAssociationTest {
 
 		}
 		catch (Exception e) {
-			log.error(  "Error", e );
+			log.error( "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
@@ -253,26 +252,26 @@ public class OrientDbAssociationTest {
 
 	@Test
 	public void test4ReadAllAssociations() throws Exception {
-		log.debug(  "start" );
+		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
 			Query query = em.createNativeQuery( "select from Customer where name='Ivahoe'", Customer.class );
 			List<Customer> customers = query.getResultList();
-			log.debug(  "customers.size(): "+ customers.size() );
+			log.debug( "customers.size(): " + customers.size() );
 			assertFalse( "Customers must be", customers.isEmpty() );
 			Customer customer = customers.get( 0 );
-			log.debug(  MessageFormat.format( "use Customer with id {0} ( rid: {1} )",customer.getbKey(), customer.getRid() ) );
+			log.debug( MessageFormat.format( "use Customer with id {0} ( rid: {1} )", customer.getbKey(), customer.getRid() ) );
 			assertNotNull( "Customer with 'Ivahoe' must be saved!", customer );
 			assertFalse( "Customer must to have orders!", customer.getOrders().isEmpty() );
 			// assertFalse("Customer must to have phones!", customer.getPhones().isEmpty());
 			Set<String> orderKeySet = new HashSet<>();
-			log.debug(  "orders :"+ customer.getOrders().size() );
+			log.debug( "orders :" + customer.getOrders().size() );
 			for ( BuyingOrder order : customer.getOrders() ) {
-				log.debug(  MessageFormat.format(  "order.orderKey:{0}; id: {1}",
+				log.debug( MessageFormat.format( "order.orderKey:{0}; id: {1}",
 						order.getOrderKey(), order.getbKey() ) );
 				orderKeySet.add( order.getOrderKey() );
 			}
-			log.debug( "OrderKeys : "+ orderKeySet );
+			log.debug( "OrderKeys : " + orderKeySet );
 			assertTrue( "OrderKey 2233 must be linked!", orderKeySet.contains( "2233" ) );
 
 			BuyingOrder order = customer.getOrders().get( 0 );

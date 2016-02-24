@@ -59,16 +59,6 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) && value == null ) {
 			value = Integer.valueOf( 0 );
 		}
-		/*
-		 * else if ( associatedEntityKeyMetadata.containsKey( targetColumnName ) ) { log.debug(
-		 * "associated targetColumnName: " + targetColumnName ); String mappedByName =
-		 * AssociationUtil.getMappedByFieldName( associatedEntityKeyMetadata.get( targetColumnName ) ); String
-		 * inOrientDbField = "in_".concat( mappedByName ); Map<String, Object> associatedEntity = loadAssociatedEntity(
-		 * associatedEntityKeyMetadata.get( targetColumnName ), targetColumnName ); if ( associatedEntity != null ) {
-		 * for ( Map.Entry<String, Object> entry : associatedEntity.entrySet() ) { log.debug( "name: " + entry.getKey() +
-		 * "; value:" + entry.getValue() ); } String string = (String) associatedEntity.get( inOrientDbField ); value =
-		 * ORidBagUtil.convertStringToORidBag( string ); dbNameValueMap.remove( targetColumnName ); } }
-		 */
 		else {
 			value = dbNameValueMap.get( targetColumnName );
 			log.debug( "targetColumnName: " + targetColumnName + "; value: " + value + "; class :" + ( value != null ? value.getClass() : null ) );

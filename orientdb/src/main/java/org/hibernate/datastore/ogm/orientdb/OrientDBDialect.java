@@ -6,31 +6,41 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
-import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
-import com.orientechnologies.orient.core.id.ORecordId;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationQueries;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationSnapshot;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBEntityQueries;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleAssociationSnapshot;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleSnapshot;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.ResultSetTupleIterator;
 import org.hibernate.datastore.ogm.orientdb.impl.OrientDBDatastoreProvider;
+import org.hibernate.datastore.ogm.orientdb.impl.OrientDBSchemaDefiner;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.query.impl.OrientDBParameterMetadataBuilder;
 import org.hibernate.datastore.ogm.orientdb.type.spi.ORecordIdGridType;
+import org.hibernate.datastore.ogm.orientdb.type.spi.ORidBagGridType;
+import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
+import org.hibernate.datastore.ogm.orientdb.utils.SequenceUtil;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.dialect.identity.spi.IdentityColumnAwareGridDialect;
 import org.hibernate.ogm.dialect.query.spi.BackendQuery;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
 import org.hibernate.ogm.dialect.query.spi.QueryParameters;
+import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
 import org.hibernate.ogm.dialect.query.spi.TypedGridValue;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
 import org.hibernate.ogm.dialect.spi.AssociationTypeContext;
@@ -44,42 +54,32 @@ import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.key.spi.AssociationKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
+import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata.IdSourceType;
+import org.hibernate.ogm.model.key.spi.RowKey;
 import org.hibernate.ogm.model.spi.Association;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.persister.impl.OgmCollectionPersister;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
-import org.hibernate.ogm.type.spi.GridType;
-import org.hibernate.persister.collection.CollectionPersister;
-import org.hibernate.persister.entity.EntityPersister;
-import org.hibernate.type.Type;
-
-import java.sql.ResultSet;
-import java.util.LinkedList;
-import java.util.List;
-import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
-import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationSnapshot;
-import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleAssociationSnapshot;
-import org.hibernate.datastore.ogm.orientdb.dialect.impl.ResultSetTupleIterator;
-import org.hibernate.datastore.ogm.orientdb.impl.OrientDBSchemaDefiner;
-import org.hibernate.datastore.ogm.orientdb.type.spi.ORidBagGridType;
-import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
-import org.hibernate.datastore.ogm.orientdb.utils.SequenceUtil;
-import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
-import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata.IdSourceType;
-import org.hibernate.ogm.model.key.spi.RowKey;
 import org.hibernate.ogm.type.impl.Iso8601StringCalendarType;
 import org.hibernate.ogm.type.impl.Iso8601StringDateType;
 import org.hibernate.ogm.type.impl.SerializableAsStringType;
+import org.hibernate.ogm.type.spi.GridType;
+import org.hibernate.persister.collection.CollectionPersister;
+import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.service.spi.ServiceRegistryAwareService;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.type.SerializableToBlobType;
 import org.hibernate.type.StandardBasicTypes;
+import org.hibernate.type.Type;
+
+import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
+import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements QueryableGridDialect<String>,
-		ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
 
 	private static final Log log = LoggerFactory.getLogger();
 	private static final Association ASSOCIATION_NOT_FOUND = null;
@@ -99,7 +99,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 		try {
 			Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getConnection(), key );
-			if ( dbValuesMap == null ||  dbValuesMap.isEmpty() ) {
+			if ( dbValuesMap == null || dbValuesMap.isEmpty() ) {
 				return null;
 			}
 			return new Tuple(
@@ -128,48 +128,50 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				+ tupleContext.getClass() );
 		return new Tuple( new OrientDBTupleSnapshot( tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), entityKeyMetadata ) );
 	}
-        
-        /**
-         *  util method for settings Tuple's keys to query.
-         * If primaryKeyName has value then all columns will add to buffer except primaryKeyColumn
-         * @param queryBuffer buffer for query
-         * @param tuple tuple
-         * @param primaryKeyName primary key column name
-         * @return list of query parameters 
-         */
-        private List<Object> addTupleFields(StringBuilder queryBuffer, Tuple tuple) {
-            return addTupleFields(queryBuffer, tuple, null);
-        }
-        private List<Object> addTupleFields(StringBuilder queryBuffer, Tuple tuple,String primaryKeyName) {
-            LinkedList<Object> preparedStatementParams = new LinkedList<>();
-            for ( String columnName : tuple.getColumnNames() ) {
-					if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) || columnName.equals( primaryKeyName ) ) {
-						continue;
-					}
-					// @TODO correct type
-					log.debug( "addTupleFields: Set value for column " + columnName );
-					queryBuffer.append( " " ).append( columnName ).append( "=" );
-					if ( tuple.get( columnName ) instanceof byte[] ) {
-						queryBuffer.append( ":" ).append( columnName );
-						preparedStatementParams.add( tuple.get( columnName ) );
-					}
-					else if ( tuple.get( columnName ) instanceof BigInteger ) {
-						queryBuffer.append( ":" ).append( columnName );
-						BigInteger bi = (BigInteger) tuple.get( columnName );
-						preparedStatementParams.add( bi.toByteArray() );
-					}
-					else if ( tuple.get( columnName ) instanceof BigDecimal ) {
-						queryBuffer.append( ":" ).append( columnName );
-						preparedStatementParams.add( tuple.get( columnName ) );
-					}
-					else {
-						EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
-					}
-					queryBuffer.append( "," );
-				}
-            
-            return preparedStatementParams;
-        }
+
+	/**
+	 * util method for settings Tuple's keys to query. If primaryKeyName has value then all columns will add to buffer
+	 * except primaryKeyColumn
+	 *
+	 * @param queryBuffer buffer for query
+	 * @param tuple tuple
+	 * @param primaryKeyName primary key column name
+	 * @return list of query parameters
+	 */
+	private List<Object> addTupleFields(StringBuilder queryBuffer, Tuple tuple) {
+		return addTupleFields( queryBuffer, tuple, null );
+	}
+
+	private List<Object> addTupleFields(StringBuilder queryBuffer, Tuple tuple, String primaryKeyName) {
+		LinkedList<Object> preparedStatementParams = new LinkedList<>();
+		for ( String columnName : tuple.getColumnNames() ) {
+			if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) || columnName.equals( primaryKeyName ) ) {
+				continue;
+			}
+			// @TODO correct type
+			log.debug( "addTupleFields: Set value for column " + columnName );
+			queryBuffer.append( " " ).append( columnName ).append( "=" );
+			if ( tuple.get( columnName ) instanceof byte[] ) {
+				queryBuffer.append( ":" ).append( columnName );
+				preparedStatementParams.add( tuple.get( columnName ) );
+			}
+			else if ( tuple.get( columnName ) instanceof BigInteger ) {
+				queryBuffer.append( ":" ).append( columnName );
+				BigInteger bi = (BigInteger) tuple.get( columnName );
+				preparedStatementParams.add( bi.toByteArray() );
+			}
+			else if ( tuple.get( columnName ) instanceof BigDecimal ) {
+				queryBuffer.append( ":" ).append( columnName );
+				preparedStatementParams.add( tuple.get( columnName ) );
+			}
+			else {
+				EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
+			}
+			queryBuffer.append( "," );
+		}
+
+		return preparedStatementParams;
+	}
 
 	@Override
 	public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
@@ -194,10 +196,10 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			if ( existsPrimaryKey ) {
 				// it is update
 				queryBuffer.append( "update " ).append( key.getTable() ).append( "  set " );
-                                preparedStatementParams = addTupleFields(queryBuffer, tuple);
-				if ( queryBuffer.toString().endsWith( "," )) {
+				preparedStatementParams = addTupleFields( queryBuffer, tuple );
+				if ( queryBuffer.toString().endsWith( "," ) ) {
 					queryBuffer.setLength( queryBuffer.length() - 1 );
-				}				
+				}
 				queryBuffer.append( " WHERE " ).append( dbKeyName ).append( "=" );
 				EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
 			}
@@ -205,24 +207,24 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				// it is insert with business key which set already
 				log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " is new! Insert new record!" );
 				queryBuffer.append( "insert into " ).append( key.getTable() ).append( "  set " );
-				preparedStatementParams = addTupleFields(queryBuffer, tuple, dbKeyName);				
+				preparedStatementParams = addTupleFields( queryBuffer, tuple, dbKeyName );
 				queryBuffer.append( dbKeyName ).append( "=" );
 				EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
 			}
 
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). Query: " + queryBuffer.toString() );
 			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
-                        if (preparedStatementParams!=null) {
-                            for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
-                                	Object value = preparedStatementParams.get( i );
-                                        if ( value instanceof byte[] ) {
-                                            pstmt.setBytes( i, (byte[]) value );
-                                        }
-                                        else {
-                                            pstmt.setObject( i, value );
-                                        }
-                            }
-                        }
+			if ( preparedStatementParams != null ) {
+				for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
+					Object value = preparedStatementParams.get( i );
+					if ( value instanceof byte[] ) {
+						pstmt.setBytes( i, (byte[]) value );
+					}
+					else {
+						pstmt.setObject( i, value );
+					}
+				}
+			}
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). inserted or updated: " + pstmt.executeUpdate() );
 		}
 		catch (SQLException e) {
@@ -274,8 +276,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			EntityKeyUtil.setFieldValue( insertQuery, value );
 			insertQuery.append( "," );
 		}
-		if ( insertQuery.toString().endsWith( "," )) {
-                        insertQuery.setLength( insertQuery.length() - 1 );
+		if ( insertQuery.toString().endsWith( "," ) ) {
+			insertQuery.setLength( insertQuery.length() - 1 );
 		}
 		log.debug( "insertTuple: insertQuery: " + insertQuery.toString() );
 

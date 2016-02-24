@@ -32,7 +32,7 @@ public class EntityKeyUtil {
 	public static void setFieldValue(StringBuilder queryBuffer, Object dbKeyValue) {
 		if ( dbKeyValue != null ) {
 			// @TODO not forget remove the code!
-			log.debug( "dbKeyValue class:"+dbKeyValue+"; class :" + dbKeyValue.getClass() );
+			log.debug( "dbKeyValue class:" + dbKeyValue + "; class :" + dbKeyValue.getClass() );
 		}
 		if ( dbKeyValue instanceof String || dbKeyValue instanceof UUID || dbKeyValue instanceof Character ) {
 			queryBuffer.append( "'" ).append( dbKeyValue ).append( "'" );
@@ -52,8 +52,8 @@ public class EntityKeyUtil {
 		else {
 			queryBuffer.append( dbKeyValue );
 		}
-                queryBuffer.append(" ");
-                
+		queryBuffer.append( " " );
+
 	}
 
 	public static Object findPrimaryKeyValue(EntityKey key) {
