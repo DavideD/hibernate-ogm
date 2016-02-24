@@ -54,10 +54,6 @@ public class MemoryDBUtil {
 
 	}
         
-        public static void setDataFormats(OrientGraphNoTx graph) {
-                graph.command( new OCommandSQL( "ALTER DATABASE DATETIMEFORMAT " + OrientDBConstant.DATETIME_FORMAT + "" ) ).execute();
-                graph.command( new OCommandSQL( "ALTER DATABASE DATEFORMAT " + OrientDBConstant.DATE_FORMAT + "" ) ).execute();
-        }
 
 	public static OrientGraphNoTx createDbFactory(String url) {
 		factory = new OrientGraphFactory( url );

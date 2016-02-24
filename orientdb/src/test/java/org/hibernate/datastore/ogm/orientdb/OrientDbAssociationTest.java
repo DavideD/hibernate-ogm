@@ -56,20 +56,14 @@ public class OrientDbAssociationTest {
 
 	@BeforeClass
 	public static void setUpClass() {
-		log.debug( "start" );
-		// MemoryDBUtil.prepareDb("remote:localhost/pizza");
 		graphNoTx = MemoryDBUtil.createDbFactory( OrientDBSimpleTest.MEMORY_TEST );
-                MemoryDBUtil.setDataFormats(graphNoTx);
-		BasicConfigurator.configure();
 		emf = Persistence.createEntityManagerFactory( "hibernateOgmJpaUnit" );
 		em = emf.createEntityManager();
 		em.setFlushMode( FlushModeType.COMMIT );
-
 	}
 
 	@AfterClass
 	public static void tearDownClass() {
-		log.debug(  "start" );
 		if ( em != null ) {
 			em.close();
 			emf.close();

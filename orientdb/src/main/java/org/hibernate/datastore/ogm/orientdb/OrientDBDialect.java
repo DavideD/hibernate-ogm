@@ -99,7 +99,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 		try {
 			Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getConnection(), key );
-			if ( dbValuesMap == null || ( dbValuesMap != null && dbValuesMap.isEmpty() ) ) {
+			if ( dbValuesMap == null ||  dbValuesMap.isEmpty() ) {
 				return null;
 			}
 			return new Tuple(
@@ -116,12 +116,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		throw new UnsupportedOperationException( "forEachTuple!.Not supported yet." );
 	}
 
-	/*
-	 * @Override public List<Tuple> getTuples(EntityKey[] keys, TupleContext tupleContext) { ArrayList<Tuple> tuples =
-	 * new ArrayList<>( keys.length ); for ( EntityKey key : keys ) { log.debug( "getTuples:EntityKey:" + key +
-	 * "; tupleContext" + tupleContext ); tuples.add( getTuple( key, tupleContext ) ); } return tuples; }
-	 */
-
 	@Override
 	public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
 		log.debug( "createTuple:EntityKey:" + key + "; tupleContext" + tupleContext + "; tupleContext.getClass():" + tupleContext.getClass() );
@@ -134,6 +128,48 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				+ tupleContext.getClass() );
 		return new Tuple( new OrientDBTupleSnapshot( tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), entityKeyMetadata ) );
 	}
+        
+        /**
+         *  util method for settings Tuple's keys to query.
+         * If primaryKeyName has value then all columns will add to buffer except primaryKeyColumn
+         * @param queryBuffer buffer for query
+         * @param tuple tuple
+         * @param primaryKeyName primary key column name
+         * @return list of query parameters 
+         */
+        private List<Object> addTupleFields(StringBuilder queryBuffer, Tuple tuple) {
+            return addTupleFields(queryBuffer, tuple, null);
+        }
+        private List<Object> addTupleFields(StringBuilder queryBuffer, Tuple tuple,String primaryKeyName) {
+            LinkedList<Object> preparedStatementParams = new LinkedList<>();
+            for ( String columnName : tuple.getColumnNames() ) {
+					if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) || columnName.equals( primaryKeyName ) ) {
+						continue;
+					}
+					// @TODO correct type
+					log.debug( "addTupleFields: Set value for column " + columnName );
+					queryBuffer.append( " " ).append( columnName ).append( "=" );
+					if ( tuple.get( columnName ) instanceof byte[] ) {
+						queryBuffer.append( ":" ).append( columnName );
+						preparedStatementParams.add( tuple.get( columnName ) );
+					}
+					else if ( tuple.get( columnName ) instanceof BigInteger ) {
+						queryBuffer.append( ":" ).append( columnName );
+						BigInteger bi = (BigInteger) tuple.get( columnName );
+						preparedStatementParams.add( bi.toByteArray() );
+					}
+					else if ( tuple.get( columnName ) instanceof BigDecimal ) {
+						queryBuffer.append( ":" ).append( columnName );
+						preparedStatementParams.add( tuple.get( columnName ) );
+					}
+					else {
+						EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
+					}
+					queryBuffer.append( "," );
+				}
+            
+            return preparedStatementParams;
+        }
 
 	@Override
 	public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
@@ -153,28 +189,12 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		try {
 			boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( provider.getConnection(), key );
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " exists in database ? " + existsPrimaryKey );
-			LinkedList<Object> preparedStatementParams = new LinkedList<>();
+			List<Object> preparedStatementParams = null;
 
 			if ( existsPrimaryKey ) {
 				// it is update
-				queryBuffer.append( "update  " ).append( key.getTable() ).append( "  set " );
-
-				for ( String columnName : tuple.getColumnNames() ) {
-					if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) || columnName.equals( dbKeyName ) ) {
-						continue;
-					}
-					// @TODO correct type
-					queryBuffer.append( " " ).append( columnName ).append( "=" );
-					if ( tuple.get( columnName ) instanceof byte[] ) {
-						queryBuffer.append( ":" ).append( columnName );
-						preparedStatementParams.add( tuple.get( columnName ) );
-					}
-					else {
-						EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
-
-					}
-					queryBuffer.append( "," );
-				}
+				queryBuffer.append( "update " ).append( key.getTable() ).append( "  set " );
+                                preparedStatementParams = addTupleFields(queryBuffer, tuple);
 				if ( queryBuffer.toString().endsWith( "," )) {
 					queryBuffer.setLength( queryBuffer.length() - 1 );
 				}				
@@ -185,47 +205,24 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				// it is insert with business key which set already
 				log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " is new! Insert new record!" );
 				queryBuffer.append( "insert into " ).append( key.getTable() ).append( "  set " );
-				for ( String columnName : tuple.getColumnNames() ) {
-					if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) || dbKeyName.equals( columnName ) ) {
-						continue;
-					}
-					// @TODO correct type
-					log.debug( "insertOrUpdateTuple: Set value for column " + columnName );
-					queryBuffer.append( " " ).append( columnName ).append( "=" );
-					if ( tuple.get( columnName ) instanceof byte[] ) {
-						queryBuffer.append( ":" ).append( columnName );
-						preparedStatementParams.add( tuple.get( columnName ) );
-					}
-					else if ( tuple.get( columnName ) instanceof BigInteger ) {
-						queryBuffer.append( ":" ).append( columnName );
-						BigInteger bi = (BigInteger) tuple.get( columnName );
-						preparedStatementParams.add( bi.toByteArray() );
-					}
-					else if ( tuple.get( columnName ) instanceof BigDecimal ) {
-						queryBuffer.append( ":" ).append( columnName );
-						preparedStatementParams.add( tuple.get( columnName ) );
-					}
-					else {
-						EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
-					}
-					queryBuffer.append( "," );
-				}				
+				preparedStatementParams = addTupleFields(queryBuffer, tuple, dbKeyName);				
 				queryBuffer.append( dbKeyName ).append( "=" );
 				EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
-
 			}
 
-			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + ").  query:" + queryBuffer.toString() );
+			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). Query: " + queryBuffer.toString() );
 			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
-			for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
-				Object value = preparedStatementParams.get( i );
-				if ( value instanceof byte[] ) {
-					pstmt.setBytes( i, (byte[]) value );
-				}
-				else {
-					pstmt.setObject( i, value );
-				}
-			}
+                        if (preparedStatementParams!=null) {
+                            for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
+                                	Object value = preparedStatementParams.get( i );
+                                        if ( value instanceof byte[] ) {
+                                            pstmt.setBytes( i, (byte[]) value );
+                                        }
+                                        else {
+                                            pstmt.setObject( i, value );
+                                        }
+                            }
+                        }
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). inserted or updated: " + pstmt.executeUpdate() );
 		}
 		catch (SQLException e) {

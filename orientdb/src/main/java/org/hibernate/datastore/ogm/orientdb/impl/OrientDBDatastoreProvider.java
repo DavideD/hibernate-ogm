@@ -77,8 +77,8 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 	}
 
 	private void setDateFormats(Connection connection) throws SQLException {
-		connection.createStatement().execute( "ALTER DATABASE DATETIMEFORMAT " + OrientDBConstant.DATETIME_FORMAT + "" );
-		connection.createStatement().execute( "ALTER DATABASE DATEFORMAT " + OrientDBConstant.DATE_FORMAT + "" );		
+		connection.createStatement().execute( "ALTER DATABASE DATETIMEFORMAT \"" + OrientDBConstant.DATETIME_FORMAT + "\"" );
+		connection.createStatement().execute( "ALTER DATABASE DATEFORMAT \"" + OrientDBConstant.DATE_FORMAT + "\"" );		
 	}
 
 	private static void createInMemoryDB(String jdbcUrl) {
