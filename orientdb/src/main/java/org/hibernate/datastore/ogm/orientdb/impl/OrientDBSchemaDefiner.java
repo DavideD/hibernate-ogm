@@ -161,11 +161,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		return MessageFormat.format( "create class {0} extends V", table.getName() );
 	}
 
-	private String createEdgeType(String edgeType) {
-		return MessageFormat.format( "CREATE CLASS {0} EXTENDS E",
-				edgeType );
-	}
-
 	private void createEntities(SchemaDefinitionContext context) throws SQLException {
 		for ( Namespace namespace : context.getDatabase().getNamespaces() ) {
 			log.debug( "namespace: " + namespace.getName() );
@@ -175,7 +170,11 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 				boolean isMappingTable = isMapingTable( table );
 				String classQuery = createClassQuery( table );
 				log.debug( "create class query: " + classQuery );
+                                try {
 				provider.getConnection().createStatement().execute( classQuery );
+                                } catch (SQLException e) {
+                                    throw log.cannotGenerateVertexClass( table.getName(),e);
+                                }
 				Iterator<Column> columnIterator = table.getColumnIterator();
 
 				while ( columnIterator.hasNext() ) {
@@ -201,17 +200,15 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						}
 						// @TODO use Links as foreign keys. see http://orientdb.com/docs/last/SQL-Create-Link.html
 
-						// @TODO support fields 'in_' and 'out_' for native queries
-						// String mappedByName = searchMappedByName( context, namespace.getTables(), (EntityType)
-						// value.getType(), column );
-						// log.debug( "create edge query: " + createEdgeType( mappedByName ) );
-						// provider.getConnection().createStatement().execute( createEdgeType( mappedByName ) );
-
 					}
 					else {
 						String propertyQuery = createValueProperyQuery( table, column );
 						log.debug( "create property query: " + propertyQuery );
+                                                try {
 						provider.getConnection().createStatement().execute( propertyQuery );
+                                                } catch (SQLException e) {
+                                                    throw log.cannotGenerateProperty(column.getName(),table.getName(),e );
+                                                }
 					}
 				}
 				if ( !isMappingTable ) {
