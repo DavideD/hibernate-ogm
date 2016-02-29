@@ -18,34 +18,18 @@ import org.junit.BeforeClass;
  */
 public class OrientDbCRUDTest extends CRUDTest {
 
-    private static final Logger LOG = Logger.getLogger(OrientDbCRUDTest.class.getName());
-    @BeforeClass
+	private static final Logger LOG = Logger.getLogger( OrientDbCRUDTest.class.getName() );
+
+	@BeforeClass
 	public static void setUpClass() {
-		LOG.log(Level.INFO, "call me!!!");
-        }
-    @Override
-    protected void configure(Map<String, Object> cfg) {
-        LOG.log(Level.INFO, "call me!!!");
-        MemoryDBUtil.createDbFactory(MEMORY_TEST);
-        super.configure(cfg); //To change body of generated methods, choose Tools | Templates.
-    }
+		LOG.log( Level.INFO, "call me!!!" );
+	}
 
-    
-    
-    
-            
-		//MemoryDBUtil.createDbFactory(MEMORY_TEST);
-//		BasicConfigurator.configure();
-                //super.setUp();
-	
-    
-
-
-	/*public  void tearDownClass() {
-            System.out.println("tearDownClass");
-                MemoryDBUtil.recrateInMemoryDn(MEMORY_TEST);
-                
-	} */
-    
+	@Override
+	protected void configure(Map<String, Object> cfg) {
+		LOG.log( Level.INFO, "call me!!!" );
+		MemoryDBUtil.createDbFactory( MEMORY_TEST );
+		super.configure( cfg ); // To change body of generated methods, choose Tools | Templates.
+	}
 
 }

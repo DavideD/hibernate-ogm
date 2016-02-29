@@ -6,6 +6,7 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
+import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.id.ORecordId;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -137,7 +138,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 	@Override
 	public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
-		log.info( "insertOrUpdateTuple:EntityKey:" + key + "; tupleContext" + tupleContext + "; tuple:" + tuple );
+		log.info( "insertOrUpdateTuple:EntityKey:" + key + "; tupleContext" + tupleContext + "; tuple:" + tuple );                
 		Connection connection = provider.getConnection();
 
 		StringBuilder queryBuffer = new StringBuilder();
@@ -149,6 +150,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			Object columnValue = key.getColumnValues()[i];
 			log.info( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
 		}
+                
 		try {
 			boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( provider.getConnection(), key );
 			log.info( "insertOrUpdateTuple:Key:" + dbKeyName + " exists in database ? " + existsPrimaryKey );
@@ -163,7 +165,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 					}
 					// @TODO correct type
 					queryBuffer.append( " " ).append( columnName ).append( "=" );
-					EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
+                                        EntityKeyUtil.setFieldValue( queryBuffer, tuple.get( columnName ) );
 					queryBuffer.append( "," );
 				}
 				queryBuffer.setLength( queryBuffer.length() - 1 );
@@ -200,8 +202,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	@Override
 	public void insertTuple(EntityKeyMetadata entityKeyMetadata, Tuple tuple, TupleContext tupleContext) {
 		log.info( "insertTuple:EntityKeyMetadata:" + entityKeyMetadata + "; tupleContext" + tupleContext + "; tuple:" + tuple );
-
-		StringBuilder insertQuery = new StringBuilder( 100 );
+                
+                StringBuilder insertQuery = new StringBuilder( 100 );
 		insertQuery.append( "insert into " ).append( entityKeyMetadata.getTable() ).append( " " );
 		if ( !tuple.getColumnNames().isEmpty() ) {
 			insertQuery.append( " set " );
@@ -546,13 +548,13 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	public GridType overrideType(Type type) {
 		log.info( "overrideType:" + type.getName() + ";" + type.getReturnedClass() );
 		GridType gridType = null;
-		if ( type.getName().equals( "com.orientechnologies.orient.core.id.ORecordId" ) ) {
+                if ( type.getName().equals(ORecordId.class.getName() ) ) {
 			gridType = ORecordIdGridType.INSTANCE;
-		} else if ( type.getName().equals( "com.orientechnologies.orient.core.db.record.ridbag.ORidBag" ) ) {
+		} else if ( type.getName().equals( ORidBag.class.getName() ) ) {
 			gridType = ORidBagGridType.INSTANCE;
 		}
 		else {
-			gridType = super.overrideType( type ); // To change body of generated methods, choose Tools | Templates.
+			gridType = super.overrideType( type );
 		}
 		return gridType;
 	}

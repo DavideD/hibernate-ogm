@@ -47,6 +47,7 @@ import org.hibernate.type.EntityType;
 import org.hibernate.type.EnumType;
 import org.hibernate.type.ManyToOneType;
 import org.hibernate.type.OneToOneType;
+import org.hibernate.type.TimestampType;
 import org.hibernate.type.YesNoType;
 import org.hibernate.usertype.UserType;
 
@@ -73,6 +74,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		map.put( FloatType.class, "float" );
 		map.put( DoubleType.class, "double" );
 		map.put( DateType.class, "date" );
+                map.put( TimestampType.class, "datetime" );
 		map.put( BooleanType.class, "boolean" );
                 map.put( YesNoType.class, "string" );
 		map.put( StringType.class, "string" );
@@ -260,26 +262,19 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	private List<String> createPrimaryKey(PrimaryKey primaryKey) {
 		List<String> queries = new ArrayList<>( 2 );
-                log.info( "primaryKey.getColumns().size(): " + primaryKey.getColumns().size() );
-                
-                if (primaryKey.getColumns().size()>1) {
-                    //@TODO  Check fields for create primary index
-                    return queries;
-                }
-                
                 
 		String table = primaryKey.getTable().getName();
 		StringBuilder columns = new StringBuilder();
+                StringBuilder uniqueIndexQuery = new StringBuilder(100);
+                uniqueIndexQuery.append("CREATE INDEX ").append(table).append("_");
+                String firstColumn = primaryKey.getColumn(0).getName();
 		for ( Iterator<Column> iterator = primaryKey.getColumnIterator(); iterator.hasNext(); ) {
 			Column indexColumn = iterator.next();
-			columns.append( indexColumn.getName() );
-			if ( iterator.hasNext() ) {
-				columns.append( '_' );
-			}
+			columns.append( indexColumn.getName() ).append(",");
 		}
-		String uniqueIndex = "CREATE INDEX " + table + "_" + columns.toString().toLowerCase() + "_pk ON " + table + "(" + columns.toString().replace( '_', ',' )
-				+ ") UNIQUE";
-		queries.add( uniqueIndex );
+                columns.setLength(columns.length()-1);
+                uniqueIndexQuery.append(firstColumn).append("_pk ON ").append(table).append(" (").append(columns).append(") UNIQUE");
+		queries.add( uniqueIndexQuery.toString() );
 		
 		log.info( "primaryKey.getColumns().get(0).getValue().getType().getClass(): " + primaryKey.getColumns().get( 0 ).getValue().getType().getClass() );
 		if ( primaryKey.getColumns().size() == 1 && SEQ_TYPES.contains( primaryKey.getColumns().get( 0 ).getValue().getType().getClass() ) ) {
