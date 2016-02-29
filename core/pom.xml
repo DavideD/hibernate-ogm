@@ -122,10 +122,10 @@
                     <enableAssertions>false</enableAssertions>
                 </configuration>
             </plugin>
-            <plugin>
+<!--            <plugin>
                  <groupId>org.apache.maven.plugins</groupId>
                  <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
+            </plugin> -->
             <plugin>
                 <groupId>org.jboss.maven.plugins</groupId>
                 <artifactId>maven-injection-plugin</artifactId>

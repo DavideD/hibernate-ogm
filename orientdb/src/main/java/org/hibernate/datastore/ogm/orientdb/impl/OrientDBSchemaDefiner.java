@@ -126,7 +126,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		map.put( YesNoType.class, "string" );
 		map.put( StringType.class, "string" );
 		map.put( UrlType.class, "string" );
-		map.put( MaterializedClobType.class, "string" );
+		
 		map.put( CharacterType.class, "string" );
 		map.put( UUIDBinaryType.class, "string" );
 
@@ -134,6 +134,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		map.put( MaterializedBlobType.class, "binary" ); // byte[]
 		map.put( SerializableToBlobType.class, "binary" ); // byte[]
 		map.put( BigIntegerType.class, "binary" );
+                map.put( MaterializedClobType.class, "binary" );
 
 		map.put( BigDecimalType.class, "decimal" );
 
@@ -161,17 +162,21 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		return MessageFormat.format( "create class {0} extends V", table.getName() );
 	}
 
-	private void createEntities(SchemaDefinitionContext context) throws SQLException {
+	private void createEntities(SchemaDefinitionContext context)  {
+            try {
+                provider.getConnection().createStatement().execute( "CREATE SEQUENCE HIBERNATE_SEQUENCE TYPE ORDERED START 1" );
+            } catch (SQLException e) {
+                    throw log.cannotGenerateSequence("HIBERNATE_SEQUENCE",e );
+            }
+                
 		for ( Namespace namespace : context.getDatabase().getNamespaces() ) {
-			log.debug( "namespace: " + namespace.getName() );
 			for ( Table table : namespace.getTables() ) {
 				log.debug( "table: " + table );
-				log.debug( "tableName: " + table.getName() );
 				boolean isMappingTable = isMapingTable( table );
 				String classQuery = createClassQuery( table );
 				log.debug( "create class query: " + classQuery );
                                 try {
-				provider.getConnection().createStatement().execute( classQuery );
+                                    provider.getConnection().createStatement().execute( classQuery );
                                 } catch (SQLException e) {
                                     throw log.cannotGenerateVertexClass( table.getName(),e);
                                 }
@@ -196,7 +201,11 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 							Class mappedByClass = searchMappedByReturnedClass( context, namespace.getTables(), (EntityType) value.getType(), column );
 							String propertyQuery = createValueProperyQuery( table, column, RETURNED_CLASS_TYPE_MAPPING.get( mappedByClass ) );
 							log.debug( "create foreign key property query: " + propertyQuery );
-							provider.getConnection().createStatement().execute( propertyQuery );
+                                                        try {
+                                                            provider.getConnection().createStatement().execute( propertyQuery );
+                                                        } catch (SQLException e) {
+                                                            throw log.cannotGenerateProperty(column.getName(),table.getName(),e );
+                                                        }
 						}
 						// @TODO use Links as foreign keys. see http://orientdb.com/docs/last/SQL-Create-Link.html
 
@@ -205,7 +214,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						String propertyQuery = createValueProperyQuery( table, column );
 						log.debug( "create property query: " + propertyQuery );
                                                 try {
-						provider.getConnection().createStatement().execute( propertyQuery );
+                                                    provider.getConnection().createStatement().execute( propertyQuery );
                                                 } catch (SQLException e) {
                                                     throw log.cannotGenerateProperty(column.getName(),table.getName(),e );
                                                 }
@@ -217,7 +226,17 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						log.debug( "primaryKey: " + primaryKey );
 						for ( String primaryKeyQuery : createPrimaryKey( primaryKey ) ) {
 							log.debug( "primary key query: " + primaryKeyQuery );
+                                                        try {
 							provider.getConnection().createStatement().execute( primaryKeyQuery );
+                                                        } catch (SQLException e) {
+                                                            if (primaryKeyQuery.contains("INDEX") ) {
+                                                                throw log.cannotGenerateIndex(primaryKey.getColumn( 0 ).getName(),table.getName(),e );
+                                                            } else {
+                                                                throw log.cannotGenerateSequence(
+                                                                        generateSeqName( primaryKey.getTable().getName(), primaryKey.getColumns().get( 0 ).getName() ),
+                                                                        e );
+                                                            }
+                                                        }
 						}
 					}
 					else {
@@ -226,7 +245,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 				}
 			}
 		}
-		provider.getConnection().createStatement().execute( "CREATE SEQUENCE HIBERNATE_SEQUENCE TYPE ORDERED START 1" );
+		
 	}
 
 	private List<String> createPrimaryKey(PrimaryKey primaryKey) {
@@ -298,13 +317,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		SessionFactoryImplementor sessionFactoryImplementor = context.getSessionFactory();
 		ServiceRegistryImplementor registry = sessionFactoryImplementor.getServiceRegistry();
 		provider = (OrientDBDatastoreProvider) registry.getService( DatastoreProvider.class );
-		try {
-			createEntities( context );
-		}
-		catch (SQLException e) {
-			log.error( "Can not initialize schema!", e );
-			throw new RuntimeException( "Can not initialize schema!", e );
-		}
+		createEntities( context );		
 	}
 
 	private boolean isEmbeddedColumn(Column column) {

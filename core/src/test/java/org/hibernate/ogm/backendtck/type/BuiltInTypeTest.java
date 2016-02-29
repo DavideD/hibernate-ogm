@@ -160,8 +160,7 @@ public class BuiltInTypeTest extends OgmTestCase {
 	}
 
 	// byte arrays
-        @SkipByGridDialect(GridDialectType.ORIENTDB)
-	@Test
+        @Test
 	public void testByteArrayAsLobSupport() throws Exception {
 		byte[] testData = new byte[200];
 		new Random().nextBytes( testData );
@@ -190,7 +189,7 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "Original and loaded data do not match!", text, loadedBookmark.getLobWithString() );
 	}
 
-        @SkipByGridDialect(GridDialectType.ORIENTDB)
+        //@SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void testByteArraySupport() throws Exception {
 		byte[] testData = new byte[200];
