@@ -24,12 +24,6 @@ import org.jboss.logging.annotations.MessageLogger;
 @MessageLogger(projectCode = "OGM")
 public interface Log extends org.hibernate.ogm.util.impl.Log {
 
-	
-
-	@LogMessage(level = DEBUG)
-	@Message(id = 1402, value = "An error occured while generating the sequence %s")
-	void errorGeneratingSequence(String sequenceName, @Cause Exception e);
-
 	@Message(id = 1403, value = "Constraint violation for entity %s: %s")
 	HibernateException constraintViolation(EntityKey entityKey, TupleOperation operation, @Cause Exception cause);
 
@@ -48,12 +42,12 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 	@Message(id = 1408, value = "Error while cheking transaction status")
 	HibernateException exceptionWhileChekingTransactionStatus(@Cause Exception e);
         
-        @Message(id = 1409, value = "Cannot create class %s")
+        @Message(id = 1700, value = "Cannot create class %s")
 	HibernateException cannotGenerateVertexClass(String className, @Cause Exception cause);
-        @Message(id = 1410, value = "Cannot create property %s for class %s")
+        @Message(id = 1701, value = "Cannot create property %s for class %s")
 	HibernateException cannotGenerateProperty(String propertyName, String className, @Cause Exception cause);
-        @Message(id = 1411, value = "Cannot create index %s for class %s")
+        @Message(id = 1702, value = "Cannot create index %s for class %s")
 	HibernateException cannotGenerateIndex(String propertyName, String className, @Cause Exception cause);
-        @Message(id = 1401, value = "Cannot generate sequence %s")
+        @Message(id = 1703, value = "Cannot generate sequence %s")
 	HibernateException cannotGenerateSequence(String sequenceName, @Cause Exception cause);
 }
