@@ -1,16 +1,15 @@
 /*
- * Hibernate OGM, Domain model persistence for NoSQL datastores
- *
- * License: GNU Lesser General Public License (LGPL), version 2.1 or later
- * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
- */
+* Hibernate OGM, Domain model persistence for NoSQL datastores
+* 
+* License: GNU Lesser General Public License (LGPL), version 2.1 or later
+* See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+*/
 
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
-import java.util.Date;
+import com.orientechnologies.orient.core.id.ORecordId;
 import java.util.List;
 import java.util.Objects;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -18,18 +17,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.PrePersist;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import javax.persistence.Version;
-
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Index;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.Store;
-
-import com.orientechnologies.orient.core.id.ORecordId;
+import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
@@ -54,14 +49,6 @@ public class BuyingOrder {
 	private Customer owner;
 	@OneToMany(mappedBy = "order")
 	private List<OrderItem> orders;
-
-	@Temporal(TemporalType.TIMESTAMP)
-	private Date createdDate;
-
-	@PrePersist
-	public void prePersist() {
-		setCreatedDate( new Date() );
-	}
 
 	public Long getbKey() {
 		return bKey;
@@ -109,14 +96,6 @@ public class BuyingOrder {
 
 	public void setVersion(int version) {
 		this.version = version;
-	}
-
-	public Date getCreatedDate() {
-		return createdDate;
-	}
-
-	public void setCreatedDate(Date createdDate) {
-		this.createdDate = createdDate;
 	}
 
 	@Override
