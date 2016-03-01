@@ -8,7 +8,7 @@ package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
 import org.hibernate.ogm.model.key.spi.AssociationKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
-import org.hibernate.ogm.il.impl.Log;
+import org.hibernate.ogm.util.impl.Log;
 import org.hibernate.ogm.util.impl.LoggerFactory;
 
 /**

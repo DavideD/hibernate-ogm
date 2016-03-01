@@ -1,6 +1,6 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
- * 
+ *
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
@@ -9,15 +9,16 @@ package org.hibernate.datastore.ogm.orientdb.jpa;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+
 import org.hibernate.annotations.GenericGenerator;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 @Entity
 public class ProductType {
-    private String id;
+
+	private String id;
 	private String description;
 
 	@Id
@@ -31,7 +32,6 @@ public class ProductType {
 		this.id = id;
 	}
 
-
 	public String getDescription() {
 		return description;
 	}
@@ -39,5 +39,5 @@ public class ProductType {
 	public void setDescription(String description) {
 		this.description = description;
 	}
-    
+
 }

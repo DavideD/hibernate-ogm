@@ -6,14 +6,18 @@
  */
 package org.hibernate.datastore.ogm.orientdb.query.impl;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Set;
+
 import org.hibernate.engine.query.spi.ParamLocationRecognizer;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>

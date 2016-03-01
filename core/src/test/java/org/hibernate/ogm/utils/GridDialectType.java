@@ -7,8 +7,9 @@
 package org.hibernate.ogm.utils;
 
 /**
- * The testsuite needs some knowledge on all NoSQL stores it is meant to support. We mainly need the name of it's
- * TestableGridDialect implementation, but this is also used to disable some tests for a specific GridDialect.
+ * The testsuite needs some knowledge on all NoSQL stores it is meant to support.
+ * We mainly need the name of it's TestableGridDialect implementation, but this
+ * is also used to disable some tests for a specific GridDialect.
  *
  * @author Sanne Grinovero &lt;sanne@hibernate.org&gt;
  * @author Gunnar Morling
@@ -30,8 +31,7 @@ public enum GridDialectType {
 	CASSANDRA("org.hibernate.ogm.datastore.cassandra.CassandraDialect", false, false),
 
 	REDIS("org.hibernate.ogm.datastore.redis.RedisDialect", false, false),
-
-	ORIENTDB( "org.hibernate.datastore.ogm.orientdb.OrientDBDialect", false, false  ),
+        
 	REDIS_JSON( "org.hibernate.ogm.datastore.redis.RedisJsonDialect", false, false ),
 
 	REDIS_HASH( "org.hibernate.ogm.datastore.redis.RedisHashDialect", false, false ),

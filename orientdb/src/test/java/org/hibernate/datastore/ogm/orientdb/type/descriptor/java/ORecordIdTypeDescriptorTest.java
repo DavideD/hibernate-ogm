@@ -6,14 +6,16 @@
  */
 package org.hibernate.datastore.ogm.orientdb.type.descriptor.java;
 
-import com.orientechnologies.orient.core.id.ORecordId;
+import static org.junit.Assert.assertEquals;
+
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>

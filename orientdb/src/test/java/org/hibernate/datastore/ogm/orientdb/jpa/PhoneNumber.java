@@ -1,6 +1,6 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
- * 
+ *
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
@@ -8,17 +8,16 @@ package org.hibernate.datastore.ogm.orientdb.jpa;
 
 import java.io.Serializable;
 import java.util.Objects;
+
 import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-//@Entity
+// @Entity
 public class PhoneNumber {
-       // @EmbeddedId
+
+	// @EmbeddedId
 	private PhoneNumberId id;
 	private String description;
 
@@ -48,6 +47,8 @@ public class PhoneNumber {
 
 	@Embeddable
 	public static class PhoneNumberId implements Serializable {
+
+		private static final long serialVersionUID = 1L;
 		private String countryCode;
 		private long number;
 
@@ -75,41 +76,39 @@ public class PhoneNumber {
 			this.number = number;
 		}
 
-        @Override
-        public int hashCode() {
-            int hash = 3;
-            hash = 59 * hash + Objects.hashCode(this.countryCode);
-            hash = 59 * hash + (int) (this.number ^ (this.number >>> 32));
-            return hash;
-        }
+		@Override
+		public int hashCode() {
+			int hash = 3;
+			hash = 59 * hash + Objects.hashCode( this.countryCode );
+			hash = 59 * hash + (int) ( this.number ^ ( this.number >>> 32 ) );
+			return hash;
+		}
 
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final PhoneNumberId other = (PhoneNumberId) obj;
-            if (this.number != other.number) {
-                return false;
-            }
-            if (!Objects.equals(this.countryCode, other.countryCode)) {
-                return false;
-            }
-            return true;
-        }
-
-		
+		@Override
+		public boolean equals(Object obj) {
+			if ( this == obj ) {
+				return true;
+			}
+			if ( obj == null ) {
+				return false;
+			}
+			if ( getClass() != obj.getClass() ) {
+				return false;
+			}
+			final PhoneNumberId other = (PhoneNumberId) obj;
+			if ( this.number != other.number ) {
+				return false;
+			}
+			if ( !Objects.equals( this.countryCode, other.countryCode ) ) {
+				return false;
+			}
+			return true;
+		}
 
 		@Override
 		public String toString() {
 			return "PhoneNumberId [countryCode=" + countryCode + ", number=" + number + "]";
 		}
 	}
-    
+
 }

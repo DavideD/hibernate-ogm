@@ -33,5 +33,4 @@ public class ORecordIdGridType extends AbstractGenericBasicType<ORecordId> {
 	public String getName() {
 		return "ORecordId";
 	}
-
 }

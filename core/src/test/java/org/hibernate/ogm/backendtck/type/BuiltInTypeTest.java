@@ -160,7 +160,6 @@ public class BuiltInTypeTest extends OgmTestCase {
 	}
 
 	// byte arrays
-        @SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void testByteArrayAsLobSupport() throws Exception {
 		byte[] testData = new byte[200];

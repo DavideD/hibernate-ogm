@@ -1,9 +1,9 @@
 /*
-* Hibernate OGM, Domain model persistence for NoSQL datastores
-* 
-* License: GNU Lesser General Public License (LGPL), version 2.1 or later
-* See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
-*/
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+ */
 
 package org.hibernate.datastore.ogm.orientdb.utils;
 
@@ -28,33 +28,42 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 public class EntityKeyUtil {
 
 	private static final Log log = LoggerFactory.getLogger();
-        private static final String ORIENTDB_DATE_FORMAT = "yyyy-MM-dd";
 
 	public static void setFieldValue(StringBuilder queryBuffer, Object dbKeyValue) {
-            log.info("dbKeyValue class;"+dbKeyValue.getClass());
+		if ( dbKeyValue != null ) {
+			// @TODO not forget remove the code!
+			log.debug( "dbKeyValue class:" + dbKeyValue + "; class :" + dbKeyValue.getClass() );
+		}
 		if ( dbKeyValue instanceof String || dbKeyValue instanceof UUID || dbKeyValue instanceof Character ) {
 			queryBuffer.append( "'" ).append( dbKeyValue ).append( "'" );
-		} else if ( dbKeyValue instanceof Date ) {
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.setTime((Date) dbKeyValue);
-                        String formattedStr = (new SimpleDateFormat(ORIENTDB_DATE_FORMAT)).format(calendar.getTime());
-			queryBuffer.append( "date('" ).append( formattedStr ).append( "','")
-                                .append("yyyy-MM-dd").append("')" );
+		}
+		else if ( dbKeyValue instanceof Date || dbKeyValue instanceof Calendar ) {
+			Calendar calendar = null;
+			if ( dbKeyValue instanceof Date ) {
+				calendar = Calendar.getInstance();
+				calendar.setTime( (Date) dbKeyValue );
+			}
+			else if ( dbKeyValue instanceof Calendar ) {
+				calendar = (Calendar) dbKeyValue;
+			}
+			String formattedStr = ( new SimpleDateFormat( OrientDBConstant.DATETIME_FORMAT ) ).format( calendar.getTime() );
+			queryBuffer.append( "'" ).append( formattedStr ).append( "'" );
 		}
 		else {
 			queryBuffer.append( dbKeyValue );
 		}
+		queryBuffer.append( " " );
+
 	}
-        
 
 	public static Object findPrimaryKeyValue(EntityKey key) {
 		Object dbKeyValue = null;
 		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
 			String columnName = key.getColumnNames()[i];
 			Object columnValue = key.getColumnValues()[i];
-			log.info( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
+			log.debug( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
 			if ( key.getMetadata().isKeyColumn( columnName ) ) {
-				log.info( "EntityKey: columnName: " + columnName + " is primary key!" );
+				log.debug( "EntityKey: columnName: " + columnName + " is primary key!" );
 				dbKeyValue = columnValue;
 			}
 		}
@@ -65,7 +74,7 @@ public class EntityKeyUtil {
 		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
 			String columnName = key.getColumnNames()[i];
 			if ( key.getMetadata().isKeyColumn( columnName ) ) {
-				log.info( "EntityKey: columnName: " + columnName + " is primary key!" );
+				log.debug( "EntityKey: columnName: " + columnName + " is primary key!" );
 				return columnName;
 			}
 		}
@@ -84,32 +93,32 @@ public class EntityKeyUtil {
 		buffer.append( dbKeyName );
 		buffer.append( " = " );
 		EntityKeyUtil.setFieldValue( buffer, dbKeyValue );
-		log.info( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; query:" + buffer.toString() );
+		log.debug( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; query:" + buffer.toString() );
 
 		ResultSet rs = stmt.executeQuery( buffer.toString() );
 		if ( rs.next() ) {
 			long count = rs.getLong( 1 );
-			log.info( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; count:" + count );
+			log.debug( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; count:" + count );
 			exists = count > 0;
 		}
 		return exists;
 	}
 
 	public static ORecordId findRid(Connection connection, String className, String businessKeyName, Object businessKeyValue) throws SQLException {
-		log.info( "findRid:className:" + className + " ; businessKeyName:" + businessKeyName + "; businessKeyValue:" + businessKeyValue );
+		log.debug( "findRid:className:" + className + " ; businessKeyName:" + businessKeyName + "; businessKeyValue:" + businessKeyValue );
 		StringBuilder buffer = new StringBuilder( "select from " );
 		buffer.append( className );
 		buffer.append( " where " );
 		buffer.append( businessKeyName );
 		buffer.append( " = " );
 		EntityKeyUtil.setFieldValue( buffer, businessKeyValue );
-		log.info( "findRid:className:" + buffer.toString() );
+		log.debug( "findRid:className:" + buffer.toString() );
 		ORecordId rid = null;
 		ResultSet rs = connection.createStatement().executeQuery( buffer.toString() );
 		if ( rs.next() ) {
-			log.info( "findRid: find" );
+			log.debug( "findRid: find" );
 			rid = (ORecordId) rs.getObject( OrientDBConstant.SYSTEM_RID );
-                        log.info( "findRid: rid: "+rid );
+			log.debug( "findRid: rid: " + rid );
 		}
 		return rid;
 	}
