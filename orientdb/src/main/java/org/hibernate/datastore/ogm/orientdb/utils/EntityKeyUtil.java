@@ -7,7 +7,6 @@
 
 package org.hibernate.datastore.ogm.orientdb.utils;
 
-import com.orientechnologies.orient.core.id.ORecordId;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,10 +15,13 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
+
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.model.key.spi.EntityKey;
+
+import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>

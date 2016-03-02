@@ -6,7 +6,6 @@
  */
 package org.hibernate.datastore.ogm.orientdb.impl;
 
-import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -37,7 +36,6 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
-
 
 	private static boolean isInmemoryDB = false;
 	private static Log log = LoggerFactory.getLogger();
@@ -93,9 +91,8 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 		}
 
 	}
-        
-        
-      public Connection getConnection() {
+
+	public Connection getConnection() {
 		return connection;
 	}
 

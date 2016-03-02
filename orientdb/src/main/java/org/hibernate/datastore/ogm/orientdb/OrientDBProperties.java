@@ -12,6 +12,7 @@ import org.hibernate.ogm.cfg.OgmProperties;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBProperties implements OgmProperties {
+
 	private OrientDBProperties() {
 	}
 }

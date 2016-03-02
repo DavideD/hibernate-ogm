@@ -6,12 +6,12 @@
  */
 package org.hibernate.datastore.ogm.orientdb.utils;
 
-import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
 import org.apache.log4j.Logger;
 import org.hibernate.SessionFactory;
 import org.hibernate.datastore.ogm.orientdb.OrientDB;
@@ -29,11 +29,12 @@ import org.hibernate.ogm.utils.GridDialectOperationContexts;
 import org.hibernate.ogm.utils.TestHelper;
 import org.hibernate.ogm.utils.TestableGridDialect;
 
+import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
+
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBTestHelper implements TestableGridDialect {
-
 
 	private static final Logger log = Logger.getLogger( OrientDBTestHelper.class.getName() );
 

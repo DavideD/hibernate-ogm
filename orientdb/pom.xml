@@ -80,10 +80,10 @@
 
 		<!-- Testing -->
 
-        <dependency>
-            <groupId>com.orientechnologies</groupId>
-            <artifactId>orientdb-core</artifactId>            
-        </dependency>
+		<dependency>
+			<groupId>com.orientechnologies</groupId>
+			<artifactId>orientdb-core</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.hibernate.hql</groupId>
@@ -93,78 +93,78 @@
 			<groupId>org.hibernate.hql</groupId>
 			<artifactId>hibernate-hql-lucene</artifactId>
 		</dependency>
-        <dependency>
-            <groupId>org.parboiled</groupId>
-            <artifactId>parboiled-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-search-engine</artifactId>
-            <type>jar</type>
-        </dependency>
+		<dependency>
+			<groupId>org.parboiled</groupId>
+			<artifactId>parboiled-java</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-search-engine</artifactId>
+			<type>jar</type>
+		</dependency>
 
-        <!-- Testing -->
-        
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate.ogm</groupId>
-            <artifactId>hibernate-ogm-core</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.jbossts</groupId>
-            <artifactId>jbossjta</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.easytesting</groupId>
-            <artifactId>fest-assert</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.shrinkwrap</groupId>
-            <artifactId>shrinkwrap-impl-base</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.takari.junit</groupId>
-            <artifactId>takari-cpsuite</artifactId>
-            <scope>test</scope>
-        </dependency>
-        
-         <dependency>
-            <groupId>org.hibernate.hql</groupId>
-            <artifactId>hibernate-hql-parser</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate.hql</groupId>
-            <artifactId>hibernate-hql-lucene</artifactId>
-        </dependency>
-        
-    </dependencies>
+		<!-- Testing -->
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate.ogm</groupId>
+			<artifactId>hibernate-ogm-core</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.jbossts</groupId>
+			<artifactId>jbossjta</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.spec.javax.transaction</groupId>
+			<artifactId>jboss-transaction-api_1.2_spec</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.easytesting</groupId>
+			<artifactId>fest-assert</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.shrinkwrap</groupId>
+			<artifactId>shrinkwrap-impl-base</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.takari.junit</groupId>
+			<artifactId>takari-cpsuite</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.hibernate.hql</groupId>
+			<artifactId>hibernate-hql-parser</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate.hql</groupId>
+			<artifactId>hibernate-hql-lucene</artifactId>
+		</dependency>
+
+	</dependencies>
 </project>

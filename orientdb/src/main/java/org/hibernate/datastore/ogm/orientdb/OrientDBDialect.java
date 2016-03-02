@@ -6,7 +6,6 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -37,12 +36,6 @@ import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.SequenceUtil;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.dialect.identity.spi.IdentityColumnAwareGridDialect;
-import org.hibernate.ogm.dialect.multiget.spi.MultigetGridDialect;
-import org.hibernate.ogm.dialect.query.spi.BackendQuery;
-import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
-import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
-import org.hibernate.ogm.dialect.query.spi.QueryParameters;
-
 import org.hibernate.ogm.dialect.query.spi.BackendQuery;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
@@ -81,13 +74,12 @@ import org.hibernate.type.Type;
 
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.id.ORecordId;
-import java.io.ByteArrayInputStream;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements QueryableGridDialect<String>,
-		ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
 
 	private static final Log log = LoggerFactory.getLogger();
 	private static final Association ASSOCIATION_NOT_FOUND = null;
@@ -127,7 +119,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		throw new UnsupportedOperationException( "forEachTuple!.Not supported yet." );
 	}
 
-
 	@Override
 	public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
 
@@ -152,18 +143,18 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	 * @param primaryKeyName primary key column name
 	 * @return list of query parameters
 	 */
-	
+
 	private List<Object> addTupleFields(StringBuilder queryBuffer, Tuple tuple, String primaryKeyName, boolean forInsert) {
 		LinkedList<Object> preparedStatementParams = new LinkedList<>();
 		for ( String columnName : tuple.getColumnNames() ) {
-			if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) || 
-                                (primaryKeyName!=null  && columnName.equals( primaryKeyName )) ) {
+			if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) ||
+					( primaryKeyName != null && columnName.equals( primaryKeyName ) ) ) {
 				continue;
 			}
 			log.debug( "addTupleFields: Set value for column " + columnName );
-                        if (!forInsert) {
-                            queryBuffer.append( columnName ).append( "=" );
-                        }
+			if ( !forInsert ) {
+				queryBuffer.append( columnName ).append( "=" );
+			}
 			if ( tuple.get( columnName ) instanceof byte[] ) {
 				queryBuffer.append( "?" );
 				preparedStatementParams.add( tuple.get( columnName ) );
@@ -182,9 +173,9 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			}
 			queryBuffer.append( " ," );
 		}
-                if (forInsert) {
-                            queryBuffer.setLength(queryBuffer.length()-1);
-                        }
+		if ( forInsert ) {
+			queryBuffer.setLength( queryBuffer.length() - 1 );
+		}
 
 		return preparedStatementParams;
 	}
@@ -205,8 +196,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			log.debug( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
 		}
 
-                
-
 		try {
 			boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( provider.getConnection(), key );
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " exists in database ? " + existsPrimaryKey );
@@ -215,7 +204,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			if ( existsPrimaryKey ) {
 				// it is update
 				queryBuffer.append( "update " ).append( key.getTable() ).append( "  set " );
-				preparedStatementParams = addTupleFields( queryBuffer, tuple,dbKeyName,false );
+				preparedStatementParams = addTupleFields( queryBuffer, tuple, dbKeyName, false );
 				if ( queryBuffer.toString().endsWith( "," ) ) {
 					queryBuffer.setLength( queryBuffer.length() - 1 );
 				}
@@ -227,32 +216,31 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 				log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " is new! Insert new record!" );
 				queryBuffer.append( "insert into " ).append( key.getTable() ).append( "  (" );
-                                for (String columnName : tuple.getColumnNames()) {
-                                    if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName )  ) {
-                                        continue;
-                                    }                                    
-                                    queryBuffer.append(columnName).append(",");
-                                }
-                                queryBuffer.setLength(queryBuffer.length()-1);
-                                queryBuffer.append(") values (");
-				preparedStatementParams = addTupleFields( queryBuffer, tuple, null,true );
-                                queryBuffer.append(")");
+				for ( String columnName : tuple.getColumnNames() ) {
+					if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) ) {
+						continue;
+					}
+					queryBuffer.append( columnName ).append( "," );
+				}
+				queryBuffer.setLength( queryBuffer.length() - 1 );
+				queryBuffer.append( ") values (" );
+				preparedStatementParams = addTupleFields( queryBuffer, tuple, null, true );
+				queryBuffer.append( ")" );
 			}
-
 
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). Query: " + queryBuffer.toString() );
 			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
-                        log.debug( "insertOrUpdateTuple: exist parameters for preparedstatement :"+preparedStatementParams.size() );
+			log.debug( "insertOrUpdateTuple: exist parameters for preparedstatement :" + preparedStatementParams.size() );
 			for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
-					Object value = preparedStatementParams.get( i );
-					if ( value instanceof byte[] ) {
-						pstmt.setBytes( i+1, (byte[]) value );
-					}
-					else {
-						pstmt.setObject( i+1, value );
-					}
+				Object value = preparedStatementParams.get( i );
+				if ( value instanceof byte[] ) {
+					pstmt.setBytes( i + 1, (byte[]) value );
+				}
+				else {
+					pstmt.setObject( i + 1, value );
+				}
 			}
-			
+
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). inserted or updated: " + pstmt.executeUpdate() );
 		}
 		catch (SQLException e) {
@@ -267,11 +255,11 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 		StringBuilder insertQuery = new StringBuilder( 100 );
 		insertQuery.append( "insert into " ).append( entityKeyMetadata.getTable() ).append( "( " );
-		
+
 		String dbKeyName = entityKeyMetadata.getColumnNames()[0];
 		Long dbKeyValue = null;
 		Connection connection = provider.getConnection();
-                List<Object> preparedStatementParams = null;
+		List<Object> preparedStatementParams = null;
 
 		if ( dbKeyName.equals( OrientDBConstant.SYSTEM_RID ) ) {
 			// use @RID for key
@@ -291,34 +279,35 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				throw new RuntimeException( e );
 			}
 		}
-                                for (String columnName : tuple.getColumnNames()) {
-                                    if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName )  ) {
-                                        continue;
-                                    }
-                                    insertQuery.append(columnName).append(",");
-                                }
-                                insertQuery.setLength(insertQuery.length()-1);
-                                insertQuery.append(") values (");
+		for ( String columnName : tuple.getColumnNames() ) {
+			if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) ) {
+				continue;
+			}
+			insertQuery.append( columnName ).append( "," );
+		}
+		insertQuery.setLength( insertQuery.length() - 1 );
+		insertQuery.append( ") values (" );
 
-				preparedStatementParams = addTupleFields( insertQuery, tuple, null,true );
-                                insertQuery.append(")");				
-		
+		preparedStatementParams = addTupleFields( insertQuery, tuple, null, true );
+		insertQuery.append( ")" );
+
 		log.debug( "insertTuple: insertQuery: " + insertQuery.toString() );
-                try{
-		PreparedStatement pstmt = connection.prepareStatement( insertQuery.toString() );
+		try {
+			PreparedStatement pstmt = connection.prepareStatement( insertQuery.toString() );
 			if ( preparedStatementParams != null ) {
 				for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
 					Object value = preparedStatementParams.get( i );
 					if ( value instanceof byte[] ) {
-                                                pstmt.setBytes( i+1, (byte[]) value );
+						pstmt.setBytes( i + 1, (byte[]) value );
 					}
 					else {
-						pstmt.setObject( i+1, value );
+						pstmt.setObject( i + 1, value );
 					}
 				}
 			}
 			log.debug( "insertTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). inserted or updated: " + pstmt.executeUpdate() );
-                } catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			log.error( "Can not insert/updated entity", e );
 			throw new RuntimeException( e );
 		}
@@ -616,7 +605,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 		if ( type.getName().equals( ORecordId.class.getName() ) ) {
 			gridType = ORecordIdGridType.INSTANCE;
-		} else if ( type.getName().equals( ORidBag.class.getName() ) ) {
+		}
+		else if ( type.getName().equals( ORidBag.class.getName() ) ) {
 			gridType = ORidBagGridType.INSTANCE;
 		}
 		else if ( type.getName().equals( ORidBag.class.getName() ) ) {

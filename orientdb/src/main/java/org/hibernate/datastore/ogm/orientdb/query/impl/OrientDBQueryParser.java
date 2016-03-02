@@ -7,9 +7,8 @@
 package org.hibernate.datastore.ogm.orientdb.query.impl;
 
 import org.hibernate.engine.query.spi.ParameterParser;
+import org.hibernate.engine.query.spi.ParameterParser.Recognizer;
 import org.parboiled.BaseParser;
-import static org.parboiled.BaseParser.ANY;
-import static org.parboiled.BaseParser.EOI;
 import org.parboiled.Rule;
 import org.parboiled.annotations.SkipNode;
 import org.parboiled.annotations.SuppressSubnodes;

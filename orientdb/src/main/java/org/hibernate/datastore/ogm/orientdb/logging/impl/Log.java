@@ -6,13 +6,13 @@
  */
 package org.hibernate.datastore.ogm.orientdb.logging.impl;
 
-import org.hibernate.HibernateException;
-import org.hibernate.ogm.model.key.spi.EntityKey;
-import org.hibernate.ogm.model.spi.TupleOperation;
 import static org.jboss.logging.Logger.Level.DEBUG;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
-import static org.jboss.logging.Logger.Level.WARN;
+
+import org.hibernate.HibernateException;
+import org.hibernate.ogm.model.key.spi.EntityKey;
+import org.hibernate.ogm.model.spi.TupleOperation;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
@@ -41,13 +41,16 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 
 	@Message(id = 1408, value = "Error while cheking transaction status")
 	HibernateException exceptionWhileChekingTransactionStatus(@Cause Exception e);
-        
-        @Message(id = 1700, value = "Cannot create class %s")
+
+	@Message(id = 1700, value = "Cannot create class %s")
 	HibernateException cannotGenerateVertexClass(String className, @Cause Exception cause);
-        @Message(id = 1701, value = "Cannot create property %s for class %s")
+
+	@Message(id = 1701, value = "Cannot create property %s for class %s")
 	HibernateException cannotGenerateProperty(String propertyName, String className, @Cause Exception cause);
-        @Message(id = 1702, value = "Cannot create index %s for class %s")
+
+	@Message(id = 1702, value = "Cannot create index %s for class %s")
 	HibernateException cannotGenerateIndex(String propertyName, String className, @Cause Exception cause);
-        @Message(id = 1703, value = "Cannot generate sequence %s")
+
+	@Message(id = 1703, value = "Cannot generate sequence %s")
 	HibernateException cannotGenerateSequence(String sequenceName, @Cause Exception cause);
 }

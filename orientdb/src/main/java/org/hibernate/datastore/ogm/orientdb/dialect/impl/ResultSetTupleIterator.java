@@ -1,4 +1,3 @@
-
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
  *
@@ -13,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
@@ -64,7 +64,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
 				String format = resultSet.getMetaData().getColumnTypeName( fieldNum ).equals( "DATETIME" )
 						? OrientDBConstant.DATETIME_FORMAT
-								: OrientDBConstant.DATE_FORMAT;
+						: OrientDBConstant.DATE_FORMAT;
 				dbValue = new SimpleDateFormat( format ).format( dbValue );
 			}
 
@@ -73,7 +73,6 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 		for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
 			map.put( systemField, resultSet.getObject( systemField ) );
 		}
-
 
 		log.debug( "field map: " + map );
 		return new Tuple( new MapTupleSnapshot( map ) );
