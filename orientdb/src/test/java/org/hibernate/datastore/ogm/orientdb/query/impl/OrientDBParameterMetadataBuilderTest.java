@@ -1,25 +1,11 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
-<<<<<<< HEAD
- * 
-=======
  *
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb.query.impl;
 
-<<<<<<< HEAD
-import java.util.Set;
-import org.hibernate.engine.query.spi.ParamLocationRecognizer;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
-=======
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -28,35 +14,12 @@ import java.util.Set;
 
 import org.hibernate.engine.query.spi.ParamLocationRecognizer;
 import org.junit.Test;
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 public class OrientDBParameterMetadataBuilderTest {
 
-<<<<<<< HEAD
-	public OrientDBParameterMetadataBuilderTest() {
-	}
-
-	@BeforeClass
-	public static void setUpClass() {
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-	}
-
-	@Before
-	public void setUp() {
-	}
-
-	@After
-	public void tearDown() {
-	}
-
-=======
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	/**
 	 * Test of parseQueryParameters method, of class OrientDBParameterMetadataBuilder.
 	 */

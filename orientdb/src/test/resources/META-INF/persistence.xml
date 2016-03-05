@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="2.0"
+
 	xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
 
 	<persistence-unit name="hibernateOgmJpaUnit"
 		transaction-type="RESOURCE_LOCAL">
 		<provider>org.hibernate.ogm.jpa.HibernateOgmPersistence</provider>
+
+		<!-- JPA entities must be registered here -->
+		<class>org.hibernate.datastore.ogm.orientdb.jpa.Customer</class>
 
 		<properties>
 			<property name="hibernate.ogm.datastore.provider" value="orientdb" />
@@ -24,6 +28,8 @@
 				value="org.hibernate.transaction.JDBCTransactionFactory" />
 			<property name="hibernate.current_session_context_clas"
 				value="thread" />
+
+
 		</properties>
 	</persistence-unit>
 </persistence>

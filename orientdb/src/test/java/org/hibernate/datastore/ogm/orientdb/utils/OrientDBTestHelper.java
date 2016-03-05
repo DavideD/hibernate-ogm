@@ -42,13 +42,7 @@ public class OrientDBTestHelper implements TestableGridDialect {
 	private static OrientGraphNoTx graphNoTx;
 
 	public OrientDBTestHelper() {
-<<<<<<< HEAD
-		BasicConfigurator.configure();
-		// create OrientDB in memory
-		org.hibernate.datastore.ogm.orientdb.util.MemoryDBUtil.createDbFactory( "jdbc:orient:memory:test" );
-=======
 		graphNoTx = MemoryDBUtil.createDbFactory( OrientDBSimpleTest.MEMORY_TEST );
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 	@Override

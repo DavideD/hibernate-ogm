@@ -1,25 +1,15 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
-<<<<<<< HEAD
- * 
-=======
  *
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
-<<<<<<< HEAD
-import com.orientechnologies.orient.core.id.ORecordId;
-import java.math.BigDecimal;
-import java.util.Objects;
-=======
 import java.math.BigDecimal;
 import java.util.Objects;
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -27,16 +17,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.Version;
-<<<<<<< HEAD
-import org.hibernate.search.annotations.Indexed;
-
-=======
 
 import org.hibernate.search.annotations.Indexed;
 
 import com.orientechnologies.orient.core.id.ORecordId;
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */

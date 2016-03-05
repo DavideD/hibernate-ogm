@@ -137,13 +137,7 @@ implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
 	@Override
 	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
-<<<<<<< HEAD
-		LOG.info( "getSchemaDefinerType" );
 		return OrientDBSchemaDefiner.class;
-		// return super.getSchemaDefinerType();
-=======
-		return OrientDBSchemaDefiner.class;
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 }

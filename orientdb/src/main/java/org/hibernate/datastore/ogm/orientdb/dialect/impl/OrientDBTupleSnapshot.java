@@ -14,10 +14,6 @@ import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.utils.AssociationUtil;
-<<<<<<< HEAD
-import org.hibernate.datastore.ogm.orientdb.utils.ORidBagUtil;
-=======
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
@@ -42,64 +38,30 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		this.associatedEntityKeyMetadata = associatedEntityKeyMetadata;
 		this.rolesByColumn = rolesByColumn;
 		this.entityKeyMetadata = entityKeyMetadata;
-<<<<<<< HEAD
-		LOG.info( "1.dbNameValueMap:" + dbNameValueMap );
-		LOG.info( "1.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
-=======
 		log.debug( "1.dbNameValueMap:" + dbNameValueMap );
 		log.debug( "1.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
 		log.debug( "1.rolesByColumn:" + rolesByColumn );
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 	public OrientDBTupleSnapshot(Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
 			Map<String, String> rolesByColumn,
 			EntityKeyMetadata entityKeyMetadata) {
 		this( new HashMap<String, Object>(), associatedEntityKeyMetadata, rolesByColumn, entityKeyMetadata );
-<<<<<<< HEAD
-		LOG.info( "2.dbNameValueMap:" + dbNameValueMap );
-		LOG.info( "2.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
-=======
 		log.debug( "2.dbNameValueMap:" + dbNameValueMap );
 		log.debug( "2.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
 		log.debug( "2.rolesByColumn:" + rolesByColumn );
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 	@Override
 	public Object get(String targetColumnName) {
-<<<<<<< HEAD
-		LOG.info( "targetColumnName: " + targetColumnName );
-=======
 		log.debug( "targetColumnName: " + targetColumnName );
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 		Object value = null;
 		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) && value == null ) {
 			value = Integer.valueOf( 0 );
 		}
-<<<<<<< HEAD
-		/*else if ( associatedEntityKeyMetadata.containsKey( targetColumnName ) ) {
-			LOG.info( "associated targetColumnName: " + targetColumnName );
-			String mappedByName = AssociationUtil.getMappedByFieldName( associatedEntityKeyMetadata.get( targetColumnName ) );
-			String inOrientDbField = "in_".concat( mappedByName );
-			Map<String, Object> associatedEntity = loadAssociatedEntity( associatedEntityKeyMetadata.get( targetColumnName ), targetColumnName );
-			if ( associatedEntity != null ) {
-				for ( Map.Entry<String, Object> entry : associatedEntity.entrySet() ) {
-					LOG.info( "name: " + entry.getKey() + "; value:" + entry.getValue() );
-				}
-				String string = (String) associatedEntity.get( inOrientDbField );
-				value = ORidBagUtil.convertStringToORidBag( string );
-				dbNameValueMap.remove( targetColumnName );
-			}
-		} */
-		else {
-			value = dbNameValueMap.get( targetColumnName );
-			LOG.info( "targetColumnName: " + targetColumnName + "; value: " + value );
-=======
 		else {
 			value = dbNameValueMap.get( targetColumnName );
 			log.debug( "targetColumnName: " + targetColumnName + "; value: " + value + "; class :" + ( value != null ? value.getClass() : null ) );
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 		}
 		return value;
 	}
@@ -107,21 +69,12 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	private Map<String, Object> loadAssociatedEntity(AssociatedEntityKeyMetadata associatedEntityKeyMetadata, String targetColumnName) {
 		String mappedByName = AssociationUtil.getMappedByFieldName( associatedEntityKeyMetadata );
 		String inOrientDbField = "in_".concat( mappedByName );
-<<<<<<< HEAD
-		LOG.info( "mappedByName: " + mappedByName + "; inOrientDbField:" + inOrientDbField );
-		LOG.info( "inOrientDbField: " + inOrientDbField + ".loaded? :" + dbNameValueMap.containsKey( inOrientDbField ) );
-		Map<String, Object> value = null;
-		if ( dbNameValueMap.containsKey( inOrientDbField ) ) {
-			value = (Map<String, Object>) dbNameValueMap.get( inOrientDbField );
-			LOG.info( "value: " + value.getClass() );
-=======
 		log.debug( "mappedByName: " + mappedByName + "; inOrientDbField:" + inOrientDbField );
 		log.debug( "inOrientDbField: " + inOrientDbField + ".loaded? :" + dbNameValueMap.containsKey( inOrientDbField ) );
 		Map<String, Object> value = null;
 		if ( dbNameValueMap.containsKey( inOrientDbField ) ) {
 			value = (Map<String, Object>) dbNameValueMap.get( inOrientDbField );
 			log.debug( "value: " + value.getClass() );
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 		}
 		return value;
 	}

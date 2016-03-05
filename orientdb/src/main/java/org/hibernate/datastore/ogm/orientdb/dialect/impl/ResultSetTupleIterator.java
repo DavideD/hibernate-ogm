@@ -12,10 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-<<<<<<< HEAD
-=======
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
@@ -79,14 +76,6 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 		catch (SQLException sqle) {
 			throw log.cannotProcessResultSet( sqle );
 		}
-<<<<<<< HEAD
-		for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
-			map.put( systemField, resultSet.getObject( systemField ) );
-		}
-
-		log.info( "field map: " + map );
-=======
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 		return new Tuple( new MapTupleSnapshot( map ) );
 	}
 

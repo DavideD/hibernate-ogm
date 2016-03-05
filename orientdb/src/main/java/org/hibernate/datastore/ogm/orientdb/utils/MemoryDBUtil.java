@@ -26,7 +26,6 @@ import com.tinkerpop.blueprints.impls.orient.OrientVertexType;
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-@Deprecated
 public class MemoryDBUtil {
 
 	private static final Logger LOG = Logger.getLogger( MemoryDBUtil.class.getName() );

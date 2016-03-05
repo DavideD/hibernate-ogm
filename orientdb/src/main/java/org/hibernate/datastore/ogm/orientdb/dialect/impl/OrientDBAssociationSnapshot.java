@@ -1,17 +1,9 @@
 /*
-<<<<<<< HEAD
-* Hibernate OGM, Domain model persistence for NoSQL datastores
-* 
-* License: GNU Lesser General Public License (LGPL), version 2.1 or later
-* See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
-*/
-=======
  * Hibernate OGM, Domain model persistence for NoSQL datastores
  *
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
@@ -30,11 +22,7 @@ import org.hibernate.ogm.model.spi.Tuple;
 
 public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 
-<<<<<<< HEAD
-	private static Log LOG = LoggerFactory.getLogger();
-=======
 	private static Log log = LoggerFactory.getLogger();
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	private final Map<RowKey, Tuple> tuples;
 
 	public OrientDBAssociationSnapshot(Map<RowKey, Tuple> tuples) {
@@ -42,33 +30,16 @@ public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 	}
 
 	@Override
-<<<<<<< HEAD
-	public Tuple get(RowKey rowKey) {
-		LOG.info( "get: rowKey :" + rowKey );
-		Tuple tuple = tuples.get( rowKey );
-		return tuple;
-	}
-
-	@Override
-	public boolean containsKey(RowKey rowKey) {
-		LOG.info( "containsKey: rowKey :" + rowKey );
-=======
 	public boolean containsKey(RowKey rowKey) {
 		log.debug( "containsKey: rowKey :" + rowKey );
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 		return tuples.containsKey( rowKey );
 	}
 
 	@Override
-<<<<<<< HEAD
-	public int size() {
-		return tuples.size();
-=======
 	public Tuple get(RowKey rowKey) {
 		log.debug( "get: rowKey :" + rowKey );
 		Tuple tuple = tuples.get( rowKey );
 		return tuple;
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 	@Override
@@ -76,12 +47,9 @@ public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 		return tuples.keySet();
 
 	}
-<<<<<<< HEAD
-=======
 
 	@Override
 	public int size() {
 		return tuples.size();
 	}
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 }

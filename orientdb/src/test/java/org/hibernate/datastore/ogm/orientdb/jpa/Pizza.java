@@ -1,35 +1,19 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
-<<<<<<< HEAD
- * 
-=======
  *
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
-<<<<<<< HEAD
-import com.orientechnologies.orient.core.id.ORecordId;
-import java.util.List;
-import java.util.Objects;
-=======
 import java.util.List;
 import java.util.Objects;
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-<<<<<<< HEAD
-import javax.persistence.OneToMany;
-import javax.persistence.Version;
-import org.hibernate.search.annotations.Indexed;
-
-=======
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.Version;
@@ -38,7 +22,6 @@ import org.hibernate.search.annotations.Indexed;
 
 import com.orientechnologies.orient.core.id.ORecordId;
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
@@ -53,13 +36,10 @@ public class Pizza {
 	private String name;
 	@OneToMany(mappedBy = "buying")
 	private List<OrderItem> orderItems;
-<<<<<<< HEAD
-=======
 
 	@ManyToMany
 	private List<Product> products;
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	@Version
 	@Column(name = "@version")
 	private int version;
@@ -106,8 +86,6 @@ public class Pizza {
 		this.rid = rid;
 	}
 
-<<<<<<< HEAD
-=======
 	public List<Product> getProducts() {
 		return products;
 	}
@@ -116,7 +94,6 @@ public class Pizza {
 		this.products = products;
 	}
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	@Override
 	public int hashCode() {
 		int hash = 7;
