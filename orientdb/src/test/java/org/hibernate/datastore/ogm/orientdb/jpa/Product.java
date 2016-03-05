@@ -1,77 +1,53 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
-<<<<<<< HEAD
- * 
-=======
  *
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
-<<<<<<< HEAD
-import com.orientechnologies.orient.core.id.ORecordId;
-import java.util.List;
-import java.util.Objects;
-=======
 import java.util.List;
 import java.util.Objects;
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
-<<<<<<< HEAD
-import javax.persistence.OneToMany;
-import javax.persistence.Version;
-import org.hibernate.search.annotations.Indexed;
-
-=======
 import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
 import javax.persistence.Version;
 
+import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.search.annotations.Indexed;
 
 import com.orientechnologies.orient.core.id.ORecordId;
 
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 @Entity
-@Indexed(index = "Pizza")
-public class Pizza {
+@Indexed(index = "Product")
+public class Product {
 
 	@Id
-	@Column(name = "bKey")
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long bKey;
+	@GeneratedValue(generator = "uuid")
+	@GenericGenerator(name = "uuid", strategy = "uuid2")
+	private String id;
 	private String name;
-	@OneToMany(mappedBy = "buying")
-	private List<OrderItem> orderItems;
-<<<<<<< HEAD
-=======
+	@ManyToMany(mappedBy = "products")
+	private List<Pizza> pizzas;
 
-	@ManyToMany
-	private List<Product> products;
-
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	@Version
 	@Column(name = "@version")
 	private int version;
 	@Column(name = "@rid")
 	private ORecordId rid;
 
-	public Long getbKey() {
-		return bKey;
+	public String getId() {
+		return id;
 	}
 
-	public void setbKey(Long bKey) {
-		this.bKey = bKey;
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	public String getName() {
@@ -82,12 +58,12 @@ public class Pizza {
 		this.name = name;
 	}
 
-	public List<OrderItem> getOrderItems() {
-		return orderItems;
+	public List<Pizza> getPizzas() {
+		return pizzas;
 	}
 
-	public void setOrderItems(List<OrderItem> orderItems) {
-		this.orderItems = orderItems;
+	public void setPizzas(List<Pizza> pizzas) {
+		this.pizzas = pizzas;
 	}
 
 	public int getVersion() {
@@ -106,21 +82,10 @@ public class Pizza {
 		this.rid = rid;
 	}
 
-<<<<<<< HEAD
-=======
-	public List<Product> getProducts() {
-		return products;
-	}
-
-	public void setProducts(List<Product> products) {
-		this.products = products;
-	}
-
->>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	@Override
 	public int hashCode() {
 		int hash = 7;
-		hash = 13 * hash + Objects.hashCode( this.bKey );
+		hash = 29 * hash + Objects.hashCode( this.id );
 		return hash;
 	}
 
@@ -135,11 +100,10 @@ public class Pizza {
 		if ( getClass() != obj.getClass() ) {
 			return false;
 		}
-		final Pizza other = (Pizza) obj;
-		if ( !Objects.equals( this.bKey, other.bKey ) ) {
+		final Product other = (Product) obj;
+		if ( !Objects.equals( this.id, other.id ) ) {
 			return false;
 		}
 		return true;
 	}
-
 }

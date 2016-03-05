@@ -7,6 +7,10 @@
 package org.hibernate.datastore.ogm.orientdb.query.parsing.impl;
 
 import java.util.Map;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.query.spi.BaseQueryParserService;
 import org.hibernate.ogm.query.spi.QueryParsingResult;
@@ -26,19 +30,31 @@ public class OrientDBBasedQueryParserService extends BaseQueryParserService {
 	@Override
 	public boolean supportsParameters() {
 		throw new UnsupportedOperationException( "Not supported yet." ); // To change body of generated methods, choose
+<<<<<<< HEAD
 																			// Tools | Templates.
+=======
+		// Tools | Templates.
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 	@Override
 	public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory, String queryString, Map<String, Object> namedParameters) {
 		throw new UnsupportedOperationException( "Not supported yet." ); // To change body of generated methods, choose
+<<<<<<< HEAD
 																			// Tools | Templates.
+=======
+		// Tools | Templates.
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 	@Override
 	public QueryParsingResult parseQuery(SessionFactoryImplementor sessionFactory, String queryString) {
 		throw new UnsupportedOperationException( "Not supported yet." ); // To change body of generated methods, choose
+<<<<<<< HEAD
 																			// Tools | Templates.
+=======
+		// Tools | Templates.
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 }

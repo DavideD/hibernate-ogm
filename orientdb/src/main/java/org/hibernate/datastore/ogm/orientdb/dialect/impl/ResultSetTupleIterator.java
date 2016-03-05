@@ -8,8 +8,14 @@ package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
@@ -36,8 +42,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			return !resultSet.isLast();
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
-			throw new RuntimeException( e );
+			throw log.cannotMoveOnResultSet( e );
 		}
 	}
 
@@ -48,22 +53,40 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			return convert();
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
-			throw new RuntimeException( e );
+			throw log.cannotMoveOnResultSet( e );
 		}
 	}
 
-	protected Tuple convert() throws SQLException {
+	protected Tuple convert() {
 		Map<String, Object> map = new HashMap<>();
-		for ( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ ) {
-			int fieldNum = i + 1;
-			map.put( resultSet.getMetaData().getColumnName( fieldNum ), resultSet.getObject( fieldNum ) );
+		try {
+			for ( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ ) {
+				int fieldNum = i + 1;
+				Object dbValue = resultSet.getObject( fieldNum );
+				if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
+					String format = resultSet.getMetaData().getColumnTypeName( fieldNum ).equals( "DATETIME" )
+							? OrientDBConstant.DATETIME_FORMAT
+									: OrientDBConstant.DATE_FORMAT;
+					dbValue = new SimpleDateFormat( format ).format( dbValue );
+				}
+
+				map.put( resultSet.getMetaData().getColumnName( fieldNum ), dbValue );
+			}
+			for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
+				map.put( systemField, resultSet.getObject( systemField ) );
+			}
 		}
+		catch (SQLException sqle) {
+			throw log.cannotProcessResultSet( sqle );
+		}
+<<<<<<< HEAD
 		for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
 			map.put( systemField, resultSet.getObject( systemField ) );
 		}
 
 		log.info( "field map: " + map );
+=======
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 		return new Tuple( new MapTupleSnapshot( map ) );
 	}
 
@@ -73,7 +96,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			resultSet.deleteRow();
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
+			throw log.cannotDeleteRowFromResultSet( e );
 		}
 	}
 
@@ -83,7 +106,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			resultSet.close();
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
+			throw log.cannotCloseResultSet( e );
 		}
 	}
 

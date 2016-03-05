@@ -1,4 +1,5 @@
 /*
+<<<<<<< HEAD
 * Hibernate OGM, Domain model persistence for NoSQL datastores
 * 
 * License: GNU Lesser General Public License (LGPL), version 2.1 or later
@@ -10,6 +11,19 @@ package org.hibernate.datastore.ogm.orientdb.jpa;
 import com.orientechnologies.orient.core.id.ORecordId;
 import java.util.List;
 import java.util.Objects;
+=======
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+ */
+
+package org.hibernate.datastore.ogm.orientdb.jpa;
+
+import java.util.List;
+import java.util.Objects;
+
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -18,6 +32,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Version;
+<<<<<<< HEAD
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.FieldBridge;
@@ -25,6 +40,16 @@ import org.hibernate.search.annotations.Index;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.Store;
 import org.hibernate.search.orientdb.bridge.ORecordIdTwoWayStringBridge;
+=======
+
+import org.hibernate.search.annotations.Analyze;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Index;
+import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.annotations.Store;
+
+import com.orientechnologies.orient.core.id.ORecordId;
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>

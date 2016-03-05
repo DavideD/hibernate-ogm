@@ -1,22 +1,49 @@
 /*
+<<<<<<< HEAD
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
+=======
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
  */
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
 import com.orientechnologies.orient.core.id.ORecordId;
+<<<<<<< HEAD
+=======
+import java.util.Calendar;
+import java.util.Date;
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import java.util.List;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+<<<<<<< HEAD
+=======
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+<<<<<<< HEAD
 import javax.persistence.Version;
+=======
+import javax.persistence.PrePersist;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Version;
+import org.hibernate.annotations.Type;
+import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
+import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.Index;
@@ -24,15 +51,28 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.Store;
 
 /**
+<<<<<<< HEAD
  * @author chernolyassv
+=======
+ * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
  */
 @Entity
 @Indexed(index = "Customer")
 @NamedQueries({
+<<<<<<< HEAD
 		@NamedQuery(name = "Customer.findAll", query = "SELECT c FROM Customer c"),
 		@NamedQuery(name = "Country.findByName", query = "SELECT c FROM Customer c WHERE c.name = :name") })
 public class Customer {
 
+=======
+	@NamedQuery(name = "Customer.findAll", query = "SELECT c FROM Customer c"),
+	@NamedQuery(name = "Country.findByName", query = "SELECT c FROM Customer c WHERE c.name = :name") })
+public class Customer {
+
+	private static Log log = LoggerFactory.getLogger();
+
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	@Id
 	@Column(name = "bKey")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,6 +88,29 @@ public class Customer {
 	@OneToMany(mappedBy = "owner")
 	private List<BuyingOrder> orders;
 
+<<<<<<< HEAD
+=======
+	@Enumerated(EnumType.STRING)
+	private Status status;
+
+	@Temporal(TemporalType.DATE)
+	private Date createdDate;
+
+	@Type(type = "yes_no")
+	private boolean blocked;
+	/*
+	 * @OneToMany
+	 * @JoinTable(name="CUSTOMER_PHONE", joinColumns=@JoinColumn(name="CUSTOMER_ID"),
+	 * inverseJoinColumns=@JoinColumn(name="PHONE_ID")) private List<PhoneNumber> phones;
+	 */
+
+	@PrePersist
+	public void prePersist() {
+		setCreatedDate( Calendar.getInstance().getTime() );
+		setBlocked( false );
+	}
+
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	public Long getbKey() {
 		return bKey;
 	}
@@ -88,6 +151,33 @@ public class Customer {
 		this.version = version;
 	}
 
+<<<<<<< HEAD
+=======
+	public Status getStatus() {
+		return status;
+	}
+
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	public Date getCreatedDate() {
+		return createdDate;
+	}
+
+	public void setCreatedDate(Date createdDate) {
+		this.createdDate = createdDate;
+	}
+
+	public boolean isBlocked() {
+		return blocked;
+	}
+
+	public void setBlocked(boolean blocked) {
+		this.blocked = blocked;
+	}
+
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	@Override
 	public int hashCode() {
 		int hash = 7;

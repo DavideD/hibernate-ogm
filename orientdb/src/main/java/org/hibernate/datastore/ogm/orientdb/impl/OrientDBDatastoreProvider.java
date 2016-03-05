@@ -8,11 +8,15 @@ package org.hibernate.datastore.ogm.orientdb.impl;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
+
 import org.hibernate.datastore.ogm.orientdb.OrientDBDialect;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
 import org.hibernate.engine.jndi.spi.JndiService;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
 import org.hibernate.ogm.datastore.spi.BaseDatastoreProvider;
@@ -26,12 +30,17 @@ import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Startable;
 import org.hibernate.service.spi.Stoppable;
 
+import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
+
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
-public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
+public class OrientDBDatastoreProvider extends BaseDatastoreProvider
+implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
-	private static Log LOG = LoggerFactory.getLogger();
+	private static boolean isInmemoryDB = false;
+	private static Log log = LoggerFactory.getLogger();
+	private static OrientGraphFactory factory;
 	private ConfigurationPropertyReader propertyReader;
 	private ServiceRegistryImplementor registry;
 	private JtaPlatform jtaPlatform;
@@ -46,25 +55,50 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public void start() {
-		LOG.info( "start" );
+		log.debug( "start" );
 		try {
 			PropertyReaderContext<String> jdbcUrlPropery = propertyReader.property( "javax.persistence.jdbc.url", String.class );
 			if ( jdbcUrlPropery != null ) {
 				String jdbcUrl = jdbcUrlPropery.getValue();
-				LOG.info( "jdbcUrl:" + jdbcUrl );
+				log.warn( "jdbcUrl:" + jdbcUrl );
 				Class.forName( propertyReader.property( "javax.persistence.jdbc.driver", String.class ).getValue() ).newInstance();
 				Properties info = new Properties();
 				info.put( "user", propertyReader.property( "javax.persistence.jdbc.user", String.class ).getValue() );
 				info.put( "password", propertyReader.property( "javax.persistence.jdbc.password", String.class ).getValue() );
 
-				connection = DriverManager.getConnection( jdbcUrl, info );
+				createInMemoryDB( jdbcUrl );
 
+				connection = DriverManager.getConnection( jdbcUrl, info );
+				setDateFormats( connection );
 			}
 
 		}
 		catch (Exception e) {
-			throw LOG.unableToStartDatastoreProvider( e );
+			throw log.unableToStartDatastoreProvider( e );
 		}
+	}
+
+	private void setDateFormats(Connection connection) {
+		String[] queries = new String[]{ "ALTER DATABASE DATETIMEFORMAT \"" + OrientDBConstant.DATETIME_FORMAT + "\"",
+				"ALTER DATABASE DATEFORMAT \"" + OrientDBConstant.DATE_FORMAT + "\"" };
+		for ( String query : queries ) {
+			try {
+				connection.createStatement().execute( query );
+			}
+			catch (SQLException sqle) {
+				throw log.cannotExecuteQuery( query, sqle );
+			}
+		}
+	}
+
+	private static void createInMemoryDB(String jdbcUrl) {
+		String orientDbUrl = jdbcUrl.substring( "jdbc:orient:".length() );
+
+		if ( orientDbUrl.startsWith( "memory" ) ) {
+			isInmemoryDB = true;
+			MemoryDBUtil.createDbFactory( orientDbUrl );
+		}
+
 	}
 
 	public Connection getConnection() {
@@ -77,12 +111,19 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public void stop() {
-		LOG.info( "stop" );
+
+		log.debug( "stop" );
+		if ( MemoryDBUtil.getOrientGraphFactory() != null ) {
+			if ( MemoryDBUtil.getOrientGraphFactory().exists() ) {
+				MemoryDBUtil.getOrientGraphFactory().close();
+				MemoryDBUtil.getOrientGraphFactory().drop();
+			}
+		}
 	}
 
 	@Override
 	public void configure(Map cfg) {
-		LOG.info( "config map:" + cfg.toString() );
+		log.debug( "config map:" + cfg.toString() );
 		propertyReader = new ConfigurationPropertyReader( cfg );
 
 	}
@@ -96,9 +137,13 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
+<<<<<<< HEAD
 		LOG.info( "getSchemaDefinerType" );
 		return OrientDBSchemaDefiner.class;
 		// return super.getSchemaDefinerType();
+=======
+		return OrientDBSchemaDefiner.class;
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
 	}
 
 }

@@ -1,4 +1,5 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2016 Hibernate.
  *
  * This library is free software; you can redistribute it and/or
@@ -15,5 +16,11 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
+=======
+ * Hibernate OGM, Domain model persistence for NoSQL datastores
+ *
+ * License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+>>>>>>> 3712b2f73e6a708158478452211328c54279a26c
  */
 package org.hibernate.datastore.ogm.orientdb.jpa;
