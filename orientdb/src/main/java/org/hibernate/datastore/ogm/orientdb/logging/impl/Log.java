@@ -62,15 +62,18 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 	@Message(id = 1705, value = "Cannot move on ResultSet")
 	HibernateException cannotMoveOnResultSet(@Cause Exception cause);
 
-	@Message(id = 1706, value = "Cannot close ResultSet")
+	@Message(id = 1706, value = "Cannot process ResultSet")
+	HibernateException cannotProcessResultSet(@Cause Exception cause);
+
+	@Message(id = 1707, value = "Cannot close ResultSet")
 	HibernateException cannotCloseResultSet(@Cause Exception cause);
 
-	@Message(id = 1707, value = "Cannot delete row from ResultSet")
+	@Message(id = 1708, value = "Cannot delete row from ResultSet")
 	HibernateException cannotDeleteRowFromResultSet(@Cause Exception cause);
 
-	@Message(id = 1708, value = "Cannot execute query %s")
+	@Message(id = 1709, value = "Cannot execute query %s")
 	HibernateException cannotExecuteQuery(String query, @Cause Exception cause);
 
-	@Message(id = 1709, value = "Cannot set value for parameter %d")
+	@Message(id = 1710, value = "Cannot set value for parameter %d")
 	HibernateException cannotSetValueForParameter(Integer paramNum, @Cause Exception cause);
 }

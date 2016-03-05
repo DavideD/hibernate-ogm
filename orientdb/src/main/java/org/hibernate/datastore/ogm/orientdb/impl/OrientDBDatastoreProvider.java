@@ -36,7 +36,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider
-		implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
+implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
 	private static boolean isInmemoryDB = false;
 	private static Log log = LoggerFactory.getLogger();
@@ -79,12 +79,13 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider
 	}
 
 	private void setDateFormats(Connection connection) {
-		String[] queries = new String[]{"ALTER DATABASE DATETIMEFORMAT \"" + OrientDBConstant.DATETIME_FORMAT + "\"",
-				"ALTER DATABASE DATEFORMAT \"" + OrientDBConstant.DATE_FORMAT + "\""};
+		String[] queries = new String[]{ "ALTER DATABASE DATETIMEFORMAT \"" + OrientDBConstant.DATETIME_FORMAT + "\"",
+				"ALTER DATABASE DATEFORMAT \"" + OrientDBConstant.DATE_FORMAT + "\"" };
 		for ( String query : queries ) {
 			try {
-				connection.createStatement().execute(query);
-			}catch (SQLException sqle) {
+				connection.createStatement().execute( query );
+			}
+			catch (SQLException sqle) {
 				throw log.cannotExecuteQuery( query, sqle );
 			}
 		}

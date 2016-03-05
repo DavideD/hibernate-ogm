@@ -80,7 +80,7 @@ import com.orientechnologies.orient.core.id.ORecordId;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements QueryableGridDialect<String>,
-		ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
 
 	private static final long serialVersionUID = 1L;
 	private static final Log log = LoggerFactory.getLogger();
@@ -323,36 +323,27 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	@Override
 	public Association getAssociation(AssociationKey associationKey, AssociationContext associationContext) {
 		log.debug( "getAssociation:AssociationKey:" + associationKey + "; AssociationContext" + associationContext );
-
-		try {
-			EntityKey entityKey = associationKey.getEntityKey();
-			boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( provider.getConnection(), entityKey );
-			if ( !existsPrimaryKey ) {
-				// Entity now extists
-				return ASSOCIATION_NOT_FOUND;
-			}
-			Map<RowKey, Tuple> tuples = createAssociationMap( associationKey, associationContext );
-			return new Association( new OrientDBAssociationSnapshot( tuples ) );
+		EntityKey entityKey = associationKey.getEntityKey();
+		boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( provider.getConnection(), entityKey );
+		if ( !existsPrimaryKey ) {
+			// Entity now extists
+			return ASSOCIATION_NOT_FOUND;
 		}
-
-		catch (SQLException e) {
-			log.error( "Can not get association!", e );
-		}
-		return ASSOCIATION_NOT_FOUND;
+		Map<RowKey, Tuple> tuples = createAssociationMap( associationKey, associationContext );
+		return new Association( new OrientDBAssociationSnapshot( tuples ) );
 	}
 
-	private Map<RowKey, Tuple> createAssociationMap(AssociationKey associationKey, AssociationContext associationContext) throws SQLException {
-
+	private Map<RowKey, Tuple> createAssociationMap(AssociationKey associationKey, AssociationContext associationContext) {
 		List<Map<String, Object>> relationships = entityQueries.get( associationKey.getEntityKey().getMetadata() )
 				.findAssociation( provider.getConnection(), associationKey, associationContext );
 
-		Map<RowKey, Tuple> tuples = new HashMap<RowKey, Tuple>();
+		Map<RowKey, Tuple> tuples = new HashMap<>();
 
 		for ( Map<String, Object> relationship : relationships ) {
-			OrientDBTupleAssociationSnapshot snapshot = new OrientDBTupleAssociationSnapshot( relationship, associationKey, associationContext );
+			OrientDBTupleAssociationSnapshot snapshot = new OrientDBTupleAssociationSnapshot( relationship, associationKey,
+					associationContext );
 			RowKey rowKey = convert( associationKey, snapshot );
 			tuples.put( rowKey, new Tuple( snapshot ) );
-
 		}
 		return tuples;
 	}

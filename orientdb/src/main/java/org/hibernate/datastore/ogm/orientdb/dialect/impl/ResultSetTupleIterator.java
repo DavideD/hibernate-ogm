@@ -54,24 +54,28 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 		}
 	}
 
-	protected Tuple convert() throws SQLException {
+	protected Tuple convert() {
 		Map<String, Object> map = new HashMap<>();
-		for ( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ ) {
-			int fieldNum = i + 1;
-			Object dbValue = resultSet.getObject( fieldNum );
-			if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
-				String format = resultSet.getMetaData().getColumnTypeName( fieldNum ).equals( "DATETIME" )
-						? OrientDBConstant.DATETIME_FORMAT
-						: OrientDBConstant.DATE_FORMAT;
-				dbValue = new SimpleDateFormat( format ).format( dbValue );
+		try {
+			for ( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ ) {
+				int fieldNum = i + 1;
+				Object dbValue = resultSet.getObject( fieldNum );
+				if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
+					String format = resultSet.getMetaData().getColumnTypeName( fieldNum ).equals( "DATETIME" )
+							? OrientDBConstant.DATETIME_FORMAT
+									: OrientDBConstant.DATE_FORMAT;
+					dbValue = new SimpleDateFormat( format ).format( dbValue );
+				}
+
+				map.put( resultSet.getMetaData().getColumnName( fieldNum ), dbValue );
 			}
-
-			map.put( resultSet.getMetaData().getColumnName( fieldNum ), dbValue );
+			for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
+				map.put( systemField, resultSet.getObject( systemField ) );
+			}
 		}
-		for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
-			map.put( systemField, resultSet.getObject( systemField ) );
+		catch (SQLException sqle) {
+			throw log.cannotProcessResultSet( sqle );
 		}
-
 		return new Tuple( new MapTupleSnapshot( map ) );
 	}
 
