@@ -35,7 +35,8 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
-public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
+public class OrientDBDatastoreProvider extends BaseDatastoreProvider
+		implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
 	private static boolean isInmemoryDB = false;
 	private static Log log = LoggerFactory.getLogger();
@@ -77,9 +78,16 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 		}
 	}
 
-	private void setDateFormats(Connection connection) throws SQLException {
-		connection.createStatement().execute( "ALTER DATABASE DATETIMEFORMAT \"" + OrientDBConstant.DATETIME_FORMAT + "\"" );
-		connection.createStatement().execute( "ALTER DATABASE DATEFORMAT \"" + OrientDBConstant.DATE_FORMAT + "\"" );
+	private void setDateFormats(Connection connection) {
+		String[] queries = new String[]{"ALTER DATABASE DATETIMEFORMAT \"" + OrientDBConstant.DATETIME_FORMAT + "\"",
+				"ALTER DATABASE DATEFORMAT \"" + OrientDBConstant.DATE_FORMAT + "\""};
+		for ( String query : queries ) {
+			try {
+				connection.createStatement().execute(query);
+			}catch (SQLException sqle) {
+				throw log.cannotExecuteQuery( query, sqle );
+			}
+		}
 	}
 
 	private static void createInMemoryDB(String jdbcUrl) {
@@ -129,7 +137,6 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 	@Override
 	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
 		return OrientDBSchemaDefiner.class;
-		// return super.getSchemaDefinerType();
 	}
 
 }

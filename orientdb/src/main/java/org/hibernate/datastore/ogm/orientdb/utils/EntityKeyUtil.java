@@ -83,44 +83,47 @@ public class EntityKeyUtil {
 		return null;
 	}
 
-	public static boolean existsPrimaryKeyInDB(Connection connection, EntityKey key) throws SQLException {
+	public static boolean existsPrimaryKeyInDB(Connection connection, EntityKey key) {
 		String dbKeyName = key.getColumnNames()[0];
 		Object dbKeyValue = key.getColumnValues()[0];
-
 		boolean exists = false;
-		Statement stmt = connection.createStatement();
-		StringBuilder buffer = new StringBuilder( "select count(" + dbKeyName + ") from " );
-		buffer.append( key.getTable() );
-		buffer.append( " where " );
-		buffer.append( dbKeyName );
-		buffer.append( " = " );
-		EntityKeyUtil.setFieldValue( buffer, dbKeyValue );
-		log.debug( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; query:" + buffer.toString() );
+		StringBuilder buffer = new StringBuilder();
+		try {
+			Statement stmt = connection.createStatement();
+			buffer.append( "select count(" ).append( dbKeyName ).append( ") from " );
+			buffer.append( key.getTable() ).append( " where " ).append( dbKeyName );
+			buffer.append( " = " );
+			EntityKeyUtil.setFieldValue( buffer, dbKeyValue );
+			ResultSet rs = stmt.executeQuery( buffer.toString() );
+			if ( rs.next() ) {
+				long count = rs.getLong( 1 );
+				log.debug( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; count:" + count );
+				exists = count > 0;
+			}
+		}
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( buffer.toString(), sqle );
 
-		ResultSet rs = stmt.executeQuery( buffer.toString() );
-		if ( rs.next() ) {
-			long count = rs.getLong( 1 );
-			log.debug( "existsPrimaryKeyInDB:Key:" + dbKeyName + " ; count:" + count );
-			exists = count > 0;
 		}
 		return exists;
 	}
 
-	public static ORecordId findRid(Connection connection, String className, String businessKeyName, Object businessKeyValue) throws SQLException {
-		log.debug( "findRid:className:" + className + " ; businessKeyName:" + businessKeyName + "; businessKeyValue:" + businessKeyValue );
-		StringBuilder buffer = new StringBuilder( "select from " );
-		buffer.append( className );
-		buffer.append( " where " );
-		buffer.append( businessKeyName );
-		buffer.append( " = " );
-		EntityKeyUtil.setFieldValue( buffer, businessKeyValue );
-		log.debug( "findRid:className:" + buffer.toString() );
+	public static ORecordId findRid(Connection connection, String className, String businessKeyName, Object businessKeyValue) {
+		StringBuilder buffer = new StringBuilder();
 		ORecordId rid = null;
-		ResultSet rs = connection.createStatement().executeQuery( buffer.toString() );
-		if ( rs.next() ) {
-			log.debug( "findRid: find" );
-			rid = (ORecordId) rs.getObject( OrientDBConstant.SYSTEM_RID );
-			log.debug( "findRid: rid: " + rid );
+		try {
+			log.debug( "findRid:className:" + className + " ; businessKeyName:" + businessKeyName + "; businessKeyValue:" + businessKeyValue );
+			buffer.append( "select from " ).append( className ).append( " where " );
+			buffer.append( businessKeyName ).append( " = " );
+			EntityKeyUtil.setFieldValue( buffer, businessKeyValue );
+
+			ResultSet rs = connection.createStatement().executeQuery( buffer.toString() );
+			if ( rs.next() ) {
+				rid = (ORecordId) rs.getObject( OrientDBConstant.SYSTEM_RID );
+			}
+		}
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( buffer.toString(), sqle );
 		}
 		return rid;
 	}

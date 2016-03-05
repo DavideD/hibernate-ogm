@@ -18,6 +18,8 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
+import com.orientechnologies.orient.core.id.ORecordId;
+
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
@@ -53,4 +55,22 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 
 	@Message(id = 1703, value = "Cannot generate sequence %s")
 	HibernateException cannotGenerateSequence(String sequenceName, @Cause Exception cause);
+
+	@Message(id = 1704, value = "Cannot read entity by @rid %s")
+	HibernateException cannotReadEntityByRid(ORecordId rid, @Cause Exception cause);
+
+	@Message(id = 1705, value = "Cannot move on ResultSet")
+	HibernateException cannotMoveOnResultSet(@Cause Exception cause);
+
+	@Message(id = 1706, value = "Cannot close ResultSet")
+	HibernateException cannotCloseResultSet(@Cause Exception cause);
+
+	@Message(id = 1707, value = "Cannot delete row from ResultSet")
+	HibernateException cannotDeleteRowFromResultSet(@Cause Exception cause);
+
+	@Message(id = 1708, value = "Cannot execute query %s")
+	HibernateException cannotExecuteQuery(String query, @Cause Exception cause);
+
+	@Message(id = 1709, value = "Cannot set value for parameter %d")
+	HibernateException cannotSetValueForParameter(Integer paramNum, @Cause Exception cause);
 }

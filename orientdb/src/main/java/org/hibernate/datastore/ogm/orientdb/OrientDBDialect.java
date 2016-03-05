@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -79,8 +80,9 @@ import com.orientechnologies.orient.core.id.ORecordId;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements QueryableGridDialect<String>,
-ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+		ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
 
+	private static final long serialVersionUID = 1L;
 	private static final Log log = LoggerFactory.getLogger();
 	private static final Association ASSOCIATION_NOT_FOUND = null;
 
@@ -95,23 +97,14 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 
 	@Override
 	public Tuple getTuple(EntityKey key, TupleContext tupleContext) {
-
 		log.debug( "getTuple:EntityKey:" + key + "; tupleContext" + tupleContext + " tupleContext.getClass():" + tupleContext.getClass() );
-
-		try {
-
-			Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getConnection(), key );
-			if ( dbValuesMap == null || dbValuesMap.isEmpty() ) {
-
-				return null;
-			}
-			return new Tuple(
-					new OrientDBTupleSnapshot( dbValuesMap, tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), key.getMetadata() ) );
+		Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getConnection(), key );
+		if ( dbValuesMap == null || dbValuesMap.isEmpty() ) {
+			return null;
 		}
-		catch (SQLException e) {
-			log.error( "Can not find entity", e );
-		}
-		return null;
+		return new Tuple(
+				new OrientDBTupleSnapshot( dbValuesMap, tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), key.getMetadata() ) );
+
 	}
 
 	@Override
@@ -121,7 +114,6 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 
 	@Override
 	public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
-
 		log.debug( "createTuple:EntityKey:" + key + "; tupleContext" + tupleContext + "; tupleContext.getClass():" + tupleContext.getClass() );
 		return new Tuple( new OrientDBTupleSnapshot( tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), key.getMetadata() ) );
 	}
@@ -195,57 +187,46 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 			Object columnValue = key.getColumnValues()[i];
 			log.debug( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
 		}
+		boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( provider.getConnection(), key );
+		log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " exists in database ? " + existsPrimaryKey );
+		List<Object> preparedStatementParams = Collections.emptyList();
 
-		try {
-			boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( provider.getConnection(), key );
-			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " exists in database ? " + existsPrimaryKey );
-			List<Object> preparedStatementParams = new LinkedList<>();
-
-			if ( existsPrimaryKey ) {
-				// it is update
-				queryBuffer.append( "update " ).append( key.getTable() ).append( "  set " );
-				preparedStatementParams = addTupleFields( queryBuffer, tuple, dbKeyName, false );
-				if ( queryBuffer.toString().endsWith( "," ) ) {
-					queryBuffer.setLength( queryBuffer.length() - 1 );
-				}
-				queryBuffer.append( " WHERE " ).append( dbKeyName ).append( "=" );
-				EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
-			}
-			else {
-				// it is insert with business key which set already
-
-				log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " is new! Insert new record!" );
-				queryBuffer.append( "insert into " ).append( key.getTable() ).append( "  (" );
-				for ( String columnName : tuple.getColumnNames() ) {
-					if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) ) {
-						continue;
-					}
-					queryBuffer.append( columnName ).append( "," );
-				}
+		if ( existsPrimaryKey ) {
+			// it is update
+			queryBuffer.append( "update " ).append( key.getTable() ).append( "  set " );
+			preparedStatementParams = addTupleFields( queryBuffer, tuple, dbKeyName, false );
+			if ( queryBuffer.toString().endsWith( "," ) ) {
 				queryBuffer.setLength( queryBuffer.length() - 1 );
-				queryBuffer.append( ") values (" );
-				preparedStatementParams = addTupleFields( queryBuffer, tuple, null, true );
-				queryBuffer.append( ")" );
 			}
+			queryBuffer.append( " WHERE " ).append( dbKeyName ).append( "=" );
+			EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
+		}
+		else {
+			// it is insert with business key which set already
 
+			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " is new! Insert new record!" );
+			queryBuffer.append( "insert into " ).append( key.getTable() ).append( "  (" );
+			for ( String columnName : tuple.getColumnNames() ) {
+				if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) ) {
+					continue;
+				}
+				queryBuffer.append( columnName ).append( "," );
+			}
+			queryBuffer.setLength( queryBuffer.length() - 1 );
+			queryBuffer.append( ") values (" );
+			preparedStatementParams = addTupleFields( queryBuffer, tuple, null, true );
+			queryBuffer.append( ")" );
+		}
+		try {
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). Query: " + queryBuffer.toString() );
 			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
 			log.debug( "insertOrUpdateTuple: exist parameters for preparedstatement :" + preparedStatementParams.size() );
-			for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
-				Object value = preparedStatementParams.get( i );
-				if ( value instanceof byte[] ) {
-					pstmt.setBytes( i + 1, (byte[]) value );
-				}
-				else {
-					pstmt.setObject( i + 1, value );
-				}
-			}
+			setParameters( pstmt, preparedStatementParams );
 
 			log.debug( "insertOrUpdateTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). inserted or updated: " + pstmt.executeUpdate() );
 		}
-		catch (SQLException e) {
-			log.error( "Can not insert/updated entity", e );
-			throw new RuntimeException( e );
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( queryBuffer.toString(), sqle );
 		}
 	}
 
@@ -259,7 +240,7 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 		String dbKeyName = entityKeyMetadata.getColumnNames()[0];
 		Long dbKeyValue = null;
 		Connection connection = provider.getConnection();
-		List<Object> preparedStatementParams = null;
+		List<Object> preparedStatementParams = Collections.emptyList();
 
 		if ( dbKeyName.equals( OrientDBConstant.SYSTEM_RID ) ) {
 			// use @RID for key
@@ -268,16 +249,8 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 		else {
 			// use business key. get new id from sequence
 			String seqName = OrientDBSchemaDefiner.generateSeqName( entityKeyMetadata.getTable(), dbKeyName );
-			log.debug( "insertTuple:seq name :" + seqName );
-			try {
-				dbKeyValue = (Long) SequenceUtil.getSequence( connection, seqName );
-				tuple.put( dbKeyName, dbKeyValue );
-				log.debug( "insertTuple:dbKeyValue :" + dbKeyValue );
-			}
-			catch (SQLException e) {
-				log.error( "Can not insert entity", e );
-				throw new RuntimeException( e );
-			}
+			dbKeyValue = (Long) SequenceUtil.getSequence( connection, seqName );
+			tuple.put( dbKeyName, dbKeyValue );
 		}
 		for ( String columnName : tuple.getColumnNames() ) {
 			if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) ) {
@@ -295,21 +268,29 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 		try {
 			PreparedStatement pstmt = connection.prepareStatement( insertQuery.toString() );
 			if ( preparedStatementParams != null ) {
-				for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
-					Object value = preparedStatementParams.get( i );
-					if ( value instanceof byte[] ) {
-						pstmt.setBytes( i + 1, (byte[]) value );
-					}
-					else {
-						pstmt.setObject( i + 1, value );
-					}
-				}
+				setParameters( pstmt, preparedStatementParams );
 			}
 			log.debug( "insertTuple:Key:" + dbKeyName + " (" + dbKeyValue + "). inserted or updated: " + pstmt.executeUpdate() );
 		}
-		catch (SQLException e) {
-			log.error( "Can not insert/updated entity", e );
-			throw new RuntimeException( e );
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( insertQuery.toString(), sqle );
+		}
+	}
+
+	private void setParameters(PreparedStatement pstmt, List<Object> preparedStatementParams) {
+		for ( int i = 0; i < preparedStatementParams.size(); i++ ) {
+			Object value = preparedStatementParams.get( i );
+			try {
+				if ( value instanceof byte[] ) {
+					pstmt.setBytes( i + 1, (byte[]) value );
+				}
+				else {
+					pstmt.setObject( i + 1, value );
+				}
+			}
+			catch (SQLException sqle) {
+				throw log.cannotSetValueForParameter( i + 1, sqle );
+			}
 		}
 	}
 
@@ -449,13 +430,7 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 		IdSourceType type = request.getKey().getMetadata().getType();
 		if ( IdSourceType.SEQUENCE.equals( type ) ) {
 			String seqName = request.getKey().getMetadata().getName();
-			try {
-				nextValue = SequenceUtil.getSequence( provider.getConnection(), seqName );
-			}
-			catch (SQLException e) {
-				log.error( "Can not get sequence value", e );
-				throw new RuntimeException( e );
-			}
+			nextValue = SequenceUtil.getSequence( provider.getConnection(), seqName );
 		}
 		else {
 			throw new UnsupportedOperationException( "nextValue Not supported yet." );
@@ -474,40 +449,36 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 		Map<String, Object> parameters = getNamedParameterValuesConvertedByGridType( queryParameters );
 		String nativeQuery = buildNativeQuery( backendQuery, queryParameters );
 		try {
-
-			log.debug( "executeBackendQuery.native query: " + nativeQuery );
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( nativeQuery );
+			int paramIndex = 1;
 			for ( Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet() ) {
 				String key = entry.getKey();
 				TypedGridValue value = entry.getValue();
 				log.debug( "key: " + key + "; type:" + value.getType().getName() + "; value:" + value.getValue() );
-				// @todo move to Map
-				if ( value.getType().getName().equals( "string" ) ) {
-					pstmt.setString( 1, (String) value.getValue() );
+				try {
+					// @todo move to Map
+					if ( value.getType().getName().equals( "string" ) ) {
+						pstmt.setString( 1, (String) value.getValue() );
+					}
+					else if ( value.getType().getName().equals( "long" ) ) {
+						pstmt.setLong( 1, (Long) value.getValue() );
+					}
 				}
-				if ( value.getType().getName().equals( "long" ) ) {
-					pstmt.setLong( 1, (Long) value.getValue() );
+				catch (SQLException sqle) {
+					throw log.cannotSetValueForParameter( paramIndex, sqle );
 				}
-
+				paramIndex++;
 			}
 			ResultSet rs = pstmt.executeQuery();
-
-			/*
-			 * if (backendQuery.getSingleEntityKeyMetadataOrNull() != null) { return new NodesTupleIterator(result,
-			 * backendQuery.getSingleEntityKeyMetadataOrNull()); }
-			 */
 			return new ResultSetTupleIterator( rs );
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
-			throw new RuntimeException( e );
+			throw log.cannotExecuteQuery( nativeQuery, e );
 		}
 	}
 
 	private String buildNativeQuery(BackendQuery<String> customQuery, QueryParameters queryParameters) {
-		StringBuilder nativeQuery = new StringBuilder( customQuery.getQuery() );
-		log.debug( "2.buildNativeQuery.native query: " + customQuery.getQuery() );
-		return nativeQuery.toString();
+		return customQuery.getQuery();
 	}
 
 	/**

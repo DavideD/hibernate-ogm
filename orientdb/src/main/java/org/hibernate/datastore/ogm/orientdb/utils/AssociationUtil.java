@@ -31,6 +31,7 @@ public class AssociationUtil {
 		return associationKeyColumn.replace( "_".concat( inversePrimaryKey ), "" );
 	}
 
+	@Deprecated
 	public static int removeAssociation(Connection connection, String edgeClassName, ORecordId outRid,
 			ORecordId inRid) throws SQLException {
 		StringBuilder query = new StringBuilder( 100 );
@@ -40,6 +41,7 @@ public class AssociationUtil {
 		return connection.createStatement().executeUpdate( query.toString() );
 	}
 
+	@Deprecated
 	public static int insertAssociation(Connection connection, String edgeClassName, ORecordId outRid,
 			ORecordId inRid) throws SQLException {
 		StringBuilder query = new StringBuilder( 100 );

@@ -13,35 +13,12 @@ import static org.junit.Assert.assertTrue;
 import java.util.Set;
 
 import org.hibernate.engine.query.spi.ParamLocationRecognizer;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 public class OrientDBParameterMetadataBuilderTest {
-
-	public OrientDBParameterMetadataBuilderTest() {
-	}
-
-	@BeforeClass
-	public static void setUpClass() {
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-	}
-
-	@Before
-	public void setUp() {
-	}
-
-	@After
-	public void tearDown() {
-	}
 
 	/**
 	 * Test of parseQueryParameters method, of class OrientDBParameterMetadataBuilder.

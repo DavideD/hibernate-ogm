@@ -39,8 +39,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			return !resultSet.isLast();
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
-			throw new RuntimeException( e );
+			throw log.cannotMoveOnResultSet( e );
 		}
 	}
 
@@ -51,8 +50,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			return convert();
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
-			throw new RuntimeException( e );
+			throw log.cannotMoveOnResultSet( e );
 		}
 	}
 
@@ -74,7 +72,6 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			map.put( systemField, resultSet.getObject( systemField ) );
 		}
 
-		log.debug( "field map: " + map );
 		return new Tuple( new MapTupleSnapshot( map ) );
 	}
 
@@ -84,7 +81,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			resultSet.deleteRow();
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
+			throw log.cannotDeleteRowFromResultSet( e );
 		}
 	}
 
@@ -94,7 +91,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 			resultSet.close();
 		}
 		catch (SQLException e) {
-			log.error( "Error with ResultSet", e );
+			throw log.cannotCloseResultSet( e );
 		}
 	}
 
