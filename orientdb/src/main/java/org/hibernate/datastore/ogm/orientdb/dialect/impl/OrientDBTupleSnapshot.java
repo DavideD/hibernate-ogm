@@ -6,57 +6,61 @@
  */
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
-import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
-import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author chernolyassv
+ * @author cristhiank (calovi86@gmail.com)
  */
 public class OrientDBTupleSnapshot implements TupleSnapshot {
 
-	private static Log LOG = LoggerFactory.getLogger();
-	private final Map<String, Object> dbNameValueMap;
+    private final ODocument orientDbRecord;
+    private final EntityKeyMetadata recordKeyMetadata;
+    private SnapshotType snapshotType;
 
-	private Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata;
-	private Map<String, String> rolesByColumn;
-	private EntityKeyMetadata entityKeyMetadata;
+    public SnapshotType getSnapshotType() {
+        return snapshotType;
+    }
 
-	public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap, Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
-			Map<String, String> rolesByColumn, EntityKeyMetadata entityKeyMetadata) {
-		this.dbNameValueMap = dbNameValueMap;
-		this.associatedEntityKeyMetadata = associatedEntityKeyMetadata;
-		this.rolesByColumn = rolesByColumn;
-		this.entityKeyMetadata = entityKeyMetadata;
-		LOG.info( "dbNameValueMap:" + dbNameValueMap );
-	}
+    public void setSnapshotType(SnapshotType snapshotType) {
+        this.snapshotType = snapshotType;
+    }
 
-	public OrientDBTupleSnapshot(EntityKeyMetadata entityKeyMetadata) {
-		this( new HashMap<String, Object>(), null, null, entityKeyMetadata );
-	}
+    public enum SnapshotType {
+        INSERT, UPDATE
+    }
 
-	@Override
-	public Object get(String targetColumnName) {
-		LOG.info( "targetColumnName: " + targetColumnName );
-		return dbNameValueMap.get( targetColumnName );
-	}
+    public OrientDBTupleSnapshot(ODocument record, EntityKeyMetadata meta, SnapshotType type) {
+        this.orientDbRecord = record;
+        this.recordKeyMetadata = meta;
+        this.snapshotType = type;
+    }
 
-	@Override
-	public boolean isEmpty() {
-		LOG.info( "isEmpty" );
-		return dbNameValueMap.isEmpty();
-	}
+    @Override
+    public Object get(String column) {
+        return getOrientDbRecord().field(column);
+    }
 
-	@Override
-	public Set<String> getColumnNames() {
-		LOG.info( "getColumnNames" );
-		return dbNameValueMap.keySet();
-	}
+    @Override
+    public boolean isEmpty() {
+        return getOrientDbRecord().isEmpty();
+    }
+
+    @Override
+    public Set<String> getColumnNames() {
+        Set<String> columnNames = new HashSet<>();
+        Collections.addAll(columnNames, getOrientDbRecord().fieldNames());
+        return columnNames;
+    }
+
+    public ODocument getOrientDbRecord() {
+        return orientDbRecord;
+    }
 
 }
