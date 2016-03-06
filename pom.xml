@@ -32,7 +32,6 @@
        <module>couchdb</module>
         <module>cassandra</module>
         <module>redis</module>
-        <module>orientdb</module>
         <module>modules</module>
         <module>performance</module>       
     </modules>
