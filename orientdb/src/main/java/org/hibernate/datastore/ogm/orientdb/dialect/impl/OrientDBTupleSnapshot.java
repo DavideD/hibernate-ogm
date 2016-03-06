@@ -9,54 +9,93 @@ package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.datastore.ogm.orientdb.utils.AssociationUtil;
 import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
 
 /**
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBTupleSnapshot implements TupleSnapshot {
 
-	private static Log LOG = LoggerFactory.getLogger();
+	private static Log log = LoggerFactory.getLogger();
 	private final Map<String, Object> dbNameValueMap;
 
 	private Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata;
 	private Map<String, String> rolesByColumn;
 	private EntityKeyMetadata entityKeyMetadata;
 
-	public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap, Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
-			Map<String, String> rolesByColumn, EntityKeyMetadata entityKeyMetadata) {
+	public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap,
+			Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
+			Map<String, String> rolesByColumn,
+			EntityKeyMetadata entityKeyMetadata) {
 		this.dbNameValueMap = dbNameValueMap;
 		this.associatedEntityKeyMetadata = associatedEntityKeyMetadata;
 		this.rolesByColumn = rolesByColumn;
 		this.entityKeyMetadata = entityKeyMetadata;
-		LOG.info( "dbNameValueMap:" + dbNameValueMap );
+		log.debug( "1.dbNameValueMap:" + dbNameValueMap );
+		log.debug( "1.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
+		log.debug( "1.rolesByColumn:" + rolesByColumn );
 	}
 
-	public OrientDBTupleSnapshot(EntityKeyMetadata entityKeyMetadata) {
-		this( new HashMap<String, Object>(), null, null, entityKeyMetadata );
+	public OrientDBTupleSnapshot(Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
+			Map<String, String> rolesByColumn,
+			EntityKeyMetadata entityKeyMetadata) {
+		this( new HashMap<String, Object>(), associatedEntityKeyMetadata, rolesByColumn, entityKeyMetadata );
+		log.debug( "2.dbNameValueMap:" + dbNameValueMap );
+		log.debug( "2.associatedEntityKeyMetadata:" + associatedEntityKeyMetadata );
+		log.debug( "2.rolesByColumn:" + rolesByColumn );
 	}
 
 	@Override
 	public Object get(String targetColumnName) {
-		LOG.info( "targetColumnName: " + targetColumnName );
-		return dbNameValueMap.get( targetColumnName );
+		log.debug( "targetColumnName: " + targetColumnName );
+		Object value = null;
+		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) && value == null ) {
+			value = Integer.valueOf( 0 );
+		}
+		else {
+			value = dbNameValueMap.get( targetColumnName );
+			log.debug( "targetColumnName: " + targetColumnName + "; value: " + value + "; class :" + ( value != null ? value.getClass() : null ) );
+		}
+		return value;
+	}
+
+	private Map<String, Object> loadAssociatedEntity(AssociatedEntityKeyMetadata associatedEntityKeyMetadata, String targetColumnName) {
+		String mappedByName = AssociationUtil.getMappedByFieldName( associatedEntityKeyMetadata );
+		String inOrientDbField = "in_".concat( mappedByName );
+		log.debug( "mappedByName: " + mappedByName + "; inOrientDbField:" + inOrientDbField );
+		log.debug( "inOrientDbField: " + inOrientDbField + ".loaded? :" + dbNameValueMap.containsKey( inOrientDbField ) );
+		Map<String, Object> value = null;
+		if ( dbNameValueMap.containsKey( inOrientDbField ) ) {
+			value = (Map<String, Object>) dbNameValueMap.get( inOrientDbField );
+			log.debug( "value: " + value.getClass() );
+		}
+		return value;
 	}
 
 	@Override
 	public boolean isEmpty() {
-		LOG.info( "isEmpty" );
 		return dbNameValueMap.isEmpty();
 	}
 
 	@Override
 	public Set<String> getColumnNames() {
-		LOG.info( "getColumnNames" );
 		return dbNameValueMap.keySet();
+	}
+
+	/**
+	 * Whether this snapshot has been newly created (meaning it doesn't have an actual {@link Node} yet) or not. A node
+	 * will be in the "new" state between the {@code createTuple()} call and the next {@code insertOrUpdateTuple()}
+	 * call.
+	 */
+	public boolean isNew() {
+		return dbNameValueMap == null || ( dbNameValueMap != null && dbNameValueMap.isEmpty() );
 	}
 
 }
