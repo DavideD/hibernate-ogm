@@ -6,98 +6,86 @@
  */
 package org.hibernate.datastore.ogm.orientdb.impl;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.Map;
-import java.util.Properties;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.datastore.ogm.orientdb.OrientDBDialect;
+import org.hibernate.datastore.ogm.orientdb.configuration.impl.OrientDBConfiguration;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
-import org.hibernate.engine.jndi.spi.JndiService;
-import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
 import org.hibernate.ogm.datastore.spi.BaseDatastoreProvider;
 import org.hibernate.ogm.datastore.spi.SchemaDefiner;
 import org.hibernate.ogm.dialect.spi.GridDialect;
+import org.hibernate.ogm.options.spi.OptionsService;
 import org.hibernate.ogm.util.configurationreader.spi.ConfigurationPropertyReader;
-import org.hibernate.ogm.util.configurationreader.spi.PropertyReaderContext;
-import org.hibernate.service.spi.Configurable;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
-import org.hibernate.service.spi.ServiceRegistryImplementor;
-import org.hibernate.service.spi.Startable;
-import org.hibernate.service.spi.Stoppable;
+import org.hibernate.service.spi.*;
+
+import java.util.Map;
 
 /**
  * @author chernolyassv
+ * @author cristhiank (calovi86 at gmail.com)
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
-	private static Log LOG = LoggerFactory.getLogger();
-	private ConfigurationPropertyReader propertyReader;
-	private ServiceRegistryImplementor registry;
-	private JtaPlatform jtaPlatform;
-	private JndiService jndiService;
+    private static Log LOG = LoggerFactory.getLogger();
+    private ODatabaseDocumentTx orientdb;
+    private OrientDBConfiguration config;
+    private ServiceRegistryImplementor serviceRegistry;
 
-	private Connection connection;
+    @Override
+    public Class<? extends GridDialect> getDefaultDialect() {
+        return OrientDBDialect.class;
+    }
 
-	@Override
-	public Class<? extends GridDialect> getDefaultDialect() {
-		return OrientDBDialect.class;
-	}
+    @Override
+    public void start() {
+        LOG.info("start");
+        try {
+            if (orientdb == null) {
+                orientdb = createOrientDbConnection(config);
+            }
+        } catch (Exception e) {
+            throw LOG.unableToStartDatastoreProvider(e);
+        }
+    }
 
-	@Override
-	public void start() {
-		LOG.info( "start" );
-		try {
-			PropertyReaderContext<String> jdbcUrlPropery = propertyReader.property( "javax.persistence.jdbc.url", String.class );
-			if ( jdbcUrlPropery != null ) {
-				String jdbcUrl = jdbcUrlPropery.getValue();
-				LOG.info( "jdbcUrl:" + jdbcUrl );
-				Class.forName( propertyReader.property( "javax.persistence.jdbc.driver", String.class ).getValue() ).newInstance();
-				Properties info = new Properties();
-				info.put( "user", propertyReader.property( "javax.persistence.jdbc.user", String.class ).getValue() );
-				info.put( "password", propertyReader.property( "javax.persistence.jdbc.password", String.class ).getValue() );
+    private ODatabaseDocumentTx createOrientDbConnection(OrientDBConfiguration config) {
+        ODatabaseDocumentTx connection = new ODatabaseDocumentTx(config.buildOrientDBUrl());
+        connection.open(config.getUsername(), config.getPassword());
+        return connection;
+    }
 
-				connection = DriverManager.getConnection( jdbcUrl, info );
+    public ODatabaseDocumentTx getConnection() {
+        return orientdb;
+    }
 
-			}
+    @Override
+    public void stop() {
+        LOG.info("stop");
+        if (!orientdb.isClosed()) {
+            orientdb.close();
+        }
+    }
 
-		}
-		catch (Exception e) {
-			throw LOG.unableToStartDatastoreProvider( e );
-		}
-	}
+    @Override
+    public void configure(Map configurationValues) {
+        LOG.info("config map:" + configurationValues.toString());
+        OptionsService optionsService = serviceRegistry.getService(OptionsService.class);
+        ClassLoaderService classLoaderService = serviceRegistry.getService(ClassLoaderService.class);
+        ConfigurationPropertyReader propertyReader = new ConfigurationPropertyReader(configurationValues, classLoaderService);
+        this.config = new OrientDBConfiguration(propertyReader, optionsService.context().getGlobalOptions());
 
-	public Connection getConnection() {
-		return connection;
-	}
+    }
 
-	public void setConnection(Connection connection) {
-		this.connection = connection;
-	}
+    @Override
+    public void injectServices(ServiceRegistryImplementor serviceRegistry) {
+        this.serviceRegistry = serviceRegistry;
+    }
 
-	@Override
-	public void stop() {
-		LOG.info( "stop" );
-	}
-
-	@Override
-	public void configure(Map cfg) {
-		LOG.info( "config map:" + cfg.toString() );
-		propertyReader = new ConfigurationPropertyReader( cfg );
-
-	}
-
-	@Override
-	public void injectServices(ServiceRegistryImplementor serviceRegistry) {
-		this.registry = serviceRegistry;
-		jtaPlatform = serviceRegistry.getService( JtaPlatform.class );
-		jndiService = serviceRegistry.getService( JndiService.class );
-	}
-
-	@Override
-	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
-		LOG.info( "getSchemaDefinerType" );
-		return super.getSchemaDefinerType();
-	}
+    @Override
+    public Class<? extends SchemaDefiner> getSchemaDefinerType() {
+        LOG.info("getSchemaDefinerType");
+        return super.getSchemaDefinerType();
+    }
 
 }
