@@ -7,16 +7,13 @@
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
 import com.orientechnologies.orient.core.id.ORecordId;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
+
+import java.sql.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
@@ -40,7 +37,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 	 * Find the node corresponding to an entity.
 	 *
 	 * @param executionEngine the {@link GraphDatabaseService} used to run the query
-	 * @param columnValues the values in {@link org.hibernate.ogm.model.key.spi.EntityKey#getColumnValues()}
+	 * @param columnValues    the values in {@link org.hibernate.ogm.model.key.spi.EntityKey#getColumnValues()}
 	 * @return the corresponding node
 	 * @throws java.sql.SQLException
 	 */

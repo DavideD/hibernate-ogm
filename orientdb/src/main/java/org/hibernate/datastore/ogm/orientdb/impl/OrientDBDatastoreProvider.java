@@ -6,7 +6,7 @@
  */
 package org.hibernate.datastore.ogm.orientdb.impl;
 
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.datastore.ogm.orientdb.OrientDBDialect;
 import org.hibernate.datastore.ogm.orientdb.configuration.impl.OrientDBConfiguration;
@@ -27,65 +27,64 @@ import java.util.Map;
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
-    private static Log LOG = LoggerFactory.getLogger();
-    private ODatabaseDocumentTx orientdb;
-    private OrientDBConfiguration config;
-    private ServiceRegistryImplementor serviceRegistry;
+	private static Log LOG = LoggerFactory.getLogger();
+	private OrientGraph orientdb;
+	private OrientDBConfiguration config;
+	private ServiceRegistryImplementor serviceRegistry;
 
-    @Override
-    public Class<? extends GridDialect> getDefaultDialect() {
-        return OrientDBDialect.class;
-    }
+	@Override
+	public Class<? extends GridDialect> getDefaultDialect() {
+		return OrientDBDialect.class;
+	}
 
-    @Override
-    public void start() {
-        LOG.info("start");
-        try {
-            if (orientdb == null) {
-                orientdb = createOrientDbConnection(config);
-            }
-        } catch (Exception e) {
-            throw LOG.unableToStartDatastoreProvider(e);
-        }
-    }
+	@Override
+	public void start() {
+		LOG.info( "start" );
+		try {
+			if ( orientdb == null ) {
+				orientdb = createOrientDbConnection( config );
+			}
+		}
+		catch (Exception e) {
+			throw LOG.unableToStartDatastoreProvider( e );
+		}
+	}
 
-    private ODatabaseDocumentTx createOrientDbConnection(OrientDBConfiguration config) {
-        ODatabaseDocumentTx connection = new ODatabaseDocumentTx(config.buildOrientDBUrl());
-        connection.open(config.getUsername(), config.getPassword());
-        return connection;
-    }
+	private OrientGraph createOrientDbConnection(OrientDBConfiguration config) {
+		return new OrientGraph( config.buildOrientDBUrl() );
+	}
 
-    public ODatabaseDocumentTx getConnection() {
-        return orientdb;
-    }
+	public OrientGraph getConnection() {
+		return orientdb;
+	}
 
-    @Override
-    public void stop() {
-        LOG.info("stop");
-        if (!orientdb.isClosed()) {
-            orientdb.close();
-        }
-    }
+	@Override
+	public void stop() {
+		LOG.info( "stop" );
+		if ( !orientdb.isClosed() ) {
+			orientdb.shutdown();
+		}
+	}
 
-    @Override
-    public void configure(Map configurationValues) {
-        LOG.info("config map:" + configurationValues.toString());
-        OptionsService optionsService = serviceRegistry.getService(OptionsService.class);
-        ClassLoaderService classLoaderService = serviceRegistry.getService(ClassLoaderService.class);
-        ConfigurationPropertyReader propertyReader = new ConfigurationPropertyReader(configurationValues, classLoaderService);
-        this.config = new OrientDBConfiguration(propertyReader, optionsService.context().getGlobalOptions());
+	@Override
+	public void configure(Map configurationValues) {
+		LOG.info( "config map:" + configurationValues.toString() );
+		OptionsService optionsService = serviceRegistry.getService( OptionsService.class );
+		ClassLoaderService classLoaderService = serviceRegistry.getService( ClassLoaderService.class );
+		ConfigurationPropertyReader propertyReader = new ConfigurationPropertyReader( configurationValues, classLoaderService );
+		this.config = new OrientDBConfiguration( propertyReader, optionsService.context().getGlobalOptions() );
 
-    }
+	}
 
-    @Override
-    public void injectServices(ServiceRegistryImplementor serviceRegistry) {
-        this.serviceRegistry = serviceRegistry;
-    }
+	@Override
+	public void injectServices(ServiceRegistryImplementor serviceRegistry) {
+		this.serviceRegistry = serviceRegistry;
+	}
 
-    @Override
-    public Class<? extends SchemaDefiner> getSchemaDefinerType() {
-        LOG.info("getSchemaDefinerType");
-        return super.getSchemaDefinerType();
-    }
+	@Override
+	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
+		LOG.info( "getSchemaDefinerType" );
+		return super.getSchemaDefinerType();
+	}
 
 }

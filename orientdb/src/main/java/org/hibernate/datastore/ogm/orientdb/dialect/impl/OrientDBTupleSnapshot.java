@@ -6,12 +6,10 @@
  */
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
-import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.tinkerpop.blueprints.impls.orient.OrientVertex;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -20,47 +18,45 @@ import java.util.Set;
  */
 public class OrientDBTupleSnapshot implements TupleSnapshot {
 
-    private final ODocument orientDbRecord;
-    private final EntityKeyMetadata recordKeyMetadata;
-    private SnapshotType snapshotType;
+	private final OrientVertex orientDbRecord;
+	private final EntityKeyMetadata recordKeyMetadata;
+	private SnapshotType snapshotType;
 
-    public SnapshotType getSnapshotType() {
-        return snapshotType;
-    }
+	public OrientDBTupleSnapshot(OrientVertex record, EntityKeyMetadata meta, SnapshotType type) {
+		this.orientDbRecord = record;
+		this.recordKeyMetadata = meta;
+		this.snapshotType = type;
+	}
 
-    public void setSnapshotType(SnapshotType snapshotType) {
-        this.snapshotType = snapshotType;
-    }
+	public SnapshotType getSnapshotType() {
+		return snapshotType;
+	}
 
-    public enum SnapshotType {
-        INSERT, UPDATE
-    }
+	public void setSnapshotType(SnapshotType snapshotType) {
+		this.snapshotType = snapshotType;
+	}
 
-    public OrientDBTupleSnapshot(ODocument record, EntityKeyMetadata meta, SnapshotType type) {
-        this.orientDbRecord = record;
-        this.recordKeyMetadata = meta;
-        this.snapshotType = type;
-    }
+	@Override
+	public Object get(String column) {
+		return getOrientDbRecord().getProperty( column );
+	}
 
-    @Override
-    public Object get(String column) {
-        return getOrientDbRecord().field(column);
-    }
+	@Override
+	public boolean isEmpty() {
+		return getOrientDbRecord().getIdentity().isNew();
+	}
 
-    @Override
-    public boolean isEmpty() {
-        return getOrientDbRecord().isEmpty();
-    }
+	@Override
+	public Set<String> getColumnNames() {
+		return getOrientDbRecord().getPropertyKeys();
+	}
 
-    @Override
-    public Set<String> getColumnNames() {
-        Set<String> columnNames = new HashSet<>();
-        Collections.addAll(columnNames, getOrientDbRecord().fieldNames());
-        return columnNames;
-    }
+	public OrientVertex getOrientDbRecord() {
+		return orientDbRecord;
+	}
 
-    public ODocument getOrientDbRecord() {
-        return orientDbRecord;
-    }
+	public enum SnapshotType {
+		INSERT, UPDATE
+	}
 
 }
