@@ -25,13 +25,11 @@ bin/
 .nbattrs
 licenseheader.txt
 nb-configuration.xml
-
 #build
 target/
+/orientdb/nbproject/
 
 #test output
 test-output/
 transaction.log
 infinispan.log
-
-#Netbeans

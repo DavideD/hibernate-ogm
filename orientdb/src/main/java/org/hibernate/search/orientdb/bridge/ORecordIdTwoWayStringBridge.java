@@ -6,8 +6,9 @@
  */
 package org.hibernate.search.orientdb.bridge;
 
-import com.orientechnologies.orient.core.id.ORecordId;
 import org.hibernate.search.bridge.TwoWayStringBridge;
+
+import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)

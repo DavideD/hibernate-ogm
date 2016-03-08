@@ -1,6 +1,6 @@
 /*
  * Hibernate OGM, Domain model persistence for NoSQL datastores
- * 
+ *
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
@@ -31,21 +31,23 @@ public class AssociationUtil {
 		return associationKeyColumn.replace( "_".concat( inversePrimaryKey ), "" );
 	}
 
+	@Deprecated
 	public static int removeAssociation(Connection connection, String edgeClassName, ORecordId outRid,
 			ORecordId inRid) throws SQLException {
 		StringBuilder query = new StringBuilder( 100 );
 		query.append( "delete edge " ).append( edgeClassName ).append( " where out=" ).append( outRid );
 		query.append( " and in=" ).append( inRid );
-		log.info( "removeAssociations: query :" + query.toString() );
+		log.debug( "removeAssociations: query :" + query.toString() );
 		return connection.createStatement().executeUpdate( query.toString() );
 	}
 
+	@Deprecated
 	public static int insertAssociation(Connection connection, String edgeClassName, ORecordId outRid,
 			ORecordId inRid) throws SQLException {
 		StringBuilder query = new StringBuilder( 100 );
 		query.append( "create edge " ).append( edgeClassName ).append( " from " ).append( outRid );
 		query.append( " to " ).append( inRid );
-		log.info( "insertAssociation: query :" + query.toString() );
+		log.debug( "insertAssociation: query :" + query.toString() );
 		return connection.createStatement().executeUpdate( query.toString() );
 
 	}

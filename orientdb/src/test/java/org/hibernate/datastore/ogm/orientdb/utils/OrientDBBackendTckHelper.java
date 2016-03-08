@@ -6,7 +6,6 @@
  */
 package org.hibernate.datastore.ogm.orientdb.utils;
 
-import org.apache.log4j.BasicConfigurator;
 import static org.hibernate.datastore.ogm.orientdb.OrientDBSimpleTest.MEMORY_TEST;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -27,11 +26,10 @@ public class OrientDBBackendTckHelper {
 	@BeforeClass
 	public static void setUpClass() {
 		MemoryDBUtil.createDbFactory( MEMORY_TEST );
-		BasicConfigurator.configure();
 	}
 
 	@AfterClass
-	public static void tearDownClass() {		
-		MemoryDBUtil.recrateInMemoryDn(MEMORY_TEST);
+	public static void tearDownClass() {
+		MemoryDBUtil.recrateInMemoryDn( MEMORY_TEST );
 	}
 }

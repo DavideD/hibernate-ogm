@@ -15,5 +15,4 @@ public class OrientDBProperties implements OgmProperties {
 
 	private OrientDBProperties() {
 	}
-
 }

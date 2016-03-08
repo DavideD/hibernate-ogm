@@ -12,7 +12,7 @@ import static org.hibernate.ogm.utils.GridDialectType.COUCHDB;
 import static org.hibernate.ogm.utils.GridDialectType.EHCACHE;
 import static org.hibernate.ogm.utils.GridDialectType.HASHMAP;
 import static org.hibernate.ogm.utils.GridDialectType.INFINISPAN;
-import static org.hibernate.ogm.utils.GridDialectType.REDIS_JSON;
+import static org.hibernate.ogm.utils.GridDialectType.REDIS;
 import static org.hibernate.ogm.utils.GridDialectType.REDIS_HASH;
 import static org.hibernate.ogm.utils.SessionHelper.asProjectionResults;
 import static org.hibernate.ogm.utils.SessionHelper.delete;
