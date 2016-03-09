@@ -27,7 +27,7 @@ import java.util.Map;
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
-	private static Log LOG = LoggerFactory.getLogger();
+	private static Log log = LoggerFactory.getLogger();
 	private OrientGraph orientdb;
 	private OrientDBConfiguration config;
 	private ServiceRegistryImplementor serviceRegistry;
@@ -39,19 +39,21 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public void start() {
-		LOG.info( "start" );
 		try {
 			if ( orientdb == null ) {
 				orientdb = createOrientDbConnection( config );
 			}
 		}
 		catch (Exception e) {
-			throw LOG.unableToStartDatastoreProvider( e );
+			throw log.unableToStartDatastoreProvider( e );
 		}
 	}
 
 	private OrientGraph createOrientDbConnection(OrientDBConfiguration config) {
-		return new OrientGraph( config.buildOrientDBUrl() );
+		OrientGraph graph = new OrientGraph( config.buildOrientDBUrl(), false );
+		//Disable Blueprints standard validations
+		graph.setStandardElementConstraints( false );
+		return graph;
 	}
 
 	public OrientGraph getConnection() {
@@ -60,7 +62,6 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public void stop() {
-		LOG.info( "stop" );
 		if ( !orientdb.isClosed() ) {
 			orientdb.shutdown();
 		}
@@ -68,7 +69,6 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public void configure(Map configurationValues) {
-		LOG.info( "config map:" + configurationValues.toString() );
 		OptionsService optionsService = serviceRegistry.getService( OptionsService.class );
 		ClassLoaderService classLoaderService = serviceRegistry.getService( ClassLoaderService.class );
 		ConfigurationPropertyReader propertyReader = new ConfigurationPropertyReader( configurationValues, classLoaderService );
@@ -83,7 +83,6 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider implements 
 
 	@Override
 	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
-		LOG.info( "getSchemaDefinerType" );
 		return super.getSchemaDefinerType();
 	}
 

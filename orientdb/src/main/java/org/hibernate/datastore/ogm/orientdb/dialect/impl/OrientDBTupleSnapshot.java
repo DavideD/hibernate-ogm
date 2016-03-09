@@ -20,20 +20,10 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 
 	private final OrientVertex orientDbRecord;
 	private final EntityKeyMetadata recordKeyMetadata;
-	private SnapshotType snapshotType;
 
-	public OrientDBTupleSnapshot(OrientVertex record, EntityKeyMetadata meta, SnapshotType type) {
+	public OrientDBTupleSnapshot(OrientVertex record, EntityKeyMetadata meta) {
 		this.orientDbRecord = record;
 		this.recordKeyMetadata = meta;
-		this.snapshotType = type;
-	}
-
-	public SnapshotType getSnapshotType() {
-		return snapshotType;
-	}
-
-	public void setSnapshotType(SnapshotType snapshotType) {
-		this.snapshotType = snapshotType;
 	}
 
 	@Override

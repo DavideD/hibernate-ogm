@@ -9,10 +9,13 @@ package org.hibernate.datastore.ogm.orientdb;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.tinkerpop.blueprints.impls.orient.OrientDynaElementIterable;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.impls.orient.OrientVertex;
+import com.tinkerpop.blueprints.impls.orient.OrientVertexType;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBQueryHelper;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleSnapshot;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientTransientVertex;
 import org.hibernate.datastore.ogm.orientdb.impl.OrientDBDatastoreProvider;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
@@ -25,6 +28,7 @@ import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.Association;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.model.spi.TupleOperation;
+import org.hibernate.ogm.model.spi.TupleOperationType;
 import org.hibernate.ogm.type.spi.GridType;
 import org.hibernate.type.Type;
 
@@ -43,15 +47,20 @@ public class OrientDBDialect extends BaseGridDialect {
 		this.provider = provider;
 	}
 
-	public OrientVertex findRecordByKey(OrientGraph executionEngine, EntityKey key, TupleContext tupleContext) {
-
+	public OrientVertex findRecordByKey(EntityKey key, TupleContext tupleContext) {
+		OrientGraph connection = provider.getConnection();
 		//TODO: include tupleContext selectableColumns projection ??
 		OSQLSynchQuery<ODocument> orientQuery = OrientDBQueryHelper.createSelect( key );
-		return executionEngine.command( orientQuery ).execute();
+		checkIfClassExists( key.getTable(), connection );
+		OrientDynaElementIterable result = connection.command( orientQuery ).execute();
+		if ( result.iterator().hasNext() ) {
+			return (OrientVertex) result.iterator().next();
+		}
+		return null;
 	}
 
-	private OrientVertex prepareObjectWithPk(EntityKey key) {
-		OrientVertex object = new OrientVertex();
+	private OrientVertex prepareTransientObjectWithPk(EntityKey key) {
+		OrientVertex object = new OrientTransientVertex();
 		String[] columnNames = key.getColumnNames();
 		Object[] columnValues = key.getColumnValues();
 		for ( int i = 0; i < columnNames.length; i++ ) {
@@ -62,47 +71,80 @@ public class OrientDBDialect extends BaseGridDialect {
 
 	@Override
 	public Tuple getTuple(EntityKey key, TupleContext tupleContext) {
-		OrientVertex document = findRecordByKey( provider.getConnection(), key, tupleContext );
+		OrientVertex result = findRecordByKey( key, tupleContext );
 		OrientDBTupleSnapshot tuple;
-		if ( document == null ) {
-			tuple = new OrientDBTupleSnapshot( prepareObjectWithPk( key ), key.getMetadata(), OrientDBTupleSnapshot.SnapshotType.INSERT );
+		if ( result != null ) {
+			tuple = new OrientDBTupleSnapshot( result, key.getMetadata() );
+			return new Tuple( tuple );
 		}
-		else {
-			return null;
-		}
-		return new Tuple( tuple );
+		return null;
 	}
 
 	@Override
 	public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
 		log.info( "createTuple:EntityKey:" + key + "; tupleContext" + tupleContext );
-		OrientVertex newObject = prepareObjectWithPk( key );
-		return new Tuple( new OrientDBTupleSnapshot( newObject, key.getMetadata(), OrientDBTupleSnapshot.SnapshotType.INSERT ) );
+		OrientVertex newObject = prepareTransientObjectWithPk( key );
+		return new Tuple( new OrientDBTupleSnapshot( newObject, key.getMetadata() ) );
 	}
 
 	@Override
 	public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
-		log.info( "insertOrUpdateTuple:EntityKey:" + key + "; tupleContext" + tupleContext + "; tuple:" + tuple );
 		OrientGraph connection = provider.getConnection();
-		OrientVertex recordByKey = findRecordByKey( connection, key, tupleContext );
+		OrientVertex recordByKey = findRecordByKey( key, tupleContext );
 		if ( recordByKey == null ) {
 			//Doesn't exist, create it.
 			createOrientDBRecord( key, tuple, tupleContext, connection );
 		}
+		else {
+			updateOrientDBRecord( recordByKey, key, tuple, tupleContext, connection );
+		}
+	}
+
+	private void updateOrientDBRecord(OrientVertex originalRecord, EntityKey key, Tuple tuple, TupleContext tupleContext, OrientGraph connection) {
+		processTupleOperations( tuple.getOperations(), originalRecord );
+		originalRecord.save();
 	}
 
 	private void createOrientDBRecord(EntityKey key, Tuple tuple, TupleContext tupleContext, OrientGraph connection) {
-		Set<TupleOperation> operations = tuple.getOperations();
+		//TODO: support adding records in clusters.
+		checkIfClassExists( key.getTable(), connection );
+		OrientVertex record = connection.addVertex( "class:" + key.getTable() );
+		processTupleOperations( tuple.getOperations(), record );
+	}
+
+	private void processTupleOperations(Set<TupleOperation> operations, OrientVertex record) {
 		for ( TupleOperation op : operations ) {
 			String column = op.getColumn();
+			TupleOperationType type = op.getType();
+			switch ( type ) {
+				case PUT:
+					record.setProperty( column, op.getValue() );
+					break;
+				case REMOVE:
+					record.removeProperty( column );
+					break;
+				case PUT_NULL:
+					record.setProperty( column, null );
+			}
+		}
+	}
 
+	private void checkIfClassExists(String tableName, OrientGraph connection) {
+		OrientVertexType vertexType = connection.getVertexType( tableName );
+		if ( vertexType == null ) {
+			//The vertex class doesn't exist, inconsistent database schema.
+			throw log.classDoesntExists( tableName );
 		}
 	}
 
 	@Override
 	public void removeTuple(EntityKey key, TupleContext tupleContext) {
-		log.info( "removeTuple:EntityKey:" + key + "; tupleContext" + tupleContext );
-		throw new UnsupportedOperationException( "Not supported yet." );
+		OrientGraph connection = provider.getConnection();
+		OrientVertex recordByKey = findRecordByKey( key, tupleContext );
+		if ( recordByKey != null ) {
+			connection.removeVertex( recordByKey );
+		}
+		//TODO: validate if it doesn't exist.
 	}
 
 	@Override
@@ -158,5 +200,4 @@ public class OrientDBDialect extends BaseGridDialect {
 		}
 		return gridType;
 	}
-
 }

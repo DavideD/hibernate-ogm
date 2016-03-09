@@ -23,15 +23,29 @@ public class OrientDBQueryHelper {
 			query.append( columnValues[0] );
 		}
 		else if ( columnValues.length > 0 ) {
+			query.append( key.getTable() );
 			query.append( " WHERE " );
 			int i = 0;
 			do {
 				if ( i > 0 ) {
 					query.append( " AND " );
 				}
-				query.append( columnNames[i] ).append( "=" ).append( columnValues[i] );
-			} while ( i++ < columnNames.length );
+				query.append( columnNames[i] ).append( " = " );
+				if ( isNumeric( columnValues[i] ) ) {
+					query.append( columnValues[i] );
+				}
+				else {
+					query.append( "\"" ).append( columnValues[i] ).append( "\"" );
+				}
+			} while ( ++i < columnNames.length );
 		}
 		return new OSQLSynchQuery<T>( query.toString() );
+	}
+
+	private static boolean isNumeric(Object columnValue) {
+		boolean isNumeric;
+		isNumeric = Number.class.isAssignableFrom( columnValue.getClass() );
+		isNumeric &= columnValue instanceof Number;
+		return isNumeric;
 	}
 }
