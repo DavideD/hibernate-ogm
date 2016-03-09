@@ -6,57 +6,47 @@
  */
 package org.hibernate.datastore.ogm.orientdb.dialect.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
-import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
-import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
+import com.tinkerpop.blueprints.impls.orient.OrientVertex;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
 
+import java.util.Set;
+
 /**
  * @author chernolyassv
+ * @author cristhiank (calovi86@gmail.com)
  */
 public class OrientDBTupleSnapshot implements TupleSnapshot {
 
-	private static Log LOG = LoggerFactory.getLogger();
-	private final Map<String, Object> dbNameValueMap;
+	private final OrientVertex orientDbRecord;
+	private final EntityKeyMetadata recordKeyMetadata;
 
-	private Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata;
-	private Map<String, String> rolesByColumn;
-	private EntityKeyMetadata entityKeyMetadata;
-
-	public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap, Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
-			Map<String, String> rolesByColumn, EntityKeyMetadata entityKeyMetadata) {
-		this.dbNameValueMap = dbNameValueMap;
-		this.associatedEntityKeyMetadata = associatedEntityKeyMetadata;
-		this.rolesByColumn = rolesByColumn;
-		this.entityKeyMetadata = entityKeyMetadata;
-		LOG.info( "dbNameValueMap:" + dbNameValueMap );
-	}
-
-	public OrientDBTupleSnapshot(EntityKeyMetadata entityKeyMetadata) {
-		this( new HashMap<String, Object>(), null, null, entityKeyMetadata );
+	public OrientDBTupleSnapshot(OrientVertex record, EntityKeyMetadata meta) {
+		this.orientDbRecord = record;
+		this.recordKeyMetadata = meta;
 	}
 
 	@Override
-	public Object get(String targetColumnName) {
-		LOG.info( "targetColumnName: " + targetColumnName );
-		return dbNameValueMap.get( targetColumnName );
+	public Object get(String column) {
+		return getOrientDbRecord().getProperty( column );
 	}
 
 	@Override
 	public boolean isEmpty() {
-		LOG.info( "isEmpty" );
-		return dbNameValueMap.isEmpty();
+		return getOrientDbRecord().getIdentity().isNew();
 	}
 
 	@Override
 	public Set<String> getColumnNames() {
-		LOG.info( "getColumnNames" );
-		return dbNameValueMap.keySet();
+		return getOrientDbRecord().getPropertyKeys();
+	}
+
+	public OrientVertex getOrientDbRecord() {
+		return orientDbRecord;
+	}
+
+	public enum SnapshotType {
+		INSERT, UPDATE
 	}
 
 }
