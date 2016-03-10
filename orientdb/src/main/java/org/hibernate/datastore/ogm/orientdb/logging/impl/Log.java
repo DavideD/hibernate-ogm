@@ -6,15 +6,8 @@
  */
 package org.hibernate.datastore.ogm.orientdb.logging.impl;
 
-import static org.jboss.logging.Logger.Level.DEBUG;
-import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.INFO;
-
 import org.hibernate.HibernateException;
-import org.hibernate.ogm.model.key.spi.EntityKey;
-import org.hibernate.ogm.model.spi.TupleOperation;
 import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
@@ -25,24 +18,6 @@ import com.orientechnologies.orient.core.id.ORecordId;
  */
 @MessageLogger(projectCode = "OGM")
 public interface Log extends org.hibernate.ogm.util.impl.Log {
-
-	@Message(id = 1403, value = "Constraint violation for entity %s: %s")
-	HibernateException constraintViolation(EntityKey entityKey, TupleOperation operation, @Cause Exception cause);
-
-	@LogMessage(level = DEBUG)
-	@Message(id = 1405, value = "%1$s")
-	void logOrientDBQueryEngineMessage(String message);
-
-	@LogMessage(level = ERROR)
-	@Message(id = 1406, value = "%1$s")
-	void logOrientDBQueryEngineException(String message, @Cause Throwable e);
-
-	@LogMessage(level = INFO)
-	@Message(id = 1407, value = "%1$s - %2$s")
-	void logOrientDBQueryEngineUserMessage(String marker, String message);
-
-	@Message(id = 1408, value = "Error while cheking transaction status")
-	HibernateException exceptionWhileChekingTransactionStatus(@Cause Exception e);
 
 	@Message(id = 1700, value = "Cannot create class %s")
 	HibernateException cannotGenerateVertexClass(String className, @Cause Exception cause);
