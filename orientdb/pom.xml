@@ -58,10 +58,12 @@
 			<!-- "provided" is used as "compile-only" here; It's NOT needed at runtime -->
 			<scope>provided</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
 			<artifactId>orientdb-core</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
 			<artifactId>orientdb-jdbc</artifactId>

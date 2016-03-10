@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.datastore.ogm.orientdb.OrientDB;

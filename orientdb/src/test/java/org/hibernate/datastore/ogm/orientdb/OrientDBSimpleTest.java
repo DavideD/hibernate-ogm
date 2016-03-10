@@ -12,9 +12,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.text.MessageFormat;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -36,6 +34,8 @@ import org.junit.runners.MethodSorters;
 
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
+import java.text.MessageFormat;
+import org.apache.log4j.Logger;
 
 /**
  * Test checks CRUD for simple entities (without links with other entities)

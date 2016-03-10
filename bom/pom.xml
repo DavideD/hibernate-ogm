@@ -1,692 +1,691 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
- ~ Hibernate OGM, Domain model persistence for NoSQL datastores
- ~
- ~ License: GNU Lesser General Public License (LGPL), version 2.1 or later
- ~ See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
-  -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<!-- ~ Hibernate OGM, Domain model persistence for NoSQL datastores ~ ~ License: 
+	GNU Lesser General Public License (LGPL), version 2.1 or later ~ See the 
+	lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.hibernate.ogm</groupId>
-    <artifactId>hibernate-ogm-bom</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+	<groupId>org.hibernate.ogm</groupId>
+	<artifactId>hibernate-ogm-bom</artifactId>
+	<version>5.0.0-SNAPSHOT</version>
 
-    <packaging>pom</packaging>
+	<packaging>pom</packaging>
 
-    <name>Hibernate OGM Bill of Materials</name>
-    <description>Hibernate OGM Bill of Materials POM</description>
-    <url>http://ogm.hibernate.org</url>
+	<name>Hibernate OGM Bill of Materials</name>
+	<description>Hibernate OGM Bill of Materials POM</description>
+	<url>http://ogm.hibernate.org</url>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- compile/runtime dependency versions, managed in the BOM -->
-        <classmateVersion>1.0.0</classmateVersion>
-        <ehcacheVersion>2.6.9</ehcacheVersion>
-        <infinispanVersion>8.0.2.Final</infinispanVersion>
-        <mongodbVersion>3.0.3</mongodbVersion>
-        <fongodbVersion>2.0.2</fongodbVersion>
-        <orientdbVersion>[2.1.12,)</orientdbVersion>
-        <neo4jVersion>2.3.2</neo4jVersion>
-        <!-- Update dependency versions accordingly when updating C*  -->
-        <cassandraVersion>2.2.0-rc3</cassandraVersion>
-        <!-- Update dependency versions accordingly when updating lettuce  -->
-        <lettuceVersion>4.0.2.Final</lettuceVersion>
-        <!-- Neo4j supports different versions of Cypher -->
-        <neo4jCypherCompiler19Version>2.0.5</neo4jCypherCompiler19Version>
-        <neo4jCypherCompiler22Version>2.2.6</neo4jCypherCompiler22Version>
-        <!-- Neo4j does not support Lucene 4 currently-->
-        <neo4jLuceneVersion>3.6.2</neo4jLuceneVersion>
-        <hibernateVersion>5.0.5.Final</hibernateVersion>
-        <hibernateSearchVersion>5.5.1.Final</hibernateSearchVersion>
-        <hibernateParserVersion>1.2.0.Final</hibernateParserVersion>
-        <hibernateCommonsAnnotationsVersion>5.0.1.Final</hibernateCommonsAnnotationsVersion>
-        <jbossjtaVersion>4.16.4.Final</jbossjtaVersion>
-        <jbossJtaAPIVersion>1.0.0.Final</jbossJtaAPIVersion>
-        <jbossLoggingVersion>3.2.1.Final</jbossLoggingVersion>
-        <jbossLoggingProcessorVersion>1.2.0.Final</jbossLoggingProcessorVersion>
-        <slf4jVersion>1.7.5</slf4jVersion>
-        <resteasyVersion>3.0.9.Final</resteasyVersion>
-        <jacksonVersion>2.4.1</jacksonVersion>
-        <parboiledVersion>1.1.7</parboiledVersion>
-        <scalaLibraryVersion>2.11.7</scalaLibraryVersion>
-        <scalaParserCombinatorVersion>1.0.4</scalaParserCombinatorVersion>
-        <concurrentlinkedhashmapVersion>1.4.2</concurrentlinkedhashmapVersion>
-        <commonsLang3Version>3.3.2</commonsLang3Version>
-        <asmVersion>5.0.3</asmVersion>
-        <luceneVersion>5.3.1</luceneVersion>
+		<!-- compile/runtime dependency versions, managed in the BOM -->
+		<classmateVersion>1.0.0</classmateVersion>
+		<ehcacheVersion>2.6.9</ehcacheVersion>
+		<infinispanVersion>8.0.2.Final</infinispanVersion>
+		<mongodbVersion>3.0.3</mongodbVersion>
+		<fongodbVersion>2.0.2</fongodbVersion>
+		<orientdbVersion>2.2.0-beta</orientdbVersion>
+		<neo4jVersion>2.3.2</neo4jVersion>
+		<!-- Update dependency versions accordingly when updating C* -->
+		<cassandraVersion>2.2.0-rc3</cassandraVersion>
+		<!-- Update dependency versions accordingly when updating lettuce -->
+		<lettuceVersion>4.0.2.Final</lettuceVersion>
+		<!-- Neo4j supports different versions of Cypher -->
+		<neo4jCypherCompiler19Version>2.0.5</neo4jCypherCompiler19Version>
+		<neo4jCypherCompiler22Version>2.2.6</neo4jCypherCompiler22Version>
+		<!-- Neo4j does not support Lucene 4 currently -->
+		<neo4jLuceneVersion>3.6.2</neo4jLuceneVersion>
+		<hibernateVersion>5.0.5.Final</hibernateVersion>
+		<hibernateSearchVersion>5.5.1.Final</hibernateSearchVersion>
+		<hibernateParserVersion>1.2.0.Final</hibernateParserVersion>
+		<hibernateCommonsAnnotationsVersion>5.0.1.Final</hibernateCommonsAnnotationsVersion>
+		<jbossjtaVersion>4.16.4.Final</jbossjtaVersion>
+		<jbossJtaAPIVersion>1.0.0.Final</jbossJtaAPIVersion>
+		<jbossLoggingVersion>3.2.1.Final</jbossLoggingVersion>
+		<jbossLoggingProcessorVersion>1.2.0.Final</jbossLoggingProcessorVersion>
+		<slf4jVersion>1.7.5</slf4jVersion>
+		<resteasyVersion>3.0.9.Final</resteasyVersion>
+		<jacksonVersion>2.4.1</jacksonVersion>
+		<parboiledVersion>1.1.7</parboiledVersion>
+		<scalaLibraryVersion>2.11.7</scalaLibraryVersion>
+		<scalaParserCombinatorVersion>1.0.4</scalaParserCombinatorVersion>
+		<concurrentlinkedhashmapVersion>1.4.2</concurrentlinkedhashmapVersion>
+		<commonsLang3Version>3.3.2</commonsLang3Version>
+		<asmVersion>5.0.3</asmVersion>
+		<luceneVersion>5.3.1</luceneVersion>
 
-        <!--
-             The following versions are required for the Cassandra driver; We don't expose a managed versions
-             of these libraries through this BOM, these versions are for internal usage to make sure the right
-             JARs end up in the C* driver WildFly module
-        -->
-        <codahaleMetricsVersion>3.0.2</codahaleMetricsVersion>
-        <cassandraGuavaVersion>16.0.1</cassandraGuavaVersion>
-        <!-- slf4J is also being used - luckily it's in synch with the above defined version 1.7.5 -->
-        <!-- end of Cassandra dependencies -->
+		<!-- The following versions are required for the Cassandra driver; We don't 
+			expose a managed versions of these libraries through this BOM, these versions 
+			are for internal usage to make sure the right JARs end up in the C* driver 
+			WildFly module -->
+		<codahaleMetricsVersion>3.0.2</codahaleMetricsVersion>
+		<cassandraGuavaVersion>16.0.1</cassandraGuavaVersion>
+		<!-- slf4J is also being used - luckily it's in synch with the above defined 
+			version 1.7.5 -->
+		<!-- end of Cassandra dependencies -->
 
-        <lettuceCommonsPoolVersion>2.4.2</lettuceCommonsPoolVersion>
-        <lettuceGuavaVersion>18.0</lettuceGuavaVersion>
-        <netty4Version>4.0.26.Final</netty4Version>
-    </properties>
+		<lettuceCommonsPoolVersion>2.4.2</lettuceCommonsPoolVersion>
+		<lettuceGuavaVersion>18.0</lettuceGuavaVersion>
+		<netty4Version>4.0.26.Final</netty4Version>
+	</properties>
 
-    <inceptionYear>2010</inceptionYear>
+	<inceptionYear>2010</inceptionYear>
 
-    <distributionManagement>
-        <repository>
-            <id>jboss-releases-repository</id>
-            <name>JBoss Releases Repository</name>
-            <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
-        </repository>
-        <snapshotRepository>
-            <id>jboss-snapshots-repository</id>
-            <name>JBoss Snapshots Repository</name>
-            <url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
+	<distributionManagement>
+		<repository>
+			<id>jboss-releases-repository</id>
+			<name>JBoss Releases Repository</name>
+			<url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
+		</repository>
+		<snapshotRepository>
+			<id>jboss-snapshots-repository</id>
+			<name>JBoss Snapshots Repository</name>
+			<url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
+		</snapshotRepository>
+	</distributionManagement>
 
-    <prerequisites>
-       <maven>3.2.3</maven>
-    </prerequisites>
+	<prerequisites>
+		<maven>3.2.3</maven>
+	</prerequisites>
 
-    <issueManagement>
-        <system>JIRA</system>
-        <url>https://hibernate.onjira.com/browse/OGM</url>
-    </issueManagement>
+	<issueManagement>
+		<system>JIRA</system>
+		<url>https://hibernate.onjira.com/browse/OGM</url>
+	</issueManagement>
 
-    <scm>
-        <connection>scm:git:git://github.com/hibernate/hibernate-ogm.git</connection>
-        <developerConnection>scm:git:git@github.com:hibernate/hibernate-ogm.git</developerConnection>
-        <url>http://github.com/hibernate/hibernate-ogm</url>
-        <tag>HEAD</tag>
-    </scm>
+	<scm>
+		<connection>scm:git:git://github.com/hibernate/hibernate-ogm.git</connection>
+		<developerConnection>scm:git:git@github.com:hibernate/hibernate-ogm.git</developerConnection>
+		<url>http://github.com/hibernate/hibernate-ogm</url>
+		<tag>HEAD</tag>
+	</scm>
 
-    <organization>
-        <name>Hibernate</name>
-        <url>http://www.hibernate.org</url>
-    </organization>
+	<organization>
+		<name>Hibernate</name>
+		<url>http://www.hibernate.org</url>
+	</organization>
 
-    <licenses>
-        <license>
-            <name>GNU Lesser General Public License</name>
-            <url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
-        </license>
-    </licenses>
+	<licenses>
+		<license>
+			<name>GNU Lesser General Public License</name>
+			<url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
+		</license>
+	</licenses>
 
-    <ciManagement>
-        <url>http://ci.jboss.org/jenkins/view/hibernate/job/hibernate-ogm/</url>
-        <system>Jenkins</system>
-    </ciManagement>
+	<ciManagement>
+		<url>http://ci.jboss.org/jenkins/view/hibernate/job/hibernate-ogm/</url>
+		<system>Jenkins</system>
+	</ciManagement>
 
-    <developers>
-        <developer>
-            <id>emmanuelbernard</id>
-            <name>Emmanuel Bernard</name>
-            <email>emmanuel@hibernate.org</email>
-            <url>http://in.relation.to/Bloggers/Emmanuel</url>
-        </developer>
-        <developer>
-            <id>sannegrinovero</id>
-            <name>Sanne Grinovero</name>
-            <email>sanne@hibernate.org</email>
-            <url>http://in.relation.to/Bloggers/Sanne</url>
-        </developer>
-        <developer>
-            <id>gunnarmorling</id>
-            <name>Gunnar Morling</name>
-            <email>gunnar@hibernate.org</email>
-            <url>http://in.relation.to/Bloggers/Gunnar</url>
-        </developer>
-    </developers>
+	<developers>
+		<developer>
+			<id>emmanuelbernard</id>
+			<name>Emmanuel Bernard</name>
+			<email>emmanuel@hibernate.org</email>
+			<url>http://in.relation.to/Bloggers/Emmanuel</url>
+		</developer>
+		<developer>
+			<id>sannegrinovero</id>
+			<name>Sanne Grinovero</name>
+			<email>sanne@hibernate.org</email>
+			<url>http://in.relation.to/Bloggers/Sanne</url>
+		</developer>
+		<developer>
+			<id>gunnarmorling</id>
+			<name>Gunnar Morling</name>
+			<email>gunnar@hibernate.org</email>
+			<url>http://in.relation.to/Bloggers/Gunnar</url>
+		</developer>
+	</developers>
 
-    <mailingLists>
-        <mailingList>
-            <name>Hibernate Announcements</name>
-            <post>hibernate-announce@lists.jboss.org</post>
-            <subscribe>https://lists.jboss.org/mailman/listinfo/hibernate-announce</subscribe>
-            <unsubscribe>https://lists.jboss.org/mailman/listinfo/hibernate-announce</unsubscribe>
-            <archive>http://lists.jboss.org/pipermail/hibernate-dev/</archive>
-        </mailingList>
-        <mailingList>
-            <name>Hibernate Commit Notifications</name>
-            <post>hibernate-commits@lists.jboss.org</post>
-            <subscribe>https://lists.jboss.org/mailman/listinfo/hibernate-commits</subscribe>
-            <unsubscribe>https://lists.jboss.org/mailman/listinfo/hibernate-commits</unsubscribe>
-            <archive>http://lists.jboss.org/pipermail/hibernate-commits/</archive>
-        </mailingList>
-        <mailingList>
-            <name>Hibernate Developers</name>
-            <post>hibernate-dev@lists.jboss.org</post>
-            <subscribe>https://lists.jboss.org/mailman/listinfo/hibernate-dev</subscribe>
-            <unsubscribe>https://lists.jboss.org/mailman/listinfo/hibernate-dev</unsubscribe>
-            <archive>http://lists.jboss.org/pipermail/hibernate-dev/</archive>
-            <otherArchives>
-                <otherArchive>http://www.mail-archive.com/hibernate-dev%40lists.jboss.org/index.html</otherArchive>
-            </otherArchives>
-        </mailingList>
-        <mailingList>
-            <name>Hibernate Issue Notifications</name>
-            <post>hibernate-issues@lists.jboss.org</post>
-            <subscribe>https://lists.jboss.org/mailman/listinfo/hibernate-issues</subscribe>
-            <unsubscribe>https://lists.jboss.org/mailman/listinfo/hibernate-issues</unsubscribe>
-            <archive>http://lists.jboss.org/pipermail/hibernate-issues/</archive>
-        </mailingList>
-    </mailingLists>
+	<mailingLists>
+		<mailingList>
+			<name>Hibernate Announcements</name>
+			<post>hibernate-announce@lists.jboss.org</post>
+			<subscribe>https://lists.jboss.org/mailman/listinfo/hibernate-announce</subscribe>
+			<unsubscribe>https://lists.jboss.org/mailman/listinfo/hibernate-announce</unsubscribe>
+			<archive>http://lists.jboss.org/pipermail/hibernate-dev/</archive>
+		</mailingList>
+		<mailingList>
+			<name>Hibernate Commit Notifications</name>
+			<post>hibernate-commits@lists.jboss.org</post>
+			<subscribe>https://lists.jboss.org/mailman/listinfo/hibernate-commits</subscribe>
+			<unsubscribe>https://lists.jboss.org/mailman/listinfo/hibernate-commits</unsubscribe>
+			<archive>http://lists.jboss.org/pipermail/hibernate-commits/</archive>
+		</mailingList>
+		<mailingList>
+			<name>Hibernate Developers</name>
+			<post>hibernate-dev@lists.jboss.org</post>
+			<subscribe>https://lists.jboss.org/mailman/listinfo/hibernate-dev</subscribe>
+			<unsubscribe>https://lists.jboss.org/mailman/listinfo/hibernate-dev</unsubscribe>
+			<archive>http://lists.jboss.org/pipermail/hibernate-dev/</archive>
+			<otherArchives>
+				<otherArchive>http://www.mail-archive.com/hibernate-dev%40lists.jboss.org/index.html</otherArchive>
+			</otherArchives>
+		</mailingList>
+		<mailingList>
+			<name>Hibernate Issue Notifications</name>
+			<post>hibernate-issues@lists.jboss.org</post>
+			<subscribe>https://lists.jboss.org/mailman/listinfo/hibernate-issues</subscribe>
+			<unsubscribe>https://lists.jboss.org/mailman/listinfo/hibernate-issues</unsubscribe>
+			<archive>http://lists.jboss.org/pipermail/hibernate-issues/</archive>
+		</mailingList>
+	</mailingLists>
 
-    <dependencyManagement>
-        <dependencies>
-            <!-- standards APIs -->
-            <dependency>
-                <groupId>org.jboss.spec.javax.transaction</groupId>
-                <artifactId>jboss-transaction-api_1.2_spec</artifactId>
-                <version>${jbossJtaAPIVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.1-api</artifactId>
-                <version>1.0.0.Final</version>
-            </dependency>
+	<dependencyManagement>
+		<dependencies>
+			<!-- standards APIs -->
+			<dependency>
+				<groupId>org.jboss.spec.javax.transaction</groupId>
+				<artifactId>jboss-transaction-api_1.2_spec</artifactId>
+				<version>${jbossJtaAPIVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate.javax.persistence</groupId>
+				<artifactId>hibernate-jpa-2.1-api</artifactId>
+				<version>1.0.0.Final</version>
+			</dependency>
 
-            <!-- Hibernate Core -->
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core</artifactId>
-                <version>${hibernateVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-annotations</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-entitymanager</artifactId>
-                <version>${hibernateVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-annotations</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-envers</artifactId>
-                <version>${hibernateVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-annotations</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-infinispan</artifactId>
-                <version>${hibernateVersion}</version>
-            </dependency>
+			<!-- Hibernate Core -->
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-core</artifactId>
+				<version>${hibernateVersion}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.jboss.logging</groupId>
+						<artifactId>jboss-logging-annotations</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-entitymanager</artifactId>
+				<version>${hibernateVersion}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.jboss.logging</groupId>
+						<artifactId>jboss-logging-annotations</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-envers</artifactId>
+				<version>${hibernateVersion}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.jboss.logging</groupId>
+						<artifactId>jboss-logging-annotations</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-infinispan</artifactId>
+				<version>${hibernateVersion}</version>
+			</dependency>
 
-            <!-- Hibernate Search -->
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-orm</artifactId>
-                <version>${hibernateSearchVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>hibernate-search-analyzers</artifactId>
-                        <groupId>org.hibernate</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>slf4j-api</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-engine</artifactId>
-                <version>${hibernateSearchVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>hibernate-search-analyzers</artifactId>
-                        <groupId>org.hibernate</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>slf4j-api</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-annotations</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!-- Hibernate Search / Infinispan integration -->
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-directory-provider</artifactId>
-                <version>${infinispanVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>hibernate-search-analyzers</artifactId>
-                        <groupId>org.hibernate</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>slf4j-api</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
+			<!-- Hibernate Search -->
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-search-orm</artifactId>
+				<version>${hibernateSearchVersion}</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>hibernate-search-analyzers</artifactId>
+						<groupId>org.hibernate</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>slf4j-api</artifactId>
+						<groupId>org.slf4j</groupId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-search-engine</artifactId>
+				<version>${hibernateSearchVersion}</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>hibernate-search-analyzers</artifactId>
+						<groupId>org.hibernate</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>slf4j-api</artifactId>
+						<groupId>org.slf4j</groupId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.jboss.logging</groupId>
+						<artifactId>jboss-logging-annotations</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<!-- Hibernate Search / Infinispan integration -->
+			<dependency>
+				<groupId>org.infinispan</groupId>
+				<artifactId>infinispan-directory-provider</artifactId>
+				<version>${infinispanVersion}</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>hibernate-search-analyzers</artifactId>
+						<groupId>org.hibernate</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>slf4j-api</artifactId>
+						<groupId>org.slf4j</groupId>
+					</exclusion>
+				</exclusions>
+			</dependency>
 
-            <!-- OGM modules -->
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-core</artifactId>
-                <version>${project.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-ehcache</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-infinispan</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-mongodb</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-neo4j</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-couchdb</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-cassandra</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>hibernate-ogm-redis</artifactId>
-                <version>${project.version}</version>
-            </dependency>
+			<!-- OGM modules -->
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-core</artifactId>
+				<version>${project.version}</version>
+				<type>test-jar</type>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-ehcache</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-infinispan</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-mongodb</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-neo4j</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-couchdb</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-cassandra</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>hibernate-ogm-redis</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 
-            <!-- Logging -->
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>1.2.16</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jbossLoggingVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-annotations</artifactId>
-                <version>${jbossLoggingProcessorVersion}</version>
-            </dependency>
+			<!-- Logging -->
+			<dependency>
+				<groupId>log4j</groupId>
+				<artifactId>log4j</artifactId>
+				<version>1.2.16</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.logging</groupId>
+				<artifactId>jboss-logging</artifactId>
+				<version>${jbossLoggingVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.logging</groupId>
+				<artifactId>jboss-logging-annotations</artifactId>
+				<version>${jbossLoggingProcessorVersion}</version>
+			</dependency>
 
-            <!-- slf4j is not used by OGM itself; Still setting the version to make sure different versions pulled in
-                 transitively converge -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4jVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4jVersion}</version>
-            </dependency>
+			<!-- slf4j is not used by OGM itself; Still setting the version to make 
+				sure different versions pulled in transitively converge -->
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4jVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-log4j12</artifactId>
+				<version>${slf4jVersion}</version>
+			</dependency>
 
-            <!-- HQL Parsing and Lucene Query creation support -->
-            <dependency>
-                <groupId>org.hibernate.hql</groupId>
-                <artifactId>hibernate-hql-parser</artifactId>
-                <version>${hibernateParserVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.hql</groupId>
-                <artifactId>hibernate-hql-lucene</artifactId>
-                <version>${hibernateParserVersion}</version>
-                <!-- TODO Remove once parser is updated -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.hibernate.javax.persistence</groupId>
-                        <artifactId>hibernate-jpa-2.0-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.hql</groupId>
-                <artifactId>hibernate-hql-mongodb</artifactId>
-                <version>${hibernateParserVersion}</version>
-            </dependency>
+			<!-- HQL Parsing and Lucene Query creation support -->
+			<dependency>
+				<groupId>org.hibernate.hql</groupId>
+				<artifactId>hibernate-hql-parser</artifactId>
+				<version>${hibernateParserVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate.hql</groupId>
+				<artifactId>hibernate-hql-lucene</artifactId>
+				<version>${hibernateParserVersion}</version>
+				<!-- TODO Remove once parser is updated -->
+				<exclusions>
+					<exclusion>
+						<groupId>org.hibernate.javax.persistence</groupId>
+						<artifactId>hibernate-jpa-2.0-api</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate.hql</groupId>
+				<artifactId>hibernate-hql-mongodb</artifactId>
+				<version>${hibernateParserVersion}</version>
+			</dependency>
 
-            <!-- NoSQL databases -->
+			<!-- NoSQL databases -->
 
-            <!-- Ehcache -->
-            <dependency>
-                <groupId>net.sf.ehcache</groupId>
-                <artifactId>ehcache-core</artifactId>
-                <version>${ehcacheVersion}</version>
-            </dependency>
+			<!-- Ehcache -->
+			<dependency>
+				<groupId>net.sf.ehcache</groupId>
+				<artifactId>ehcache-core</artifactId>
+				<version>${ehcacheVersion}</version>
+			</dependency>
 
-            <!-- Infinispan -->
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispanVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.transaction</groupId>
-                        <artifactId>jboss-transaction-api_1.1_spec</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-lucene-directory</artifactId>
-                <version>${infinispanVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispanVersion}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
+			<!-- Infinispan -->
+			<dependency>
+				<groupId>org.infinispan</groupId>
+				<artifactId>infinispan-core</artifactId>
+				<version>${infinispanVersion}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.jboss.spec.javax.transaction</groupId>
+						<artifactId>jboss-transaction-api_1.1_spec</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.infinispan</groupId>
+				<artifactId>infinispan-lucene-directory</artifactId>
+				<version>${infinispanVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.infinispan</groupId>
+				<artifactId>infinispan-core</artifactId>
+				<version>${infinispanVersion}</version>
+				<type>test-jar</type>
+				<scope>test</scope>
+			</dependency>
 
-            <!-- MongoDB -->
-            <dependency>
-                <groupId>org.mongodb</groupId>
-                <artifactId>mongo-java-driver</artifactId>
-                <version>${mongodbVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.fakemongo</groupId>
-                <artifactId>fongo</artifactId>
-                <version>${fongodbVersion}</version>
-            </dependency>
+			<!-- MongoDB -->
+			<dependency>
+				<groupId>org.mongodb</groupId>
+				<artifactId>mongo-java-driver</artifactId>
+				<version>${mongodbVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.fakemongo</groupId>
+				<artifactId>fongo</artifactId>
+				<version>${fongodbVersion}</version>
+			</dependency>
 
-            <!-- Neo4j -->
-            <dependency>
-                <groupId>org.neo4j</groupId>
-                <artifactId>neo4j</artifactId>
-                <version>${neo4jVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>neo4j-consistency-check</artifactId>
-                        <groupId>org.neo4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>neo4j-csv</artifactId>
-                        <groupId>org.neo4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>opencsv</artifactId>
-                        <groupId>net.sf.opencsv</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
+			<!-- Neo4j -->
+			<dependency>
+				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j</artifactId>
+				<version>${neo4jVersion}</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>neo4j-consistency-check</artifactId>
+						<groupId>org.neo4j</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>neo4j-csv</artifactId>
+						<groupId>org.neo4j</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>opencsv</artifactId>
+						<groupId>net.sf.opencsv</groupId>
+					</exclusion>
+				</exclusions>
+			</dependency>
 
-            <!-- Cassandra -->
-            <dependency>
-                <groupId>com.datastax.cassandra</groupId>
-                <artifactId>cassandra-driver-core</artifactId>
-                <version>${cassandraVersion}</version>
-            </dependency>
+			<!-- Cassandra -->
+			<dependency>
+				<groupId>com.datastax.cassandra</groupId>
+				<artifactId>cassandra-driver-core</artifactId>
+				<version>${cassandraVersion}</version>
+			</dependency>
 
-            <!-- Redis -->
-            <dependency>
-                <groupId>biz.paluch.redis</groupId>
-                <artifactId>lettuce</artifactId>
-                <version>${lettuceVersion}</version>
-            </dependency>
+			<!-- Redis -->
+			<dependency>
+				<groupId>biz.paluch.redis</groupId>
+				<artifactId>lettuce</artifactId>
+				<version>${lettuceVersion}</version>
+			</dependency>
 
-            <!-- OrientDB -->
-            <dependency>
-                <groupId>com.orientechnologies</groupId>
-                <artifactId>orientdb-core</artifactId>
-                <version>${orientdbVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.orientechnologies</groupId>
-                <artifactId>orientdb-jdbc</artifactId>
-                <version>${orientdbVersion}</version>
-            </dependency>
+			<!-- OrientDB -->
+			<dependency>
+				<groupId>com.orientechnologies</groupId>
+				<artifactId>orientdb-core</artifactId>
+				<version>${orientdbVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.orientechnologies</groupId>
+				<artifactId>orientdb-jdbc</artifactId>
+				<version>${orientdbVersion}</version>
+			</dependency>
 
-            <!-- RESTEasy for accessing CouchDB -->
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-client</artifactId>
-                <version>${resteasyVersion}</version>
-                <exclusions>
-                    <!-- Javassist changed its group id and is already pulled in with the new id -->
-                    <exclusion>
-                        <groupId>javassist</groupId>
-                        <artifactId>javassist</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxrs</artifactId>
-                <version>${resteasyVersion}</version>
-                <exclusions>
-                    <!-- Actually RESTEasy shouldn't depend on a slf4j backend -->
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-simple</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jackson2-provider</artifactId>
-                <version>${resteasyVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>jaxrs-api</artifactId>
-                <version>${resteasyVersion}</version>
-            </dependency>
+			<!-- RESTEasy for accessing CouchDB -->
+			<dependency>
+				<groupId>org.jboss.resteasy</groupId>
+				<artifactId>resteasy-client</artifactId>
+				<version>${resteasyVersion}</version>
+				<exclusions>
+					<!-- Javassist changed its group id and is already pulled in with the 
+						new id -->
+					<exclusion>
+						<groupId>javassist</groupId>
+						<artifactId>javassist</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.resteasy</groupId>
+				<artifactId>resteasy-jaxrs</artifactId>
+				<version>${resteasyVersion}</version>
+				<exclusions>
+					<!-- Actually RESTEasy shouldn't depend on a slf4j backend -->
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-simple</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.resteasy</groupId>
+				<artifactId>resteasy-jackson2-provider</artifactId>
+				<version>${resteasyVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.resteasy</groupId>
+				<artifactId>jaxrs-api</artifactId>
+				<version>${resteasyVersion}</version>
+			</dependency>
 
-            <!-- utils -->
-            <dependency>
-                <groupId>org.hibernate.common</groupId>
-                <artifactId>hibernate-commons-annotations</artifactId>
-                <version>${hibernateCommonsAnnotationsVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-annotations</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>3.18.1-GA</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml</groupId>
-                <artifactId>classmate</artifactId>
-                <version>${classmateVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.parboiled</groupId>
-                <artifactId>parboiled-java</artifactId>
-                <version>${parboiledVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jacksonVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jacksonVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jacksonVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.jbossts</groupId>
-                <artifactId>jbossjta</artifactId>
-                <version>${jbossjtaVersion}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.ws.native</groupId>
-                        <artifactId>jbossws-native-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>emma</artifactId>
-                        <groupId>emma</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>emma_ant</artifactId>
-                        <groupId>emma</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>hornetq-core</artifactId>
-                        <groupId>org.hornetq</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>netty</artifactId>
-                        <groupId>org.jboss.netty</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>wrapper</artifactId>
-                        <groupId>tanukisoft</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jacorb</artifactId>
-                        <groupId>jacorb</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jfreechart</artifactId>
-                        <groupId>jfree</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-corba-ots-spi</artifactId>
-                        <groupId>org.jboss.integration</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-server-manager</artifactId>
-                        <groupId>org.jboss.jbossas</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-ejb-api_3.1_spec</artifactId>
-                        <groupId>org.jboss.spec.javax.ejb</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jnp-client</artifactId>
-                        <groupId>org.jboss.naming</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-                        <groupId>org.jboss.spec.javax.servlet</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jbossws-common</artifactId>
-                        <groupId>org.jboss.ws</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jcl-over-slf4j</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>stax-api</artifactId>
-                        <groupId>stax</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>idl</artifactId>
-                        <groupId>jacorb</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-connector-api_1.5_spec</artifactId>
-                        <groupId>org.jboss.spec.javax.resource</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-transaction-spi</artifactId>
-                        <groupId>org.jboss.integration</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-remoting</artifactId>
-                        <groupId>org.jboss.remoting</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>slf4j-api</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>dom4j</artifactId>
-                        <groupId>dom4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>commons-codec</artifactId>
-                        <groupId>commons-codec</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logmanager</artifactId>
-                        <groupId>org.jboss.logmanager</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>hibernate-jpa-2.0-api</artifactId>
-                        <groupId>org.hibernate.javax.persistence</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jcommon</artifactId>
-                        <groupId>jfree</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-transaction-api_1.1_spec</artifactId>
-                        <groupId>org.jboss.spec.javax.transaction</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>commons-httpclient</artifactId>
-                        <groupId>commons-httpclient</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logging-processor</artifactId>
-                        <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logging-generator</artifactId>
-                        <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+			<!-- utils -->
+			<dependency>
+				<groupId>org.hibernate.common</groupId>
+				<artifactId>hibernate-commons-annotations</artifactId>
+				<version>${hibernateCommonsAnnotationsVersion}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.jboss.logging</groupId>
+						<artifactId>jboss-logging-annotations</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.javassist</groupId>
+				<artifactId>javassist</artifactId>
+				<version>3.18.1-GA</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml</groupId>
+				<artifactId>classmate</artifactId>
+				<version>${classmateVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.parboiled</groupId>
+				<artifactId>parboiled-java</artifactId>
+				<version>${parboiledVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>${jacksonVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-annotations</artifactId>
+				<version>${jacksonVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jacksonVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.jbossts</groupId>
+				<artifactId>jbossjta</artifactId>
+				<version>${jbossjtaVersion}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.jboss.ws.native</groupId>
+						<artifactId>jbossws-native-core</artifactId>
+					</exclusion>
+					<exclusion>
+						<artifactId>emma</artifactId>
+						<groupId>emma</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>emma_ant</artifactId>
+						<groupId>emma</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>hornetq-core</artifactId>
+						<groupId>org.hornetq</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>netty</artifactId>
+						<groupId>org.jboss.netty</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>wrapper</artifactId>
+						<groupId>tanukisoft</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jacorb</artifactId>
+						<groupId>jacorb</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jfreechart</artifactId>
+						<groupId>jfree</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-corba-ots-spi</artifactId>
+						<groupId>org.jboss.integration</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-server-manager</artifactId>
+						<groupId>org.jboss.jbossas</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-ejb-api_3.1_spec</artifactId>
+						<groupId>org.jboss.spec.javax.ejb</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jnp-client</artifactId>
+						<groupId>org.jboss.naming</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-servlet-api_3.0_spec</artifactId>
+						<groupId>org.jboss.spec.javax.servlet</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jbossws-common</artifactId>
+						<groupId>org.jboss.ws</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jcl-over-slf4j</artifactId>
+						<groupId>org.slf4j</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>stax-api</artifactId>
+						<groupId>stax</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>idl</artifactId>
+						<groupId>jacorb</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-connector-api_1.5_spec</artifactId>
+						<groupId>org.jboss.spec.javax.resource</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-transaction-spi</artifactId>
+						<groupId>org.jboss.integration</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-remoting</artifactId>
+						<groupId>org.jboss.remoting</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>slf4j-api</artifactId>
+						<groupId>org.slf4j</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>dom4j</artifactId>
+						<groupId>dom4j</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>commons-codec</artifactId>
+						<groupId>commons-codec</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-logmanager</artifactId>
+						<groupId>org.jboss.logmanager</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>hibernate-jpa-2.0-api</artifactId>
+						<groupId>org.hibernate.javax.persistence</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jcommon</artifactId>
+						<groupId>jfree</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-transaction-api_1.1_spec</artifactId>
+						<groupId>org.jboss.spec.javax.transaction</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>commons-httpclient</artifactId>
+						<groupId>commons-httpclient</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-logging-processor</artifactId>
+						<groupId>org.jboss.logging</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jboss-logging-generator</artifactId>
+						<groupId>org.jboss.logging</groupId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 </project>

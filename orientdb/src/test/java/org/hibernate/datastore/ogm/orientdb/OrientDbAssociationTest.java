@@ -11,14 +11,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
-
+import org.apache.log4j.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
@@ -40,6 +38,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
+import java.text.MessageFormat;
 
 /**
  * Test checks CRUD for entities with associations (with links with other entities)
