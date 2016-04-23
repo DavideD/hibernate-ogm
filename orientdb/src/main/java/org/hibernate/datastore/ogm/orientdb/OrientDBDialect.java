@@ -339,12 +339,18 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				break;
 			case REMOVE:
 				log.debugf( "applyAssociationOperation: REMOVE operation for: %s ;", associationKey );
+                                //@TODO implement it!
 				// removeAssociation( associationKey, associationContext );
-				// removeAssociationOperation( association, key, operation,
-				// associationContext.getAssociationTypeContext().getAssociatedEntityKeyMetadata() );
+				 removeAssociationOperation( association, associationKey, operation,
+				 associationContext.getAssociationTypeContext().getAssociatedEntityKeyMetadata() );
 				break;
 		}
 	}
+        private void removeAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
+			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "removeAssociationOperation: : action: %s ; metadata: %s; association:%s", action, associationKey.getMetadata(), association );
+                //@TODO implement it!!!
+        }
 
 	private void putAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
@@ -363,7 +369,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				// throw new UnsupportedOperationException("putAssociationOperation: relations not empty not
 				// supported!");
 			}
-
 		}
 		else {
 			log.debugf( "putAssociationOperation: no associations for  metadata: %s", associationKey.getMetadata() );
