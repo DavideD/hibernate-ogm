@@ -68,8 +68,8 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 
 	private void close() {
 		try {
-                        currentOrientDBTransaction.getDatabase().close();
-                        
+                        //currentOrientDBTransaction.getDatabase().close();
+                        datastoreProvider.closeConnection();
 		}
 		finally {
 			currentOrientDBTransaction = null;

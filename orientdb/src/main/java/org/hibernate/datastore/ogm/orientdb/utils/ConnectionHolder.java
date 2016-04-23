@@ -6,6 +6,7 @@
  */
 package org.hibernate.datastore.ogm.orientdb.utils;
 
+import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -39,15 +40,38 @@ public class ConnectionHolder extends ThreadLocal<Connection> {
 		log.debugf( "get connection for thread %s", Thread.currentThread().getName() );	
                 if (!CONNECTIONS.containsKey(Thread.currentThread().getId())) {
                     CONNECTIONS.put(Thread.currentThread().getId(),createConnectionForCurrentThread());
-                }                
+                }
+                Connection connection = CONNECTIONS.get(Thread.currentThread().getId());
+                try {
+                if (connection.isClosed()) {
+                    log.debugf( "connection for thread %s is closed", Thread.currentThread().getName() );
+                    CONNECTIONS.put(Thread.currentThread().getId(),createConnectionForCurrentThread());
+                }
+                } catch (SQLException | OException sqle) {
+                    log.error("Cannot recreate connection", sqle);
+                }
                 return CONNECTIONS.get(Thread.currentThread().getId());
 	}
 
+        @Override
+        public void remove() {
+                log.debugf( "remove connection for thread %s", Thread.currentThread().getName() );
+                try {
+                    get().close();
+                } catch (SQLException | OException sqle) {
+                    log.error("Cannot close connection", sqle);
+                }
+                CONNECTIONS.remove(Thread.currentThread().getId());
+        }
+        
+
         private OrientJdbcConnection createConnectionForCurrentThread() {
-            Connection connection = null;
+            OrientJdbcConnection connection = null;
 		try {
 			log.debugf( "create connection %s for thread %s", jdbcUrl, Thread.currentThread().getName() );
-			connection = DriverManager.getConnection( jdbcUrl, info );
+                        Properties properties = new Properties();
+                        properties.setProperty("db.usePool","true");
+			connection = (OrientJdbcConnection) DriverManager.getConnection( jdbcUrl, info );
 			connection.setAutoCommit( false );
 			initConnection( connection );
 		}

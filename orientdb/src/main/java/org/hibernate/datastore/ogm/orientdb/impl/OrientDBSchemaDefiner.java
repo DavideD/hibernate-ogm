@@ -21,13 +21,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.hibernate.HibernateException;
 import org.hibernate.boot.model.relational.Namespace;
 import org.hibernate.datastore.ogm.orientdb.dto.EmbeddedColumnInfo;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
-import org.hibernate.datastore.ogm.orientdb.utils.SequenceUtil;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.PrimaryKey;
@@ -49,7 +47,6 @@ import org.hibernate.usertype.UserType;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.exception.OSequenceException;
-import com.orientechnologies.orient.core.metadata.function.OFunction;
 import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
 import java.io.IOException;
 import java.io.InputStream;
@@ -289,7 +286,8 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						
 					}
 				}
-				if ( table.hasPrimaryKey() && !isTablePerClassInheritance( table ) && !isEmbeddedObjectTable( table ) ) {
+				if ( table.hasPrimaryKey() && !isTablePerClassInheritance( table ) 
+                                        && !isEmbeddedObjectTable( table ) && !isMapingTable(table) ) {
 					PrimaryKey primaryKey = table.getPrimaryKey();
 					if ( primaryKey != null ) {
 						log.debugf( "primaryKey: %s ", primaryKey.getTable().getName() );
@@ -466,13 +464,22 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	}
 
-	private boolean isMapingTable(Table table) {
-		int tableColumns = 0;
-		for ( Iterator iterator = table.getColumnIterator(); iterator.hasNext(); ) {
-			Object next = iterator.next();
-			tableColumns++;
+	private boolean isMapingTable(Table table) {		
+                Set<String> tableColumns = new HashSet<>();
+                Set<String> primaryKeyColumns = new HashSet<>();
+		for ( Iterator<Column> iterator = table.getColumnIterator(); iterator.hasNext(); ) {
+			Column column = iterator.next();
+			tableColumns.add(column.getName());
 		}
-		return table.getPrimaryKey() == null && tableColumns == 2;
+                log.debugf( "isMapingTable: Table: %s, primary key: %s ", table.getName(),table.getPrimaryKey() );
+                if (table.hasPrimaryKey()) {
+                    for (Column column : table.getPrimaryKey().getColumns()) {
+                        primaryKeyColumns.add(column.getName());
+                    }
+                }
+                //@TODO think about multucolumn index in OrientDB!
+		return (!table.hasPrimaryKey() && tableColumns.size() == 2 ) || 
+                        (tableColumns.equals(primaryKeyColumns));
 	}
 
 	private boolean isEmbeddedObjectTable(Table table) {
@@ -518,14 +525,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		SessionFactoryImplementor sessionFactoryImplementor = context.getSessionFactory();
 		ServiceRegistryImplementor registry = sessionFactoryImplementor.getServiceRegistry();
 		provider = (OrientDBDatastoreProvider) registry.getService( DatastoreProvider.class );
-		Connection connection = provider.getConnection();
-                // check exists sequence
-		/* try {
-			log.debugf( "default hibernate sequence value: %s", SequenceUtil.getNextSequenceValue( connection, "hibernate_sequence" ) );
-		}
-		catch (HibernateException he) {
-			createSequence( connection, "hibernate_sequence", 0, 1 );
-		} */
+		Connection connection = provider.getConnection();                
                 createSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE, 0, 1 );
                 createTableSequence(connection,OrientDBConstant.HIBERNATE_SEQUENCE_TABLE,"key","seed");
 		createGetTableSeqValueFunc( connection );

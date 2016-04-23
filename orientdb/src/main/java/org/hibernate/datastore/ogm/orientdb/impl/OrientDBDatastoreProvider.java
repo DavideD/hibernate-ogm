@@ -94,6 +94,9 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider
 	public Connection getConnection() {
                 return connectionHolder.get();                
 	}
+        public void closeConnection() {
+                connectionHolder.remove();                
+	}
         
 
 	@Override
