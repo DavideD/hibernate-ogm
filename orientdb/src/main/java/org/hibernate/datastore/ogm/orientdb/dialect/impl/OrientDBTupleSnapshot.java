@@ -96,34 +96,6 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		return value;
 	}
 
-	private ODocument findEmbeddedClass(ODocument doc, EmbeddedColumnInfo ec) {
-		ODocument targetDocument = doc;
-		if ( targetDocument == null ) {
-			return null;
-		}
-		if ( ec.getClassNames().size() > 1 ) {
-			for ( int i = 1; i < ec.getClassNames().size(); i++ ) {
-				String className = ec.getClassNames().get( i );
-				targetDocument = targetDocument.field( className );
-			}
-		}
-
-		return targetDocument;
-	}
-
-	private Map<String, Object> loadAssociatedEntity(AssociatedEntityKeyMetadata associatedEntityKeyMetadata, String targetColumnName) {
-		String mappedByName = AssociationUtil.getMappedByFieldName( associatedEntityKeyMetadata );
-		String inOrientDbField = "in_".concat( mappedByName );
-		log.debug( "mappedByName: " + mappedByName + "; inOrientDbField:" + inOrientDbField );
-		log.debug( "inOrientDbField: " + inOrientDbField + ".loaded? :" + dbNameValueMap.containsKey( inOrientDbField ) );
-		Map<String, Object> value = null;
-		if ( dbNameValueMap.containsKey( inOrientDbField ) ) {
-			value = (Map<String, Object>) dbNameValueMap.get( inOrientDbField );
-			log.debug( "value: " + value.getClass() );
-		}
-		return value;
-	}
-
 	@Override
 	public boolean isEmpty() {
 		return dbNameValueMap.isEmpty();
