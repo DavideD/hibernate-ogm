@@ -18,7 +18,7 @@ import javax.persistence.Version;
 public class Account {
 
 	private String login;
-	private String password;	
+	private String password;
 	private Address homeAddress;
 	private Integer version;
 
@@ -38,7 +38,8 @@ public class Account {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-        @Embedded
+
+	@Embedded
 	public Address getHomeAddress() {
 		return homeAddress;
 	}
