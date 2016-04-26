@@ -33,9 +33,9 @@ public class OrientDBConstant {
 	public static final Map<String, String> MAPPING_FIELDS;
 	public static final Set<Class> BASE64_TYPES;
 	public static final String NULL_VALUE = "null";
-        public static final Set<String> SYSTEM_CLASS_SET;
-        public static final String HIBERNATE_SEQUENCE="hibernate_sequence";
-        public static final String HIBERNATE_SEQUENCE_TABLE="sequences";
+	public static final Set<String> SYSTEM_CLASS_SET;
+	public static final String HIBERNATE_SEQUENCE = "hibernate_sequence";
+	public static final String HIBERNATE_SEQUENCE_TABLE = "sequences";
 
 	static {
 		Set<String> set = new HashSet<>();
@@ -52,9 +52,10 @@ public class OrientDBConstant {
 		set1.add( BigInteger.class );
 		set1.add( byte[].class );
 		BASE64_TYPES = Collections.unmodifiableSet( set1 );
-                
-                SYSTEM_CLASS_SET = Collections.unmodifiableSet( new HashSet<String>(Arrays.asList("V","OSequence","ORestricted","OTriggered","OIdentity","ORole","OSchedule",
-                        "OUser","OFunction","E")) );
+
+		SYSTEM_CLASS_SET = Collections
+				.unmodifiableSet( new HashSet<String>( Arrays.asList( "V", "OSequence", "ORestricted", "OTriggered", "OIdentity", "ORole", "OSchedule",
+						"OUser", "OFunction", "E" ) ) );
 
 	}
 }

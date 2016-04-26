@@ -6,8 +6,7 @@
  */
 package org.hibernate.datastore.ogm.orientdb.utils;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 import org.hibernate.ogm.backendtck.simpleentity.CRUDTest;
 
 /**

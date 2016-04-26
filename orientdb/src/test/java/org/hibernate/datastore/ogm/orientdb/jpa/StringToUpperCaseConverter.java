@@ -10,6 +10,7 @@ import javax.persistence.AttributeConverter;
 
 /**
  * Show direct value from database
+ *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 public class StringToUpperCaseConverter implements AttributeConverter<String, String> {
@@ -23,5 +24,5 @@ public class StringToUpperCaseConverter implements AttributeConverter<String, St
 	public String convertToEntityAttribute(String dbData) {
 		return dbData != null ? dbData : null;
 	}
-    
+
 }

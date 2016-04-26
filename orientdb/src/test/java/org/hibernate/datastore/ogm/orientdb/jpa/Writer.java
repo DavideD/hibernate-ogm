@@ -18,99 +18,95 @@ import javax.persistence.TemporalType;
 import javax.persistence.Version;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 @Entity
 public class Writer {
 
-    @Id
-    private Long bKey;
-    @Version
-    @Column(name = "@version")
-    private int version;
-    @Column(name = "@rid")
-    private ORecordId rid;
-    @Temporal(TemporalType.DATE)
-    private Date birthDate;
-    @Convert(converter = StringToUpperCaseConverter.class)
-    private String name;    
-    private long count;
+	@Id
+	private Long bKey;
+	@Version
+	@Column(name = "@version")
+	private int version;
+	@Column(name = "@rid")
+	private ORecordId rid;
+	@Temporal(TemporalType.DATE)
+	private Date birthDate;
+	@Convert(converter = StringToUpperCaseConverter.class)
+	private String name;
+	private long count;
 
-    public Long getbKey() {
-        return bKey;
-    }
+	public Long getbKey() {
+		return bKey;
+	}
 
-    public void setbKey(Long bKey) {
-        this.bKey = bKey;
-    }
+	public void setbKey(Long bKey) {
+		this.bKey = bKey;
+	}
 
-    public int getVersion() {
-        return version;
-    }
+	public int getVersion() {
+		return version;
+	}
 
-    public void setVersion(int version) {
-        this.version = version;
-    }
+	public void setVersion(int version) {
+		this.version = version;
+	}
 
-    public ORecordId getRid() {
-        return rid;
-    }
+	public ORecordId getRid() {
+		return rid;
+	}
 
-    public void setRid(ORecordId rid) {
-        this.rid = rid;
-    }
+	public void setRid(ORecordId rid) {
+		this.rid = rid;
+	}
 
-    public Date getBirthDate() {
-        return birthDate;
-    }
+	public Date getBirthDate() {
+		return birthDate;
+	}
 
-    public void setBirthDate(Date birthDate) {
-        this.birthDate = birthDate;
-    }
+	public void setBirthDate(Date birthDate) {
+		this.birthDate = birthDate;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
-    public long getCount() {
-        return count;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void setCount(long count) {
-        this.count = count;
-    }
-    
+	public long getCount() {
+		return count;
+	}
 
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 29 * hash + Objects.hashCode(this.bKey);
-        return hash;
-    }
+	public void setCount(long count) {
+		this.count = count;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Writer other = (Writer) obj;
-        if (!Objects.equals(this.bKey, other.bKey)) {
-            return false;
-        }
-        return true;
-    }
-    
-    
-    
-    
+	@Override
+	public int hashCode() {
+		int hash = 5;
+		hash = 29 * hash + Objects.hashCode( this.bKey );
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null ) {
+			return false;
+		}
+		if ( getClass() != obj.getClass() ) {
+			return false;
+		}
+		final Writer other = (Writer) obj;
+		if ( !Objects.equals( this.bKey, other.bKey ) ) {
+			return false;
+		}
+		return true;
+	}
+
 }

@@ -20,14 +20,16 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.type.spi.GridType;
 import org.hibernate.ogm.type.spi.TypeTranslator;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.hibernate.ogm.utils.TestHelper;
 import org.hibernate.type.StandardBasicTypes;
 import org.junit.Test;
 
 /**
- * Test the JPA @Convert logic in OGM
- * TODO: should it be in the TCK, that's core code but it's nice to see it tested across all backends
+ * Test the JPA @Convert logic in OGM TODO: should it be in the TCK, that's core code but it's nice to see it tested
+ * across all backends
  *
  * @author Emmanuel Bernard emmanuel@hibernate.org
  */
@@ -51,8 +53,7 @@ public class JpaAttributeConverterTest extends OgmTestCase {
 		// Make sure the converter has actually been applied
 		Map<String, Object> persistedTuple = TestHelper.extractEntityTuple(
 				sessions,
-				getPrinterEntityKey( printer.id )
-		);
+				getPrinterEntityKey( printer.id ) );
 		String persistedPrinterName = (String) persistedTuple.get( "name" );
 		assertThat( persistedPrinterName ).isEqualTo( "SOMEFOO" );
 		session.getTransaction().commit();
@@ -71,6 +72,7 @@ public class JpaAttributeConverterTest extends OgmTestCase {
 	/**
 	 * MyString -> String
 	 */
+	@SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void jpaConverterIsAppliedToCustomType() throws Exception {
 		Session session = openSession();
@@ -86,8 +88,7 @@ public class JpaAttributeConverterTest extends OgmTestCase {
 		// Make sure the converter has actually been applied
 		Map<String, Object> persistedTuple = TestHelper.extractEntityTuple(
 				sessions,
-				getPrinterEntityKey( printer.id )
-		);
+				getPrinterEntityKey( printer.id ) );
 		String persistedPrinterName = (String) persistedTuple.get( "brand" );
 		assertThat( persistedPrinterName ).isEqualTo( "PRINTR INC." );
 		session.getTransaction().commit();
@@ -122,21 +123,19 @@ public class JpaAttributeConverterTest extends OgmTestCase {
 	}
 
 	private EntityKey getPrinterEntityKey(UUID id) {
-		GridType uuidType = ( (SessionFactoryImplementor) sessions ).getServiceRegistry().
-				getService( TypeTranslator.class ).
-				getType( StandardBasicTypes.UUID_BINARY );
+		GridType uuidType = ( (SessionFactoryImplementor) sessions ).getServiceRegistry().getService( TypeTranslator.class )
+				.getType( StandardBasicTypes.UUID_BINARY );
 
 		Tuple dummy = new Tuple();
-		uuidType.nullSafeSet( dummy, id, new String[] { "id" }, null );
+		uuidType.nullSafeSet( dummy, id, new String[]{ "id" }, null );
 
 		return new EntityKey(
-				new DefaultEntityKeyMetadata( "Printer", new String[] { "id" } ),
-				new Object[]{ dummy.get( "id" ) }
-		);
+				new DefaultEntityKeyMetadata( "Printer", new String[]{ "id" } ),
+				new Object[]{ dummy.get( "id" ) } );
 	}
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] { Printer.class };
+		return new Class<?>[]{ Printer.class };
 	}
 }

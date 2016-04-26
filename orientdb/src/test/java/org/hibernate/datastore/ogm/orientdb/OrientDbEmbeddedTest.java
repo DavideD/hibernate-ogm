@@ -60,7 +60,7 @@ public class OrientDbEmbeddedTest {
 			emf.close();
 
 		}
-		MemoryDBUtil.dropInMemoryDb( );
+		MemoryDBUtil.dropInMemoryDb();
 	}
 
 	@Before
@@ -76,8 +76,8 @@ public class OrientDbEmbeddedTest {
 	}
 
 	@Test
-	public void testInsertNewEmbeddedClass() {
-		log.debug( "start" );
+	public void test1InsertNewEmbeddedClass() {
+		log.debug( "insertNewEmbeddedClass" );
 		try {
 			em.getTransaction().begin();
 			Producer producer = new Producer();
@@ -135,8 +135,8 @@ public class OrientDbEmbeddedTest {
 	}
 
 	@Test
-	public void updateEmbeddedClass() {
-		log.debug( "start" );
+	public void test2UpdateEmbeddedClass() {
+		log.debug( "updateEmbeddedClass" );
 		try {
 			em.getTransaction().begin();
 			Car car = em.find( Car.class, 1l );
@@ -162,8 +162,8 @@ public class OrientDbEmbeddedTest {
 	}
 
 	@Test
-	public void updateEmbeddedCollection() {
-		log.debug( "start" );
+	public void test3UpdateEmbeddedCollection() {
+		log.debug( "updateEmbeddedCollection" );
 		try {
 			em.getTransaction().begin();
 			Car car = em.find( Car.class, 1l );
@@ -184,6 +184,39 @@ public class OrientDbEmbeddedTest {
 			car = em.find( Car.class, 1l );
 			assertNotNull( "Car must be updated!", car );
 			assertEquals( "Count of owners must be changed!", car.getOwners().size(), 3L );
+			em.getTransaction().commit();
+		}
+		catch (Exception e) {
+			log.error( "Error", e );
+			em.getTransaction().rollback();
+			throw e;
+		}
+	}
+
+	@Test
+	public void test4RemoveEmbeddedCollection() {
+		log.debug( "removeEmbeddedCollection" );
+		try {
+			em.getTransaction().begin();
+			Car car = em.find( Car.class, 1l );
+			assertNotNull( "Car must be saved!", car );
+
+			List<CarOwner> owners = car.getOwners();
+			List<CarOwner> newOwners = new LinkedList<>();
+			for ( CarOwner owner : owners ) {
+				if ( !owner.getName().equals( "name3" ) ) {
+					newOwners.add( owner );
+				}
+			}
+			car.setOwners( newOwners );
+			em.merge( car );
+			em.getTransaction().commit();
+			em.clear();
+
+			em.getTransaction().begin();
+			car = em.find( Car.class, 1l );
+			assertNotNull( "Car must be updated!", car );
+			assertEquals( "Count of owners must be changed!", car.getOwners().size(), 2L );
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {

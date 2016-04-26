@@ -7,10 +7,6 @@
 package org.hibernate.datastore.ogm.orientdb.utils;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.core.index.OIndex;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.sequence.OSequenceLibrary;
-import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -23,7 +19,6 @@ import java.util.Properties;
 import org.hibernate.SessionFactory;
 import org.hibernate.datastore.ogm.orientdb.OrientDB;
 import org.hibernate.datastore.ogm.orientdb.OrientDBDialect;
-import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.impl.OrientDBDatastoreProvider;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
@@ -145,9 +140,9 @@ public class OrientDBTestHelper implements TestableGridDialect {
 			if ( !db.isActiveOnCurrentThread() ) {
 				db.activateOnCurrentThread();
 			}
-                        if (db.getTransaction().isActive() ) {
-                            db.getTransaction().close();
-                        }
+			if ( db.getTransaction().isActive() ) {
+				db.getTransaction().close();
+			}
 			MemoryDBUtil.dropInMemoryDb();
 			try {
 				connection.close();

@@ -31,17 +31,13 @@ import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Startable;
 import org.hibernate.service.spi.Stoppable;
 
-import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
-
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider
-		implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
+implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
-	private static boolean isInmemoryDB = false;
 	private static Log log = LoggerFactory.getLogger();
-	private static OrientGraphFactory factory;
 	private ConnectionHolder connectionHolder;
 	private ConfigurationPropertyReader propertyReader;
 	private ServiceRegistryImplementor registry;
@@ -80,31 +76,28 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider
 	private void createInMemoryDB() {
 
 		String orientDbUrl = propertyReader.property( "javax.persistence.jdbc.url", String.class ).getValue().substring( "jdbc:orient:".length() );
-		Boolean restart = propertyReader.property( "restart.inmemorydb", Boolean.class ).withDefault( Boolean.FALSE ).getValue();
-
 		if ( orientDbUrl.startsWith( "memory" ) ) {
-			isInmemoryDB = true;                        
-			ODatabaseDocumentTx db =  MemoryDBUtil.createDbFactory( orientDbUrl );
+			if ( MemoryDBUtil.getOrientGraphFactory() != null ) {
+				log.debugf( "getCreatedInstancesInPool: %d", MemoryDBUtil.getOrientGraphFactory().getCreatedInstancesInPool() );
+			}
+			ODatabaseDocumentTx db = MemoryDBUtil.createDbFactory( orientDbUrl );
 			log.debugf( "in-memory database exists: %b ", db.exists() );
-                        log.debugf( "in-memory database closed: %b ", db.isClosed() );					
+			log.debugf( "in-memory database closed: %b ", db.isClosed() );
 		}
 
 	}
 
 	public Connection getConnection() {
-                return connectionHolder.get();                
+		return connectionHolder.get();
 	}
-        public void closeConnection() {
-                connectionHolder.remove();                
+
+	public void closeConnection() {
+		connectionHolder.remove();
 	}
-        
 
 	@Override
 	public void stop() {
 		log.debug( "---stop---" );
-		/*
-		 * if ( jdbcUrl.contains("memory:" ) ) { MemoryDBUtil.dropInMemoryDb(jdbcUrl); }
-		 */
 	}
 
 	@Override

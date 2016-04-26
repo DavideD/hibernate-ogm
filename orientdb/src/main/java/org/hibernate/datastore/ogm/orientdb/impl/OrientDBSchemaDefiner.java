@@ -137,10 +137,10 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 			throw log.cannotGenerateClass( seqTable, e );
 		}
 	}
-        
+
 	private void createGetTableSeqValueFunc(Connection connection) {
 		try {
-			OrientJdbcConnection orientDBConnection = (OrientJdbcConnection) connection;                        
+			OrientJdbcConnection orientDBConnection = (OrientJdbcConnection) connection;
 			Set<String> functions = orientDBConnection.getDatabase().getMetadata().getFunctionLibrary().getFunctionNames();
 			log.debugf( " functions : %s", functions );
 			if ( functions.contains( "getTableSeqValue".toUpperCase() ) ) {
@@ -162,7 +162,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 	}
 
 	private void createEntities(Connection connection, SchemaDefinitionContext context) {
-		
+
 		for ( Namespace namespace : context.getDatabase().getNamespaces() ) {
 			Set<String> createdEmbeddedClassSet = new HashSet<>();
 			Set<String> tables = new HashSet<>();
@@ -266,11 +266,11 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 					}
 					else {
 						String propertyQuery = createValueProperyQuery( tableName, column );
-						log.debugf( "create property query: %s" , propertyQuery );
+						log.debugf( "create property query: %s", propertyQuery );
 						try {
 							provider.getConnection().createStatement().execute( propertyQuery );
 						}
-                                                catch (OCommandExecutionException oe) {
+						catch (OCommandExecutionException oe) {
 							log.debugf( "orientdb message: %s; ", oe.getMessage() );
 							if ( oe.getMessage().contains( "already exists" ) ) {
 								log.debugf( "property %s already exists. Continue ", column.getName() );
@@ -280,14 +280,14 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 							}
 						}
 						catch (SQLException | OException e) {
-                                                        log.error( "Exception:",e  );
+							log.error( "Exception:", e );
 							throw log.cannotGenerateProperty( column.getName(), table.getName(), e );
 						}
-						
+
 					}
 				}
-				if ( table.hasPrimaryKey() && !isTablePerClassInheritance( table ) 
-                                        && !isEmbeddedObjectTable( table ) && !isMapingTable(table) ) {
+				if ( table.hasPrimaryKey() && !isTablePerClassInheritance( table )
+						&& !isEmbeddedObjectTable( table ) && !isMapingTable( table ) ) {
 					PrimaryKey primaryKey = table.getPrimaryKey();
 					if ( primaryKey != null ) {
 						log.debugf( "primaryKey: %s ", primaryKey.getTable().getName() );
@@ -464,22 +464,22 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	}
 
-	private boolean isMapingTable(Table table) {		
-                Set<String> tableColumns = new HashSet<>();
-                Set<String> primaryKeyColumns = new HashSet<>();
+	private boolean isMapingTable(Table table) {
+		Set<String> tableColumns = new HashSet<>();
+		Set<String> primaryKeyColumns = new HashSet<>();
 		for ( Iterator<Column> iterator = table.getColumnIterator(); iterator.hasNext(); ) {
 			Column column = iterator.next();
-			tableColumns.add(column.getName());
+			tableColumns.add( column.getName() );
 		}
-                log.debugf( "isMapingTable: Table: %s, primary key: %s ", table.getName(),table.getPrimaryKey() );
-                if (table.hasPrimaryKey()) {
-                    for (Column column : table.getPrimaryKey().getColumns()) {
-                        primaryKeyColumns.add(column.getName());
-                    }
-                }
-                //@TODO think about multucolumn index in OrientDB!
-		return (!table.hasPrimaryKey() && tableColumns.size() == 2 ) || 
-                        (tableColumns.equals(primaryKeyColumns));
+		log.debugf( "isMapingTable: Table: %s, primary key: %s ", table.getName(), table.getPrimaryKey() );
+		if ( table.hasPrimaryKey() ) {
+			for ( Column column : table.getPrimaryKey().getColumns() ) {
+				primaryKeyColumns.add( column.getName() );
+			}
+		}
+		// @TODO think about multucolumn index in OrientDB!
+		return ( !table.hasPrimaryKey() && tableColumns.size() == 2 ) ||
+				( tableColumns.equals( primaryKeyColumns ) );
 	}
 
 	private boolean isEmbeddedObjectTable(Table table) {
@@ -525,9 +525,9 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		SessionFactoryImplementor sessionFactoryImplementor = context.getSessionFactory();
 		ServiceRegistryImplementor registry = sessionFactoryImplementor.getServiceRegistry();
 		provider = (OrientDBDatastoreProvider) registry.getService( DatastoreProvider.class );
-		Connection connection = provider.getConnection();                
-                createSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE, 0, 1 );
-                createTableSequence(connection,OrientDBConstant.HIBERNATE_SEQUENCE_TABLE,"key","seed");
+		Connection connection = provider.getConnection();
+		createSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE, 0, 1 );
+		createTableSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE_TABLE, "key", "seed" );
 		createGetTableSeqValueFunc( connection );
 		createEntities( connection, context );
 	}

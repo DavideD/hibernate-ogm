@@ -11,15 +11,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
-import org.hibernate.datastore.ogm.orientdb.dto.EmbeddedColumnInfo;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
-import org.hibernate.datastore.ogm.orientdb.utils.AssociationUtil;
 import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
-
-import com.orientechnologies.orient.core.record.impl.ODocument;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)

@@ -65,7 +65,7 @@ public class OrientDbAssociationTest {
 			em.close();
 			emf.close();
 		}
-		MemoryDBUtil.dropInMemoryDb(  );
+		MemoryDBUtil.dropInMemoryDb();
 	}
 
 	@Before

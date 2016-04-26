@@ -28,7 +28,8 @@ public class ConnectionHolder extends ThreadLocal<Connection> {
 	private static Log log = LoggerFactory.getLogger();
 	private final String jdbcUrl;
 	private final Properties info;
-	private final Map<Long,OrientJdbcConnection> CONNECTIONS = Collections.<Long,OrientJdbcConnection>synchronizedMap(new HashMap<Long,OrientJdbcConnection>());
+	private final Map<Long, OrientJdbcConnection> CONNECTIONS = Collections
+			.<Long, OrientJdbcConnection> synchronizedMap( new HashMap<Long, OrientJdbcConnection>() );
 
 	public ConnectionHolder(String jdbcUrl, Properties info) {
 		this.jdbcUrl = jdbcUrl;
@@ -36,41 +37,42 @@ public class ConnectionHolder extends ThreadLocal<Connection> {
 	}
 
 	@Override
-	public Connection get() {            
-		log.debugf( "get connection for thread %s", Thread.currentThread().getName() );	
-                if (!CONNECTIONS.containsKey(Thread.currentThread().getId())) {
-                    CONNECTIONS.put(Thread.currentThread().getId(),createConnectionForCurrentThread());
-                }
-                Connection connection = CONNECTIONS.get(Thread.currentThread().getId());
-                try {
-                if (connection.isClosed()) {
-                    log.debugf( "connection for thread %s is closed", Thread.currentThread().getName() );
-                    CONNECTIONS.put(Thread.currentThread().getId(),createConnectionForCurrentThread());
-                }
-                } catch (SQLException | OException sqle) {
-                    log.error("Cannot recreate connection", sqle);
-                }
-                return CONNECTIONS.get(Thread.currentThread().getId());
+	public Connection get() {
+		log.debugf( "get connection for thread %s", Thread.currentThread().getName() );
+		if ( !CONNECTIONS.containsKey( Thread.currentThread().getId() ) ) {
+			CONNECTIONS.put( Thread.currentThread().getId(), createConnectionForCurrentThread() );
+		}
+		Connection connection = CONNECTIONS.get( Thread.currentThread().getId() );
+		try {
+			if ( connection.isClosed() ) {
+				log.debugf( "connection for thread %s is closed", Thread.currentThread().getName() );
+				CONNECTIONS.put( Thread.currentThread().getId(), createConnectionForCurrentThread() );
+			}
+		}
+		catch (SQLException | OException sqle) {
+			log.error( "Cannot recreate connection", sqle );
+		}
+		return CONNECTIONS.get( Thread.currentThread().getId() );
 	}
 
-        @Override
-        public void remove() {
-                log.debugf( "remove connection for thread %s", Thread.currentThread().getName() );
-                try {
-                    get().close();
-                } catch (SQLException | OException sqle) {
-                    log.error("Cannot close connection", sqle);
-                }
-                CONNECTIONS.remove(Thread.currentThread().getId());
-        }
-        
+	@Override
+	public void remove() {
+		log.debugf( "remove connection for thread %s", Thread.currentThread().getName() );
+		try {
+			get().close();
+		}
+		catch (SQLException | OException sqle) {
+			log.error( "Cannot close connection", sqle );
+		}
+		CONNECTIONS.remove( Thread.currentThread().getId() );
+	}
 
-        private OrientJdbcConnection createConnectionForCurrentThread() {
-            OrientJdbcConnection connection = null;
+	private OrientJdbcConnection createConnectionForCurrentThread() {
+		OrientJdbcConnection connection = null;
 		try {
 			log.debugf( "create connection %s for thread %s", jdbcUrl, Thread.currentThread().getName() );
-                        Properties properties = new Properties();
-                        properties.setProperty("db.usePool","true");
+			Properties properties = new Properties();
+			properties.setProperty( "db.usePool", "true" );
 			connection = (OrientJdbcConnection) DriverManager.getConnection( jdbcUrl, info );
 			connection.setAutoCommit( false );
 			initConnection( connection );
@@ -80,7 +82,8 @@ public class ConnectionHolder extends ThreadLocal<Connection> {
 		}
 		return (OrientJdbcConnection) connection;
 	}
-        private void initConnection(Connection connection) {
+
+	private void initConnection(Connection connection) {
 		String[] queries = new String[]{ "ALTER DATABASE DATETIMEFORMAT \"" + OrientDBConstant.DATETIME_FORMAT + "\"",
 				"ALTER DATABASE DATEFORMAT \"" + OrientDBConstant.DATE_FORMAT + "\"" };
 		for ( String query : queries ) {

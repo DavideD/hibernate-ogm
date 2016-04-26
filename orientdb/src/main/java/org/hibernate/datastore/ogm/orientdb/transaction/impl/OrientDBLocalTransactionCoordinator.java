@@ -6,7 +6,6 @@
  */
 package org.hibernate.datastore.ogm.orientdb.transaction.impl;
 
-import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.tx.OTransaction;
 import com.orientechnologies.orient.core.tx.OTransactionNoTx;
@@ -45,7 +44,7 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 			log.debugf( "commit transaction (Id: %d) for database %s  is %d.",
 					currentOrientDBTransaction.getId(),
 					currentOrientDBTransaction.getDatabase().getName() );
-			currentOrientDBTransaction.commit(true);
+			currentOrientDBTransaction.commit( true );
 			close();
 		}
 		else {
@@ -58,7 +57,7 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 			log.debugf( "rollback transaction (Id: %d) for database %s  is %d.",
 					currentOrientDBTransaction.getId(),
 					currentOrientDBTransaction.getDatabase().getName() );
-			currentOrientDBTransaction.rollback();
+			currentOrientDBTransaction.rollback( true, 1 );
 			close();
 		}
 		else {
@@ -68,8 +67,8 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 
 	private void close() {
 		try {
-                        //currentOrientDBTransaction.getDatabase().close();
-                        datastoreProvider.closeConnection();
+			// currentOrientDBTransaction.getDatabase().close();
+			datastoreProvider.closeConnection();
 		}
 		finally {
 			currentOrientDBTransaction = null;
@@ -87,20 +86,20 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 			Connection sqlConnection = datastoreProvider.getConnection();
 			OrientJdbcConnection orientDbConn = (OrientJdbcConnection) sqlConnection;
 			ODatabaseDocumentTx database = orientDbConn.getDatabase();
-			log.debugf( "begin transaction for database %s. Connection's hash code: %s", 
-                                database.getName(),orientDbConn.hashCode() );
+			log.debugf( "begin transaction for database %s. Connection's hash code: %s",
+					database.getName(), orientDbConn.hashCode() );
 			super.begin();
-                        if (database.isClosed()) {
-                            log.debugf( "Database %s closed. Reopen for thread : %s", 
-                                database.getName(),Thread.currentThread().getName() );
-                                database.open("admin", "admin");
-                        }
-                        currentOrientDBTransaction = database.activateOnCurrentThread().begin().getTransaction();
+			if ( database.isClosed() ) {
+				log.debugf( "Database %s closed. Reopen for thread : %s",
+						database.getName(), Thread.currentThread().getName() );
+				database.open( "admin", "admin" );
+			}
+			currentOrientDBTransaction = database.activateOnCurrentThread().begin().getTransaction();
 			if ( currentOrientDBTransaction instanceof OTransactionNoTx ) {
 				// no active transaction. create it!!
 				log.debugf( "no active transactions for database %s . Create new transaction!", database.getName() );
-                                currentOrientDBTransaction = database.getTransaction();                                
-                                currentOrientDBTransaction.setUsingLog(true);
+				currentOrientDBTransaction = database.getTransaction();
+				currentOrientDBTransaction.setUsingLog( true );
 				log.debugf( "Id of new transaction for database %s  is %d.", database.getName(),
 						currentOrientDBTransaction.getId() );
 			}
@@ -121,7 +120,7 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 							String.valueOf( currentOrientDBTransaction.isActive() ) );
 					super.commit();
 					success();
-                                        
+
 				}
 
 			}
@@ -144,7 +143,7 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 							String.valueOf( currentOrientDBTransaction.getId() ),
 							currentOrientDBTransaction.getDatabase().getName(),
 							String.valueOf( currentOrientDBTransaction.isActive() ) );
-						super.rollback();
+					super.rollback();
 				}
 			}
 			catch (Exception e) {

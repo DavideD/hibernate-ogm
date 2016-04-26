@@ -43,8 +43,8 @@ import com.orientechnologies.orient.core.id.ORecordId;
 @Entity
 @Indexed(index = "Customer")
 @NamedQueries({
-		@NamedQuery(name = "Customer.findAll", query = "SELECT c FROM Customer c"),
-		@NamedQuery(name = "Country.findByName", query = "SELECT c FROM Customer c WHERE c.name = :name") })
+	@NamedQuery(name = "Customer.findAll", query = "SELECT c FROM Customer c"),
+	@NamedQuery(name = "Country.findByName", query = "SELECT c FROM Customer c WHERE c.name = :name") })
 public class Customer {
 
 	private static Log log = LoggerFactory.getLogger();

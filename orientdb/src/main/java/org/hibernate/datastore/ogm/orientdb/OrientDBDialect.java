@@ -91,7 +91,7 @@ import org.hibernate.ogm.model.key.spi.AssociationType;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements QueryableGridDialect<String>,
-		ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
 
 	private static final long serialVersionUID = 1L;
 	private static final Log log = LoggerFactory.getLogger();
@@ -339,18 +339,78 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				break;
 			case REMOVE:
 				log.debugf( "applyAssociationOperation: REMOVE operation for: %s ;", associationKey );
-                                //@TODO implement it!
-				// removeAssociation( associationKey, associationContext );
-				 removeAssociationOperation( association, associationKey, operation,
-				 associationContext.getAssociationTypeContext().getAssociatedEntityKeyMetadata() );
+				removeAssociationOperation( association, associationKey, operation,
+						associationContext.getAssociationTypeContext().getAssociatedEntityKeyMetadata() );
 				break;
 		}
 	}
-        private void removeAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
+
+	@Override
+	public void removeAssociation(AssociationKey key, AssociationContext associationContext) {
+		// Remove the list of tuples corresponding to a given association
+		// If this is the inverse side of a bi-directional association, we don't manage the relationship from this side
+		if ( key.getMetadata().isInverse() ) {
+			return;
+		}
+
+		associationQueries.get( key.getMetadata() ).removeAssociation( provider.getConnection(), key, associationContext );
+	}
+
+	private void removeAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
-		log.debugf( "removeAssociationOperation: : action: %s ; metadata: %s; association:%s", action, associationKey.getMetadata(), association );
-                //@TODO implement it!!!
-        }
+		log.debugf( "removeAssociationOperation: action key: %s ;action value: %s ; metadata: %s; association:%s;associatedEntityKeyMetadata:%s",
+				action.getKey(), action.getValue(), associationKey.getMetadata(), association, associatedEntityKeyMetadata );
+		log.debugf( "removeAssociationOperation: contains key :%b",
+				associationQueries.containsKey( associationKey.getMetadata() ) );
+		if ( associationKey.getMetadata().isInverse() ) {
+			return;
+		}
+		associationQueries.get( associationKey.getMetadata() ).removeAssociationRow( provider.getConnection(), associationKey, action.getKey() );
+	}
+
+	private void ____removeAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
+			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "removeAssociationOperation: action key: %s ;action value: %s ; metadata: %s; association:%s",
+				action.getKey(), action.getValue(), associationKey.getMetadata(), association );
+		Connection connection = provider.getConnection();
+		// @TODO implement it!!!
+		if ( associationQueries.containsKey( associationKey.getMetadata() ) ) {
+			List<Map<String, Object>> relationship = associationQueries.get( associationKey.getMetadata() ).findRelationship( connection,
+					associationKey, action.getKey() );
+			if ( !relationship.isEmpty() ) {
+				// create
+				removeRelationship( associationKey, action.getKey(), associatedEntityKeyMetadata );
+			}
+			else {
+				log.debugf( "removeAssociationOperation: :  associations for  metadata: %s is %d", associationKey.getMetadata(), relationship.size() );
+				// relationship = createRelationship( associationKey, action.getValue(), associatedEntityKeyMetadata );
+				// throw new UnsupportedOperationException("putAssociationOperation: relations not empty not
+				// supported!");
+			}
+		}
+		else {
+			log.debugf( "putAssociationOperation: no associations for  metadata: %s", associationKey.getMetadata() );
+		}
+	}
+
+	private void removeRelationship(AssociationKey associationKey, RowKey associationRowKey, AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "removeRelationship: associationKey.getMetadata(): %s ; associationRow: %s", associationKey.getMetadata(), associationRowKey );
+		log.debugf( "removeRelationship: getAssociationKind: %s", associationKey.getMetadata().getAssociationKind() );
+		log.debugf( "removeRelationship: getAssociationType:%s", associationKey.getMetadata().getAssociationType() );
+		switch ( associationKey.getMetadata().getAssociationKind() ) {
+			case EMBEDDED_COLLECTION:
+				log.debug( "removeRelationship:EMBEDDED_COLLECTION" );
+				// createRelationshipWithEmbeddedNode( associationKey, associationRow, associatedEntityKeyMetadata );
+				throw new UnsupportedOperationException( "removeRelationship:EMBEDDED_COLLECTION" );
+			case ASSOCIATION:
+				log.debug( "removeRelationship:ASSOCIATION" );
+				removeRelationshipWithEntityNode( associationKey, associationRowKey, associatedEntityKeyMetadata );
+				break;
+			default:
+				throw new AssertionFailure( "Unrecognized associationKind: " + associationKey.getMetadata().getAssociationKind() );
+		}
+
+	}
 
 	private void putAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
@@ -412,6 +472,43 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		}
 	}
 
+	private void removeRelationshipWithEntityNode(AssociationKey associationKey, RowKey associationRowKey,
+			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "removeRelationshipWithEntityNode: associationKey.getMetadata(): %s ; associationRowKey: %s ; associatedEntityKeyMetadata: %s",
+				associationKey.getMetadata(), associationRowKey, associatedEntityKeyMetadata );
+		StringBuilder query = new StringBuilder( 200 );
+		if ( associationKey.getMetadata().getAssociationType().equals( AssociationType.BAG ) ) {
+			query.append( " update " ).append( associationKey.getTable() ).append( " set " );
+			for ( int i = 0; i < associationKey.getMetadata().getColumnNames().length; i++ ) {
+				query.append( associationKey.getMetadata().getColumnNames()[i] ).append( "=null" );
+				if ( associationKey.getMetadata().getColumnNames().length != ( i + 1 ) ) {
+					query.append( " and " );
+				}
+			}
+		}
+		else {
+			query.append( "delete vertex " ).append( associationKey.getTable() );
+		}
+		query.append( " where " );
+
+		for ( int i = 0; i < associationRowKey.getColumnNames().length; i++ ) {
+			String columnName = associationRowKey.getColumnNames()[i];
+			if ( i > 0 ) {
+				query.append( " AND " );
+			}
+			query.append( columnName ).append( "=" );
+			EntityKeyUtil.setFieldValue( query, associationRowKey.getColumnValues()[i] );
+		}
+		log.debugf( "removeRelationshipWithEntityNode: query: %s", query );
+		try {
+			PreparedStatement pstmt = provider.getConnection().prepareStatement( query.toString() );
+			log.debugf( "removeRelationshipWithEntityNode: execute remove query: %d", pstmt.executeUpdate() );
+		}
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( query.toString(), sqle );
+		}
+	}
+
 	private void createRelationshipWithEmbeddedNode(AssociationKey associationKey, Tuple associationRow,
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
 		log.debugf( "createRelationshipWithEmbeddedNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
@@ -426,55 +523,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		catch (SQLException sqle) {
 			throw log.cannotExecuteQuery( result.getQuery(), sqle );
 		}
-	}
-
-	@Override
-	public void removeAssociation(AssociationKey associationKey, AssociationContext associationContext) {
-		log.debugf( "removeAssociation: AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
-		log.debugf( "removeAssociation: getAssociationKind: %s", associationKey.getMetadata().getAssociationKind() );
-		StringBuilder deleteQuery = null;
-		String columnName = null;
-		log.debugf( "removeAssociation:%s", associationKey.getMetadata().getAssociationKind() );
-		log.debugf( "removeAssociation:getRoleOnMainSide:%s", associationContext.getAssociationTypeContext().getRoleOnMainSide() );
-		log.debugf( "removeAssociation:getAssociationType:%s", associationKey.getMetadata().getAssociationType() );
-		switch ( associationKey.getMetadata().getAssociationKind() ) {
-			case EMBEDDED_COLLECTION:
-				deleteQuery = new StringBuilder( "delete vertex " );
-				deleteQuery.append( associationKey.getTable() ).append( " where " );
-				columnName = associationKey.getColumnNames()[0];
-				deleteQuery.append( columnName ).append( "=" );
-				EntityKeyUtil.setFieldValue( deleteQuery, associationKey.getColumnValues()[0] );
-				break;
-			case ASSOCIATION:
-				String tableName = associationKey.getTable();
-				columnName = associationKey.getColumnNames()[0];
-				deleteQuery = new StringBuilder( 100 );
-				if ( associationKey.getMetadata().getAssociationType().equals( AssociationType.BAG ) ||
-						associationKey.getMetadata().getAssociationType().equals( AssociationType.LIST ) ) {
-					// it is ManyToMany or Embedded Collection
-					deleteQuery.append( "delete vertex " ).append( tableName );
-				}
-				else {
-					deleteQuery.append( "update " ).append( tableName );
-					deleteQuery.append( " set " ).append( columnName ).append( "=null" );
-				}
-				deleteQuery.append( " where " );
-				deleteQuery.append( columnName ).append( "=" );
-				EntityKeyUtil.setFieldValue( deleteQuery, associationKey.getColumnValues()[0] );
-				break;
-			default:
-				throw new AssertionFailure( "Unrecognized associationKind: " + associationKey.getMetadata().getAssociationKind() );
-		}
-
-		log.debugf( "removeAssociation: query: %s ", deleteQuery );
-		try {
-			PreparedStatement pstmt = provider.getConnection().prepareStatement( deleteQuery.toString() );
-			log.debugf( "removeAssociation:AssociationKey: %s. remove: %s", associationKey, pstmt.executeUpdate() );
-		}
-		catch (SQLException e) {
-			throw log.cannotExecuteQuery( deleteQuery.toString(), e );
-		}
-
 	}
 
 	@Override
@@ -555,7 +603,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	 * corresponding to each parameter type.
 	 */
 	private Map<String, Object> getNamedParameterValuesConvertedByGridType(QueryParameters queryParameters) {
-		Map<String, Object> parameterValues = new HashMap<String, Object>( queryParameters.getNamedParameters().size() );
+		Map<String, Object> parameterValues = new HashMap<>( queryParameters.getNamedParameters().size() );
 		Tuple dummy = new Tuple();
 
 		for ( Map.Entry<String, TypedGridValue> parameter : queryParameters.getNamedParameters().entrySet() ) {
@@ -602,7 +650,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	}
 
 	private Map<EntityKeyMetadata, OrientDBEntityQueries> initializeEntityQueries(SessionFactoryImplementor sessionFactoryImplementor) {
-		Map<EntityKeyMetadata, OrientDBEntityQueries> queryMap = new HashMap<EntityKeyMetadata, OrientDBEntityQueries>();
+		Map<EntityKeyMetadata, OrientDBEntityQueries> queryMap = new HashMap<>();
 		Collection<EntityPersister> entityPersisters = sessionFactoryImplementor.getEntityPersisters().values();
 		for ( EntityPersister entityPersister : entityPersisters ) {
 			if ( entityPersister instanceof OgmEntityPersister ) {
@@ -614,7 +662,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	}
 
 	private Map<AssociationKeyMetadata, OrientDBAssociationQueries> initializeAssociationQueries(SessionFactoryImplementor sessionFactoryImplementor) {
-		Map<AssociationKeyMetadata, OrientDBAssociationQueries> queryMap = new HashMap<AssociationKeyMetadata, OrientDBAssociationQueries>();
+		Map<AssociationKeyMetadata, OrientDBAssociationQueries> queryMap = new HashMap<>();
 		Collection<CollectionPersister> collectionPersisters = sessionFactoryImplementor.getCollectionPersisters().values();
 		for ( CollectionPersister collectionPersister : collectionPersisters ) {
 			if ( collectionPersister instanceof OgmCollectionPersister ) {
@@ -635,7 +683,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 	@Override
 	public GridType overrideType(Type type) {
-		log.debugf( "overrideType: %s ; ReturnedClass: %s", type.getName(), type.getReturnedClass() );
 		GridType gridType = null;
 
 		if ( type.getReturnedClass().equals( ORecordId.class ) ) {
@@ -643,15 +690,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		}
 		else if ( type.getReturnedClass().equals( ORidBag.class ) ) {
 			gridType = ORidBagGridType.INSTANCE;
-		} // persist calendars as ISO8601 strings, including TZ info
-		/*
-		 * else if ( type == StandardBasicTypes.CALENDAR ) { gridType = Iso8601CalendarGridType.DATETIME_INSTANCE; }
-		 * else if ( type == StandardBasicTypes.CALENDAR_DATE ) { gridType = Iso8601CalendarGridType.DATE_INSTANCE; }
-		 * else if ( type == StandardBasicTypes.DATE ) { return Iso8601DateGridType.DATE_INSTANCE; } else if ( type ==
-		 * StandardBasicTypes.TIME ) { return Iso8601DateGridType.DATETIME_INSTANCE; } else if ( type ==
-		 * StandardBasicTypes.TIMESTAMP ) { return Iso8601DateGridType.DATETIME_INSTANCE; }
-		 */
-
+		}
 		// persist calendars as ISO8601 strings, including TZ info
 		else if ( type == StandardBasicTypes.CALENDAR ) {
 			return Iso8601StringCalendarType.DATE_TIME;

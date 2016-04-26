@@ -75,7 +75,12 @@ public class CollectionUnidirectionalTest extends OgmTestCase {
 		transaction.commit();
 
 		assertThat( getNumberOfEntities( sessions ) ).isEqualTo( 4 );
-		assertThat( getNumberOfAssociations( sessions ) ).isEqualTo( 1 );
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			assertThat( getNumberOfAssociations( sessions ) ).isEqualTo( 2 );
+		}
+		else {
+			assertThat( getNumberOfAssociations( sessions ) ).isEqualTo( 1 );
+		}
 
 		session.clear();
 
