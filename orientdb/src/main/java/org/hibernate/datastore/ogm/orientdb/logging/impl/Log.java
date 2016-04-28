@@ -12,6 +12,7 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
 import com.orientechnologies.orient.core.id.ORecordId;
+import org.hibernate.ogm.model.key.spi.EntityKey;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
@@ -66,4 +67,7 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 
 	@Message(id = 1715, value = "Cannot create connection.")
 	HibernateException cannotCreateConnection(@Cause Exception cause);
+        
+        @Message(id = 1716, value = "Key: %s. Version %d not actual.")
+	HibernateException versionNotActual(EntityKey key, Integer version);
 }

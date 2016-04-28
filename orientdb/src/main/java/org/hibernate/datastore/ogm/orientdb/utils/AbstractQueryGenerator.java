@@ -31,21 +31,21 @@ public abstract class AbstractQueryGenerator {
 	public static class GenerationResult {
 
 		private List<Object> preparedStatementParams;
-		private String query;
+		private String executionQuery;
 
-		public GenerationResult(List<Object> preparedStatementParams, String query) {
-			this.preparedStatementParams = preparedStatementParams;
-			this.query = query;
-		}
+		public GenerationResult(List<Object> preparedStatementParams, String executionQuery) {
+                        this.preparedStatementParams = preparedStatementParams;
+                        this.executionQuery = executionQuery;
+                }
+                
 
 		public List<Object> getPreparedStatementParams() {
 			return preparedStatementParams;
 		}
 
-		public String getQuery() {
-			return query;
+		public String getExecutionQuery() {
+			return executionQuery;
 		}
-
 	}
 
 }

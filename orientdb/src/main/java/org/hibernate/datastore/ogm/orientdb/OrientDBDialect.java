@@ -74,7 +74,6 @@ import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.type.SerializableToBlobType;
 import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.type.Type;
-import org.json.simple.JSONObject;
 
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.exception.OConcurrentModificationException;
@@ -85,7 +84,6 @@ import org.hibernate.datastore.ogm.orientdb.utils.UpdateQueryGenerator;
 import org.hibernate.datastore.ogm.orientdb.utils.AbstractQueryGenerator.GenerationResult;
 import org.hibernate.datastore.ogm.orientdb.utils.QueryTypeDefiner;
 import org.hibernate.datastore.ogm.orientdb.utils.QueryTypeDefiner.QueryType;
-import org.hibernate.ogm.model.key.spi.AssociationType;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
@@ -137,13 +135,6 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 		return new Tuple( new OrientDBTupleSnapshot( tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), entityKeyMetadata ) );
 	}
 
-	private JSONObject getDefaultEmbeddedRow(String className) {
-		JSONObject embeddedFieldValue = new JSONObject();
-		embeddedFieldValue.put( "@type", "d" );
-		embeddedFieldValue.put( "@class", className );
-		return embeddedFieldValue;
-	}
-
 	@Override
 	public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
 
@@ -171,20 +162,15 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 			case INSERT:
 				log.debugf( "insertOrUpdateTuple:Key: %s is new! Insert new record!", dbKeyName );
 				GenerationResult insertResult = INSERT_QUERY_GENERATOR.generate( key.getTable(), tuple );
-				queryBuffer.append( insertResult.getQuery() );
+				queryBuffer.append( insertResult.getExecutionQuery() );
 				preparedStatementParams = insertResult.getPreparedStatementParams();
 				break;
 			case UPDATE:
-				boolean isVersionActual = EntityKeyUtil.isVersionActual( connection, key, (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION ) );
-				log.debugf( "insertOrUpdateTuple:@version: %s. current tread: %s; is version actual : %b",
-						snapshot.get( "@version" ), Thread.currentThread().getName(), isVersionActual );
-				if ( isVersionActual ) {
-					GenerationResult updateResult = UPDATE_QUERY_GENERATOR.generate( key.getTable(), tuple, key );
-					queryBuffer.append( updateResult.getQuery() );
-				}
-				else {
-					throw new StaleObjectStateException( key.getTable(), (Serializable) dbKeyValue );
-				}
+                                Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
+				log.debugf( "insertOrUpdateTuple:@version: %s. current tread: %s;",
+						snapshot.get( OrientDBConstant.SYSTEM_VERSION ), Thread.currentThread().getName() );
+				GenerationResult updateResult = UPDATE_QUERY_GENERATOR.generate( key.getTable(), tuple, key, currentVersion );
+				queryBuffer.append( updateResult.getExecutionQuery() );
 				break;
 			case ERROR:
 				throw new StaleObjectStateException( key.getTable(), (Serializable) dbKeyValue );
@@ -197,9 +183,10 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 			QueryUtil.setParameters( pstmt, preparedStatementParams );
 			int updateCount = pstmt.executeUpdate();
 			log.debugf( "insertOrUpdateTuple:Key: %s (%s) ;inserted or updated: %d ", dbKeyName, dbKeyValue, updateCount );
-			if ( updateCount == 0 && existsInDB ) {
+			if ( updateCount == 0 && queryType.equals(QueryType.UPDATE) ) {
 				// primary key was in DB .... but during prepare query someone remove it from DB.
-				throw new StaleObjectStateException( key.getTable(), (Serializable) dbKeyValue );
+                                Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
+                                throw log.versionNotActual(key, currentVersion);
 			}
 		}
 		catch (SQLException sqle) {
@@ -231,11 +218,11 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 			tuple.put( dbKeyName, dbKeyValue );
 		}
 		InsertQueryGenerator.GenerationResult result = INSERT_QUERY_GENERATOR.generate( entityKeyMetadata.getTable(), tuple );
-		query = result.getQuery();
+		query = result.getExecutionQuery();
 
-		log.debugf( "insertTuple: insertQuery: %s ", result.getQuery() );
+		log.debugf( "insertTuple: insertQuery: %s ", result.getExecutionQuery() );
 		try {
-			PreparedStatement pstmt = connection.prepareStatement( result.getQuery() );
+			PreparedStatement pstmt = connection.prepareStatement( result.getExecutionQuery() );
 			if ( result.getPreparedStatementParams() != null ) {
 				QueryUtil.setParameters( pstmt, result.getPreparedStatementParams() );
 			}
@@ -368,50 +355,6 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 		associationQueries.get( associationKey.getMetadata() ).removeAssociationRow( provider.getConnection(), associationKey, action.getKey() );
 	}
 
-	private void ____removeAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
-			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
-		log.debugf( "removeAssociationOperation: action key: %s ;action value: %s ; metadata: %s; association:%s",
-				action.getKey(), action.getValue(), associationKey.getMetadata(), association );
-		Connection connection = provider.getConnection();
-		// @TODO implement it!!!
-		if ( associationQueries.containsKey( associationKey.getMetadata() ) ) {
-			List<Map<String, Object>> relationship = associationQueries.get( associationKey.getMetadata() ).findRelationship( connection,
-					associationKey, action.getKey() );
-			if ( !relationship.isEmpty() ) {
-				// create
-				removeRelationship( associationKey, action.getKey(), associatedEntityKeyMetadata );
-			}
-			else {
-				log.debugf( "removeAssociationOperation: :  associations for  metadata: %s is %d", associationKey.getMetadata(), relationship.size() );
-				// relationship = createRelationship( associationKey, action.getValue(), associatedEntityKeyMetadata );
-				// throw new UnsupportedOperationException("putAssociationOperation: relations not empty not
-				// supported!");
-			}
-		}
-		else {
-			log.debugf( "putAssociationOperation: no associations for  metadata: %s", associationKey.getMetadata() );
-		}
-	}
-
-	private void removeRelationship(AssociationKey associationKey, RowKey associationRowKey, AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
-		log.debugf( "removeRelationship: associationKey.getMetadata(): %s ; associationRow: %s", associationKey.getMetadata(), associationRowKey );
-		log.debugf( "removeRelationship: getAssociationKind: %s", associationKey.getMetadata().getAssociationKind() );
-		log.debugf( "removeRelationship: getAssociationType:%s", associationKey.getMetadata().getAssociationType() );
-		switch ( associationKey.getMetadata().getAssociationKind() ) {
-			case EMBEDDED_COLLECTION:
-				log.debug( "removeRelationship:EMBEDDED_COLLECTION" );
-				// createRelationshipWithEmbeddedNode( associationKey, associationRow, associatedEntityKeyMetadata );
-				throw new UnsupportedOperationException( "removeRelationship:EMBEDDED_COLLECTION" );
-			case ASSOCIATION:
-				log.debug( "removeRelationship:ASSOCIATION" );
-				removeRelationshipWithEntityNode( associationKey, associationRowKey, associatedEntityKeyMetadata );
-				break;
-			default:
-				throw new AssertionFailure( "Unrecognized associationKind: " + associationKey.getMetadata().getAssociationKind() );
-		}
-
-	}
-
 	private void putAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
 		log.debugf( "putAssociationOperation: : action: %s ; metadata: %s; association:%s", action, associationKey.getMetadata(), association );
@@ -461,51 +404,14 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
 		// @TODO equals with createRelationshipWithEmbeddedNode?
 		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow );
-		log.debugf( "createRelationshipWithEntityNode: query: %s", result.getQuery() );
+		log.debugf( "createRelationshipWithEntityNode: query: %s", result.getExecutionQuery() );
 		try {
-			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getQuery() );
+			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
 			QueryUtil.setParameters( pstmt, result.getPreparedStatementParams() );
 			log.debugf( "createRelationshipWithEntityNode: execute insert query: %d", pstmt.executeUpdate() );
 		}
 		catch (SQLException sqle) {
-			throw log.cannotExecuteQuery( result.getQuery(), sqle );
-		}
-	}
-
-	private void removeRelationshipWithEntityNode(AssociationKey associationKey, RowKey associationRowKey,
-			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
-		log.debugf( "removeRelationshipWithEntityNode: associationKey.getMetadata(): %s ; associationRowKey: %s ; associatedEntityKeyMetadata: %s",
-				associationKey.getMetadata(), associationRowKey, associatedEntityKeyMetadata );
-		StringBuilder query = new StringBuilder( 200 );
-		if ( associationKey.getMetadata().getAssociationType().equals( AssociationType.BAG ) ) {
-			query.append( " update " ).append( associationKey.getTable() ).append( " set " );
-			for ( int i = 0; i < associationKey.getMetadata().getColumnNames().length; i++ ) {
-				query.append( associationKey.getMetadata().getColumnNames()[i] ).append( "=null" );
-				if ( associationKey.getMetadata().getColumnNames().length != ( i + 1 ) ) {
-					query.append( " and " );
-				}
-			}
-		}
-		else {
-			query.append( "delete vertex " ).append( associationKey.getTable() );
-		}
-		query.append( " where " );
-
-		for ( int i = 0; i < associationRowKey.getColumnNames().length; i++ ) {
-			String columnName = associationRowKey.getColumnNames()[i];
-			if ( i > 0 ) {
-				query.append( " AND " );
-			}
-			query.append( columnName ).append( "=" );
-			EntityKeyUtil.setFieldValue( query, associationRowKey.getColumnValues()[i] );
-		}
-		log.debugf( "removeRelationshipWithEntityNode: query: %s", query );
-		try {
-			PreparedStatement pstmt = provider.getConnection().prepareStatement( query.toString() );
-			log.debugf( "removeRelationshipWithEntityNode: execute remove query: %d", pstmt.executeUpdate() );
-		}
-		catch (SQLException sqle) {
-			throw log.cannotExecuteQuery( query.toString(), sqle );
+			throw log.cannotExecuteQuery( result.getExecutionQuery(), sqle );
 		}
 	}
 
@@ -514,14 +420,14 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 		log.debugf( "createRelationshipWithEmbeddedNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
 		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow );
-		log.debugf( "createRelationshipWithEmbeddedNode: query: %s", result.getQuery() );
+		log.debugf( "createRelationshipWithEmbeddedNode: query: %s", result.getExecutionQuery() );
 		try {
-			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getQuery() );
+			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
 			QueryUtil.setParameters( pstmt, result.getPreparedStatementParams() );
 			log.debugf( "createRelationshipWithEmbeddedNode: execute insert query: %d", pstmt.executeUpdate() );
 		}
 		catch (SQLException sqle) {
-			throw log.cannotExecuteQuery( result.getQuery(), sqle );
+			throw log.cannotExecuteQuery( result.getExecutionQuery(), sqle );
 		}
 	}
 

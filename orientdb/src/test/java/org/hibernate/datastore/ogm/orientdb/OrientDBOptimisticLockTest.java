@@ -6,6 +6,7 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
+import com.orientechnologies.orient.core.exception.OConcurrentModificationException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -18,11 +19,13 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
 import javax.persistence.OptimisticLockException;
 import javax.persistence.Persistence;
+import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import javax.persistence.RollbackException;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 import org.apache.log4j.Logger;
+import org.hibernate.HibernateException;
 import static org.hibernate.datastore.ogm.orientdb.OrientDBSimpleTest.MEMORY_TEST;
 import org.hibernate.datastore.ogm.orientdb.jpa.Writer;
 import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
@@ -37,6 +40,7 @@ import org.junit.Test;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @see https://blogs.oracle.com/enterprisetechtips/entry/locking_and_concurrency_in_java
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OrientDBOptimisticLockTest {
@@ -104,8 +108,8 @@ public class OrientDBOptimisticLockTest {
                 final CountDownLatch commit = new CountDownLatch(1);
                 
                 log.info( "waiting results...." );
-		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2, emf.createEntityManager() ) ) );
-		ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 3, emf.createEntityManager() ) ) );
+		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2, emf.createEntityManager(),true, commit)) );
+		ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 3, emf.createEntityManager(),false, commit ) ) );
 		
 		long t1Result = -1;
 		long t2Result = -1;
@@ -117,16 +121,25 @@ public class OrientDBOptimisticLockTest {
 		}
 		catch (ExecutionException e) {
 			log.error( "Error in task", e );
+                        RollbackException re =(RollbackException) e.getCause();
+                        log.debug( "3. Error in task "+ re.getCause().getCause().getClass() );
+                        if (re.getCause().getCause() instanceof PersistenceException) {
+                            HibernateException he = (HibernateException) re.getCause().getCause().getCause();
+                            log.debug( "4.HibernateException message !"+ he.getMessage()+"!" );//OGM001716
+                        }
+                        assertTrue("Must be right exception (OConcurrentModificationException)",
+                                (re.getCause().getCause() instanceof OConcurrentModificationException) || 
+                                        (re.getCause().getCause().getCause().getMessage().contains("OGM001716")));
 		}
 		if (t1.isDone() && t2.isDone()) {
-		//if ( t1.isDone() ) {
-			try {
+                    if (isAnyThreadSuccess(t1, t2)) {
+                        try {
 				em.clear();
 				em.getTransaction().begin();
 				valterScott = em.find( Writer.class, 1l );
 				log.info( "valterScott.getCount(): " + valterScott.getCount() );
 				log.info( "valterScott.getName(): " + valterScott.getName() );
-				assertTrue( "Counter must be changed!", valterScott.getCount() > 1L );
+				assertTrue( "Counter must be changed!", valterScott.getCount() > 1L ); // one thread commited change
 				assertEquals( "Name must be uppercase!", "Valter Scott".toUpperCase(), valterScott.getName() );
 				em.getTransaction().commit();
 			}
@@ -134,24 +147,33 @@ public class OrientDBOptimisticLockTest {
 				log.error( "Error", e );
 				em.getTransaction().rollback();
 				throw e;
-			} 
+			}
+                    } else {
+                        assertTrue("No success threads!", false);
+                    }
 		}
 	}
-
-	private class WriterUpdateThread implements Callable<Long> {
+        
+        private boolean isAnyThreadSuccess(ForkJoinTask<Long> t1,ForkJoinTask<Long> t2) {
+            return t1.isCompletedNormally() || t2.isCompletedNormally();
+        }
+        
+        private class WriterUpdateThread implements Callable<Long> {
 
 		private final Logger log = Logger.getLogger( WriterUpdateThread.class.getName() );
 		private long taskId;
                 private EntityManager localEm;
+                private boolean isWaiter;
+                private CountDownLatch commit;
 
-                public WriterUpdateThread(long taskId, EntityManager localEm) {
+                public WriterUpdateThread(long taskId, EntityManager localEm, boolean isWaiter, CountDownLatch commit) {
                     this.taskId = taskId;
                     this.localEm = localEm;
+                    this.isWaiter = isWaiter;
+                    this.commit = commit;
                 }
 
-		
-
-		@Override
+                @Override
 		public Long call() throws Exception {
 			try {
 				log.info( "begin reading..." );
@@ -162,23 +184,12 @@ public class OrientDBOptimisticLockTest {
 				Writer valterScott = results.get( 0 );
 				valterScott.setCount( taskId );
 				valterScott = localEm.merge( valterScott );
+                                
 				log.info( "begin writing...." );
 				localEm.getTransaction().commit();
 				log.info( "transaction commited" );
-			}
-                        catch (RollbackException re) {
-                            log.error( "RollbackException", re );
-                            if (re.getCause() instanceof OptimisticLockException) {
-                                log.error( "!!!OptimisticLockException!!!" );
-                            }
-				if ( localEm.getTransaction().isActive() ) {
-					log.info( "try to rollback transaction" );
-					localEm.getTransaction().rollback();
-				}
-				throw re;
-                        }
+			}                        
 			catch (Exception e) {
-				log.error( "Error", e );
 				if ( localEm.getTransaction().isActive() ) {
 					log.info( "try to rollback transaction" );
 					localEm.getTransaction().rollback();
@@ -186,6 +197,7 @@ public class OrientDBOptimisticLockTest {
 				throw e;
 			} finally {
                             localEm.clear();
+                            localEm.close();
                         }
 			return taskId;
 		}

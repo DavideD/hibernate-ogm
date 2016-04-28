@@ -58,9 +58,9 @@ public class UpdateQueryGeneratorTest {
 		valuesMap.put( "field3.subfield2", new byte[]{ 1, 2, 3 } );
 		EntityKey primaryKey = new EntityKey( new DefaultEntityKeyMetadata( tableName, new String[]{ "id" } ), new Object[]{ 1 } );
 		UpdateQueryGenerator instance = new UpdateQueryGenerator();
-		AbstractQueryGenerator.GenerationResult result = instance.generate( tableName, valuesMap, primaryKey );
-		System.out.println( "update query: " + result.getQuery() );
-		Assert.assertThat( result.getQuery(), new BaseMatcher<String>() {
+		AbstractQueryGenerator.GenerationResult result = instance.generate( tableName, valuesMap, primaryKey, 1 );
+		System.out.println( "update query: " + result.getExecutionQuery() );
+		Assert.assertThat( result.getExecutionQuery(), new BaseMatcher<String>() {
 
 			@Override
 			public boolean matches(Object o) {
