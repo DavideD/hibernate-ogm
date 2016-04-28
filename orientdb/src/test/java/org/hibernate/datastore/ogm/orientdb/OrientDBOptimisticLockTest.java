@@ -7,14 +7,19 @@
 package org.hibernate.datastore.ogm.orientdb;
 
 import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
+import javax.persistence.OptimisticLockException;
 import javax.persistence.Persistence;
+import javax.persistence.Query;
+import javax.persistence.RollbackException;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 import org.apache.log4j.Logger;
@@ -24,6 +29,7 @@ import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -85,7 +91,7 @@ public class OrientDBOptimisticLockTest {
 			em.persist( valterScott );
 			em.getTransaction().commit();
 			log.info( "Writer persisted" );
-			em.clear();
+                        em.clear();
 		}
 		catch (Exception e) {
 			log.error( "Error", e );
@@ -94,23 +100,26 @@ public class OrientDBOptimisticLockTest {
 			}
 			throw e;
 		}
-
-		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2 ) ) );
-		// ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit(ForkJoinTask.adapt(new WriterUpdateThread(3)));
-		log.info( "waiting results...." );
+                
+                final CountDownLatch commit = new CountDownLatch(1);
+                
+                log.info( "waiting results...." );
+		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2, emf.createEntityManager() ) ) );
+		ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 3, emf.createEntityManager() ) ) );
+		
 		long t1Result = -1;
 		long t2Result = -1;
 		try {
 			t1Result = t1.get();
-			// t2Result = t2.get();
-			log.info( "t1 result:" + t1Result );
-			// log.info("t2 result:" + t2Result);
+                        log.info( "t1 result:" + t1Result );
+			t2Result = t2.get();			
+			log.info("t2 result:" + t2Result);
 		}
 		catch (ExecutionException e) {
 			log.error( "Error in task", e );
 		}
-		// if (t1.isDone() && t2.isDone()) {
-		if ( t1.isDone() ) {
+		if (t1.isDone() && t2.isDone()) {
+		//if ( t1.isDone() ) {
 			try {
 				em.clear();
 				em.getTransaction().begin();
@@ -125,7 +134,7 @@ public class OrientDBOptimisticLockTest {
 				log.error( "Error", e );
 				em.getTransaction().rollback();
 				throw e;
-			}
+			} 
 		}
 	}
 
@@ -133,32 +142,51 @@ public class OrientDBOptimisticLockTest {
 
 		private final Logger log = Logger.getLogger( WriterUpdateThread.class.getName() );
 		private long taskId;
+                private EntityManager localEm;
 
-		public WriterUpdateThread(long taskId) {
-			this.taskId = taskId;
-		}
+                public WriterUpdateThread(long taskId, EntityManager localEm) {
+                    this.taskId = taskId;
+                    this.localEm = localEm;
+                }
+
+		
 
 		@Override
 		public Long call() throws Exception {
 			try {
-				log.info( "begin reading" );
-				em.getTransaction().begin();
-				Writer valterScott = em.find( Writer.class, 1l );
+				log.info( "begin reading..." );
+				localEm.getTransaction().begin();
+                                Query query = localEm.createNativeQuery("select from writer where bKey=1", Writer.class);
+                                List<Writer> results = query.getResultList();
+                                assertFalse( "Writer must be!", results.isEmpty() );
+				Writer valterScott = results.get( 0 );
 				valterScott.setCount( taskId );
-				valterScott = em.merge( valterScott );
+				valterScott = localEm.merge( valterScott );
 				log.info( "begin writing...." );
-				em.getTransaction().commit();
-				em.clear();
+				localEm.getTransaction().commit();
 				log.info( "transaction commited" );
 			}
+                        catch (RollbackException re) {
+                            log.error( "RollbackException", re );
+                            if (re.getCause() instanceof OptimisticLockException) {
+                                log.error( "!!!OptimisticLockException!!!" );
+                            }
+				if ( localEm.getTransaction().isActive() ) {
+					log.info( "try to rollback transaction" );
+					localEm.getTransaction().rollback();
+				}
+				throw re;
+                        }
 			catch (Exception e) {
 				log.error( "Error", e );
-				if ( em.getTransaction().isActive() ) {
+				if ( localEm.getTransaction().isActive() ) {
 					log.info( "try to rollback transaction" );
-					em.getTransaction().rollback();
+					localEm.getTransaction().rollback();
 				}
 				throw e;
-			}
+			} finally {
+                            localEm.clear();
+                        }
 			return taskId;
 		}
 	}

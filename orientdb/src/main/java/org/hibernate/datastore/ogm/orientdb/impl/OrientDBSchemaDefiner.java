@@ -286,6 +286,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 					}
 				}
+                                //@TODO think about primary key for mapping tables!
 				if ( table.hasPrimaryKey() && !isTablePerClassInheritance( table )
 						&& !isEmbeddedObjectTable( table ) && !isMapingTable( table ) ) {
 					PrimaryKey primaryKey = table.getPrimaryKey();
