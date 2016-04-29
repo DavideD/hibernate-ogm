@@ -80,18 +80,18 @@ public class OrientDBOptimisticLockTest {
 
 	@Test
 	public void test1ParallelUpdateEntity() throws Exception {
-		Writer valterScott = null;
+		Writer writer = null;
 		try {
 			log.info( "Create first writer" );
 			em.getTransaction().begin();
-			valterScott = new Writer();
-			valterScott.setbKey( 1L );
-			valterScott.setCount( 1L );
-			valterScott.setName( "Valter Scott" );
+			writer = new Writer();
+			writer.setbKey( 1L );
+			writer.setCount( 1L );
+			writer.setName( "Valter Scott" );
 			Calendar calendar = Calendar.getInstance();
 			calendar.set( 1771, 11, 15 );
-			valterScott.setBirthDate( calendar.getTime() );
-			em.persist( valterScott );
+			writer.setBirthDate( calendar.getTime() );
+			em.persist( writer );
 			em.getTransaction().commit();
 			log.info( "Writer persisted" );
 			em.clear();
@@ -105,8 +105,8 @@ public class OrientDBOptimisticLockTest {
 		}
 
 		log.info( "waiting results...." );
-		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2, emf.createEntityManager() ) ) );
-		ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 3, emf.createEntityManager() ) ) );
+		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2, 1, emf.createEntityManager() ) ) );
+		ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 3, 1, emf.createEntityManager() ) ) );
 
 		long t1Result = -1;
 		long t2Result = -1;
@@ -128,11 +128,82 @@ public class OrientDBOptimisticLockTest {
 				try {
 					em.clear();
 					em.getTransaction().begin();
-					valterScott = em.find( Writer.class, 1l );
-					log.info( "valterScott.getCount(): " + valterScott.getCount() );
-					log.info( "valterScott.getName(): " + valterScott.getName() );
-					assertTrue( "Counter must be changed!", valterScott.getCount() > 1L ); // one thread commited change
-					assertEquals( "Name must be uppercase!", "Valter Scott".toUpperCase(), valterScott.getName() );
+					writer = em.find( Writer.class, 1l );
+					assertTrue( "Counter must be changed!", writer.getCount() > 1L ); // one thread commited change
+					assertEquals( "Name must be uppercase!", "Valter Scott".toUpperCase(), writer.getName() );
+					em.getTransaction().commit();
+				}
+				catch (Exception e) {
+					log.error( "Error", e );
+					em.getTransaction().rollback();
+					throw e;
+				}
+			}
+			else {
+				assertTrue( "No success threads!", false );
+			}
+		}
+	}
+        
+        
+        
+        @Test
+	public void test2ParallelUpdateDeleteEntity() throws Exception {
+		Writer writer = null;
+		try {
+			log.info( "Create second writer" );
+			em.getTransaction().begin();
+			writer = new Writer();
+			writer.setbKey( 2L );
+			writer.setCount( 1L );
+			writer.setName( "Agniya Barto" );
+			Calendar calendar = Calendar.getInstance();
+			calendar.set( 1906, 01, 4 );
+			writer.setBirthDate( calendar.getTime() );
+			em.persist( writer );
+			em.getTransaction().commit();
+			log.info( "Writer persisted" );
+			em.clear();
+		}
+		catch (Exception e) {
+			log.error( "Error", e );
+			if ( em.getTransaction().isActive() ) {
+				em.getTransaction().rollback();
+			}
+			throw e;
+		}
+
+		log.info( "waiting results...." );
+		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2, 2, emf.createEntityManager() ) ) );
+		ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterDeleteThread( 3, 2, emf.createEntityManager() ) ) );
+
+		long t1Result = -1;
+		long t2Result = -1;
+                boolean isOrientDBEx = false;
+		try {
+			t1Result = t1.get();
+			log.info( "t1 result:" + t1Result );
+			t2Result = t2.get();
+			log.info( "t2 result:" + t2Result );
+		}
+		catch (ExecutionException e) {
+			log.error( "Error in task", e );
+			RollbackException re = (RollbackException) e.getCause();
+                        isOrientDBEx =( re.getCause().getCause() instanceof OConcurrentModificationException );
+			assertTrue( "Must be right exception (OConcurrentModificationException)", ( isOrientDBEx )  );
+		}
+		if ( t1.isDone() && t2.isDone() ) {
+			if ( isAnyThreadSuccess( t1, t2 ) ) {
+				try {
+					em.clear();
+					em.getTransaction().begin();
+					writer = em.find( Writer.class, 2l );
+					log.info( "Barto.getCount(): " + writer.getCount() );
+                                        if (isOrientDBEx) {
+                                            // update thread commited change,  delete thread get OrientDB exception   
+                                            assertEquals("Counter must be changed!", 2, writer.getCount() ); 
+                                        }
+					
 					em.getTransaction().commit();
 				}
 				catch (Exception e) {
@@ -155,25 +226,69 @@ public class OrientDBOptimisticLockTest {
 
 		private final Logger log = Logger.getLogger( WriterUpdateThread.class.getName() );
 		private final long taskId;
+                private final long writerId;
 		private final EntityManager localEm;
 
-		public WriterUpdateThread(long taskId, EntityManager localEm) {
-			this.taskId = taskId;
-			this.localEm = localEm;
-		}
+                public WriterUpdateThread(long taskId, long writerId, EntityManager localEm) {
+                    this.taskId = taskId;
+                    this.writerId = writerId;
+                    this.localEm = localEm;
+                }
+
+		
 
 		@Override
 		public Long call() throws Exception {
 			try {
 				log.info( "begin reading..." );
 				localEm.getTransaction().begin();
-				Query query = localEm.createNativeQuery( "select from writer where bKey=1", Writer.class );
+				Query query = localEm.createNativeQuery( "select from writer where bKey="+writerId, Writer.class );
 				List<Writer> results = query.getResultList();
 				assertFalse( "Writer must be!", results.isEmpty() );
-				Writer valterScott = results.get( 0 );
-				valterScott.setCount( taskId );
-				valterScott = localEm.merge( valterScott );
+				Writer writer = results.get( 0 );
+				writer.setCount( taskId );
+				writer = localEm.merge( writer );
 
+				log.info( "begin writing...." );
+				localEm.getTransaction().commit();
+				log.info( "transaction commited" );
+			}
+			catch (Exception e) {
+				if ( localEm.getTransaction().isActive() ) {
+					log.info( "try to rollback transaction" );
+					localEm.getTransaction().rollback();
+				}
+				throw e;
+			}
+			finally {
+				localEm.clear();
+				localEm.close();
+			}
+			return taskId;
+		}
+	}
+        private class WriterDeleteThread implements Callable<Long> {
+
+		private final Logger log = Logger.getLogger( WriterDeleteThread.class.getName() );
+		private final long taskId;
+                private final long writerId;
+		private final EntityManager localEm;
+
+                public WriterDeleteThread(long taskId, long writerId, EntityManager localEm) {
+                    this.taskId = taskId;
+                    this.writerId = writerId;
+                    this.localEm = localEm;
+                }
+		@Override
+		public Long call() throws Exception {
+			try {
+				log.info( "begin reading..." );
+				localEm.getTransaction().begin();
+				Query query = localEm.createNativeQuery( "select from writer where bKey="+writerId, Writer.class );
+				List<Writer> results = query.getResultList();
+				assertFalse( "Writer must be!", results.isEmpty() );
+				Writer writer = results.get( 0 );				
+				localEm.remove( writer );
 				log.info( "begin writing...." );
 				localEm.getTransaction().commit();
 				log.info( "transaction commited" );
