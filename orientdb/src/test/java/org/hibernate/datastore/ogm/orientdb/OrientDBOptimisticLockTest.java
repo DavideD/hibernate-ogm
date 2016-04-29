@@ -7,26 +7,23 @@
 package org.hibernate.datastore.ogm.orientdb;
 
 import com.orientechnologies.orient.core.exception.OConcurrentModificationException;
+import static org.hibernate.datastore.ogm.orientdb.OrientDBSimpleTest.MEMORY_TEST;
+
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
-import javax.persistence.OptimisticLockException;
 import javax.persistence.Persistence;
-import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import javax.persistence.RollbackException;
-import org.junit.FixMethodOrder;
-import org.junit.runners.MethodSorters;
 import org.apache.log4j.Logger;
-import org.hibernate.HibernateException;
-import static org.hibernate.datastore.ogm.orientdb.OrientDBSimpleTest.MEMORY_TEST;
+
 import org.hibernate.datastore.ogm.orientdb.jpa.Writer;
 import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
 import org.junit.After;
@@ -36,7 +33,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
@@ -95,7 +94,7 @@ public class OrientDBOptimisticLockTest {
 			em.persist( valterScott );
 			em.getTransaction().commit();
 			log.info( "Writer persisted" );
-                        em.clear();
+			em.clear();
 		}
 		catch (Exception e) {
 			log.error( "Error", e );
@@ -104,101 +103,92 @@ public class OrientDBOptimisticLockTest {
 			}
 			throw e;
 		}
-                
-                final CountDownLatch commit = new CountDownLatch(1);
-                
-                log.info( "waiting results...." );
-		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2, emf.createEntityManager(),true, commit)) );
-		ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 3, emf.createEntityManager(),false, commit ) ) );
-		
+
+		log.info( "waiting results...." );
+		ForkJoinTask<Long> t1 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 2, emf.createEntityManager() ) ) );
+		ForkJoinTask<Long> t2 = ForkJoinPool.commonPool().submit( ForkJoinTask.adapt( new WriterUpdateThread( 3, emf.createEntityManager() ) ) );
+
 		long t1Result = -1;
 		long t2Result = -1;
 		try {
 			t1Result = t1.get();
-                        log.info( "t1 result:" + t1Result );
-			t2Result = t2.get();			
-			log.info("t2 result:" + t2Result);
+			log.info( "t1 result:" + t1Result );
+			t2Result = t2.get();
+			log.info( "t2 result:" + t2Result );
 		}
 		catch (ExecutionException e) {
 			log.error( "Error in task", e );
-                        RollbackException re =(RollbackException) e.getCause();
-                        log.debug( "3. Error in task "+ re.getCause().getCause().getClass() );
-                        if (re.getCause().getCause() instanceof PersistenceException) {
-                            HibernateException he = (HibernateException) re.getCause().getCause().getCause();
-                            log.debug( "4.HibernateException message !"+ he.getMessage()+"!" );//OGM001716
-                        }
-                        assertTrue("Must be right exception (OConcurrentModificationException)",
-                                (re.getCause().getCause() instanceof OConcurrentModificationException) || 
-                                        (re.getCause().getCause().getCause().getMessage().contains("OGM001716")));
+			RollbackException re = (RollbackException) e.getCause();
+			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716)",
+					( re.getCause().getCause() instanceof OConcurrentModificationException ) ||
+							( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) ) );
 		}
-		if (t1.isDone() && t2.isDone()) {
-                    if (isAnyThreadSuccess(t1, t2)) {
-                        try {
-				em.clear();
-				em.getTransaction().begin();
-				valterScott = em.find( Writer.class, 1l );
-				log.info( "valterScott.getCount(): " + valterScott.getCount() );
-				log.info( "valterScott.getName(): " + valterScott.getName() );
-				assertTrue( "Counter must be changed!", valterScott.getCount() > 1L ); // one thread commited change
-				assertEquals( "Name must be uppercase!", "Valter Scott".toUpperCase(), valterScott.getName() );
-				em.getTransaction().commit();
+		if ( t1.isDone() && t2.isDone() ) {
+			if ( isAnyThreadSuccess( t1, t2 ) ) {
+				try {
+					em.clear();
+					em.getTransaction().begin();
+					valterScott = em.find( Writer.class, 1l );
+					log.info( "valterScott.getCount(): " + valterScott.getCount() );
+					log.info( "valterScott.getName(): " + valterScott.getName() );
+					assertTrue( "Counter must be changed!", valterScott.getCount() > 1L ); // one thread commited change
+					assertEquals( "Name must be uppercase!", "Valter Scott".toUpperCase(), valterScott.getName() );
+					em.getTransaction().commit();
+				}
+				catch (Exception e) {
+					log.error( "Error", e );
+					em.getTransaction().rollback();
+					throw e;
+				}
 			}
-			catch (Exception e) {
-				log.error( "Error", e );
-				em.getTransaction().rollback();
-				throw e;
+			else {
+				assertTrue( "No success threads!", false );
 			}
-                    } else {
-                        assertTrue("No success threads!", false);
-                    }
 		}
 	}
-        
-        private boolean isAnyThreadSuccess(ForkJoinTask<Long> t1,ForkJoinTask<Long> t2) {
-            return t1.isCompletedNormally() || t2.isCompletedNormally();
-        }
-        
-        private class WriterUpdateThread implements Callable<Long> {
+
+	private boolean isAnyThreadSuccess(ForkJoinTask<Long> t1, ForkJoinTask<Long> t2) {
+		return t1.isCompletedNormally() || t2.isCompletedNormally();
+	}
+
+	private class WriterUpdateThread implements Callable<Long> {
 
 		private final Logger log = Logger.getLogger( WriterUpdateThread.class.getName() );
-		private long taskId;
-                private EntityManager localEm;
-                private boolean isWaiter;
-                private CountDownLatch commit;
+		private final long taskId;
+		private final EntityManager localEm;
 
-                public WriterUpdateThread(long taskId, EntityManager localEm, boolean isWaiter, CountDownLatch commit) {
-                    this.taskId = taskId;
-                    this.localEm = localEm;
-                    this.isWaiter = isWaiter;
-                    this.commit = commit;
-                }
+		public WriterUpdateThread(long taskId, EntityManager localEm) {
+			this.taskId = taskId;
+			this.localEm = localEm;
+		}
 
-                @Override
+		@Override
 		public Long call() throws Exception {
 			try {
 				log.info( "begin reading..." );
 				localEm.getTransaction().begin();
-                                Query query = localEm.createNativeQuery("select from writer where bKey=1", Writer.class);
-                                List<Writer> results = query.getResultList();
-                                assertFalse( "Writer must be!", results.isEmpty() );
+				Query query = localEm.createNativeQuery( "select from writer where bKey=1", Writer.class );
+				List<Writer> results = query.getResultList();
+				assertFalse( "Writer must be!", results.isEmpty() );
 				Writer valterScott = results.get( 0 );
 				valterScott.setCount( taskId );
 				valterScott = localEm.merge( valterScott );
-                                
+
 				log.info( "begin writing...." );
 				localEm.getTransaction().commit();
 				log.info( "transaction commited" );
-			}                        
+			}
 			catch (Exception e) {
 				if ( localEm.getTransaction().isActive() ) {
 					log.info( "try to rollback transaction" );
 					localEm.getTransaction().rollback();
 				}
 				throw e;
-			} finally {
-                            localEm.clear();
-                            localEm.close();
-                        }
+			}
+			finally {
+				localEm.clear();
+				localEm.close();
+			}
 			return taskId;
 		}
 	}

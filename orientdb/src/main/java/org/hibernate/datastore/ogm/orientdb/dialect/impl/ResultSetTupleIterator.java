@@ -63,7 +63,7 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 				if ( dbValue != null && dbValue.getClass().equals( Date.class ) ) {
 					String format = resultSet.getMetaData().getColumnTypeName( fieldNum ).equals( "DATETIME" )
 							? OrientDBConstant.DATETIME_FORMAT
-									: OrientDBConstant.DATE_FORMAT;
+							: OrientDBConstant.DATE_FORMAT;
 					dbValue = new SimpleDateFormat( format ).format( dbValue );
 				}
 

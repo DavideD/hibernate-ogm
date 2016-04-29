@@ -67,7 +67,7 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 
 	@Message(id = 1715, value = "Cannot create connection.")
 	HibernateException cannotCreateConnection(@Cause Exception cause);
-        
-        @Message(id = 1716, value = "Key: %s. Version %d not actual.")
+
+	@Message(id = 1716, value = "Key: %s. Version %d not actual.")
 	HibernateException versionNotActual(EntityKey key, Integer version);
 }

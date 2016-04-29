@@ -116,8 +116,8 @@ public class EntityKeyUtil {
 		}
 		return exists;
 	}
-        
-        public static ORecordId findRid(Connection connection, String className, String businessKeyName, Object businessKeyValue) {
+
+	public static ORecordId findRid(Connection connection, String className, String businessKeyName, Object businessKeyValue) {
 		StringBuilder buffer = new StringBuilder();
 		ORecordId rid = null;
 		try {

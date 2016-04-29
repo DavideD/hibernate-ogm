@@ -34,10 +34,9 @@ public abstract class AbstractQueryGenerator {
 		private String executionQuery;
 
 		public GenerationResult(List<Object> preparedStatementParams, String executionQuery) {
-                        this.preparedStatementParams = preparedStatementParams;
-                        this.executionQuery = executionQuery;
-                }
-                
+			this.preparedStatementParams = preparedStatementParams;
+			this.executionQuery = executionQuery;
+		}
 
 		public List<Object> getPreparedStatementParams() {
 			return preparedStatementParams;

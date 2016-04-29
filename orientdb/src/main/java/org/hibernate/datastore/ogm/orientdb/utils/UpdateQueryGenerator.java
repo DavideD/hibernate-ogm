@@ -32,8 +32,8 @@ public class UpdateQueryGenerator extends AbstractQueryGenerator {
 
 	private static final Log log = LoggerFactory.getLogger();
 
-	public GenerationResult generate(String tableName, Tuple tuple, EntityKey primaryKey,Integer currentVersion) {
-		return generate( tableName, TupleUtil.toMap( tuple ), primaryKey,currentVersion );
+	public GenerationResult generate(String tableName, Tuple tuple, EntityKey primaryKey, Integer currentVersion) {
+		return generate( tableName, TupleUtil.toMap( tuple ), primaryKey, currentVersion );
 	}
 
 	public GenerationResult generate(String tableName, Map<String, Object> valuesMap, EntityKey primaryKey, Integer currentVersion) {
@@ -53,7 +53,7 @@ public class UpdateQueryGenerator extends AbstractQueryGenerator {
 
 		LinkedHashSet<String> columnNames = new LinkedHashSet<>( allValuesMap.keySet() );
 		columnNames.removeAll( Arrays.asList( primaryKey.getColumnNames() ) );
-                columnNames.removeAll( OrientDBConstant.SYSTEM_FIELDS );
+		columnNames.removeAll( OrientDBConstant.SYSTEM_FIELDS );
 		columnNames.removeAll( OrientDBConstant.MAPPING_FIELDS.keySet() );
 
 		for ( String columnName : columnNames ) {
@@ -101,16 +101,16 @@ public class UpdateQueryGenerator extends AbstractQueryGenerator {
 		}
 		updateQuery.setCharAt( updateQuery.lastIndexOf( "," ), ' ' );
 		updateQuery.append( " where " );
-                //@TODO support multi column primary keys
+		// @TODO support multi column primary keys
 		String columnName = primaryKey.getColumnNames()[0];
 		updateQuery.append( columnName ).append( "=" );
 		Object value = primaryKey.getColumnValues()[0];
-                EntityKeyUtil.setFieldValue(updateQuery, value);
-                // and version protection
-                if (currentVersion!=null) {
-                    log.debugf("version of entity : %d", currentVersion);
-                    updateQuery.append(" AND ").append(OrientDBConstant.SYSTEM_VERSION).append("=").append(currentVersion);
-                } 
+		EntityKeyUtil.setFieldValue( updateQuery, value );
+		// and version protection
+		if ( currentVersion != null ) {
+			log.debugf( "version of entity : %d", currentVersion );
+			updateQuery.append( " AND " ).append( OrientDBConstant.SYSTEM_VERSION ).append( "=" ).append( currentVersion );
+		}
 		return new GenerationResult( Collections.emptyList(), updateQuery.toString() );
 	}
 

@@ -89,7 +89,7 @@ import org.hibernate.datastore.ogm.orientdb.utils.QueryTypeDefiner.QueryType;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDialect extends BaseGridDialect implements QueryableGridDialect<String>,
-ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+		ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
 
 	private static final long serialVersionUID = 1L;
 	private static final Log log = LoggerFactory.getLogger();
@@ -166,7 +166,7 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 				preparedStatementParams = insertResult.getPreparedStatementParams();
 				break;
 			case UPDATE:
-                                Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
+				Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
 				log.debugf( "insertOrUpdateTuple:@version: %s. current tread: %s;",
 						snapshot.get( OrientDBConstant.SYSTEM_VERSION ), Thread.currentThread().getName() );
 				GenerationResult updateResult = UPDATE_QUERY_GENERATOR.generate( key.getTable(), tuple, key, currentVersion );
@@ -183,10 +183,10 @@ ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumn
 			QueryUtil.setParameters( pstmt, preparedStatementParams );
 			int updateCount = pstmt.executeUpdate();
 			log.debugf( "insertOrUpdateTuple:Key: %s (%s) ;inserted or updated: %d ", dbKeyName, dbKeyValue, updateCount );
-			if ( updateCount == 0 && queryType.equals(QueryType.UPDATE) ) {
+			if ( updateCount == 0 && queryType.equals( QueryType.UPDATE ) ) {
 				// primary key was in DB .... but during prepare query someone remove it from DB.
-                                Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
-                                throw log.versionNotActual(key, currentVersion);
+				Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
+				throw log.versionNotActual( key, currentVersion );
 			}
 		}
 		catch (SQLException sqle) {

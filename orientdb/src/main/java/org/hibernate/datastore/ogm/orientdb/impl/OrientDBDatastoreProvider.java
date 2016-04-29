@@ -35,7 +35,7 @@ import org.hibernate.service.spi.Stoppable;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider
-implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
+		implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
 	private static Log log = LoggerFactory.getLogger();
 	private ConnectionHolder connectionHolder;

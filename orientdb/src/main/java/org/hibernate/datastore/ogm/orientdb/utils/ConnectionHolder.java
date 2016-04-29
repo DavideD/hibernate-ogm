@@ -29,7 +29,7 @@ public class ConnectionHolder extends ThreadLocal<Connection> {
 	private final String jdbcUrl;
 	private final Properties info;
 	private final Map<Long, OrientJdbcConnection> CONNECTIONS = Collections
-			.<Long, OrientJdbcConnection> synchronizedMap( new HashMap<Long, OrientJdbcConnection>() );
+			.synchronizedMap( new HashMap<Long, OrientJdbcConnection>() );
 
 	public ConnectionHolder(String jdbcUrl, Properties info) {
 		this.jdbcUrl = jdbcUrl;
