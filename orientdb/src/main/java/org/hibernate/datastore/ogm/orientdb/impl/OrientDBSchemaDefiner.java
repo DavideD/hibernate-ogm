@@ -156,7 +156,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 			connection.createStatement().execute( new String( buffer.array() ).trim() );
 		}
 		catch (SQLException | OException | IOException e) {
-			log.error( "Error!", e );
 			throw log.cannotCreateStoredProcedure( "getTableSeqValue", e );
 		}
 	}
