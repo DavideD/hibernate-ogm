@@ -84,7 +84,7 @@ public class ManyToManyExtraTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[]{
+		return new Class<?>[] {
 				Student.class,
 				ClassRoom.class
 		};

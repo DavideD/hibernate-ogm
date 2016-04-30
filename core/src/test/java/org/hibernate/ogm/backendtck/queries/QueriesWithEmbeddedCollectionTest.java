@@ -315,6 +315,6 @@ public class QueriesWithEmbeddedCollectionTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[]{ StoryGame.class };
+		return new Class<?>[] { StoryGame.class };
 	}
 }
