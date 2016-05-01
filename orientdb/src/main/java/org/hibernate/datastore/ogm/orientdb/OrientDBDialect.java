@@ -479,7 +479,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				TypedGridValue value = entry.getValue();
 				log.debugf( "key: %s ; type: %s ; value: %s ", key, value.getType().getName(), value.getValue() );
 				try {
-					// @todo move to Map
+					// @TODO move to Map
+                                        // TODO move to Map
 					if ( value.getType().getName().equals( "string" ) ) {
 						pstmt.setString( 1, (String) value.getValue() );
 					}
