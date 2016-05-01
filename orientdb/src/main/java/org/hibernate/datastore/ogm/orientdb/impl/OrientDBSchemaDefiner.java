@@ -177,7 +177,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 				log.debugf( "QualifiedTableName: ObjectName: %s; TableName:%s ",
 						table.getQualifiedTableName().getObjectName(), table.getQualifiedTableName().getTableName() );
 
-				boolean isMappingTable = isMapingTable( table );
 				boolean isEmbeddedListTableName = isEmbeddedListTable( table );
 				String tableName = table.getName();
 
@@ -226,6 +225,9 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 					Column column = columnIterator.next();
 					log.debugf( "column: %s ", column );
 					log.debugf( "relation type: %s", column.getValue().getType().getClass() );
+					if ( column.getName().startsWith( "_identifierMapper" ) ) {
+						continue;
+					}
 
 					if ( OrientDBConstant.SYSTEM_FIELDS.contains( column.getName() ) ) {
 						continue;
@@ -234,6 +236,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						log.debugf( "column name %s has component type. Returned type: %s ",
 								column.getName(), column.getValue().getType().getReturnedClass() );
 						ComponentType type = (ComponentType) column.getValue().getType();
+						throw new UnsupportedOperationException( "Component type not supported yet " );
 					}
 					else if ( RELATIONS_TYPES.contains( column.getValue().getType().getClass() ) ) {
 						// @TODO refactor it
@@ -260,8 +263,26 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 					}
 					else if ( EntityKeyUtil.isEmbeddedColumn( column ) ) {
 						EmbeddedColumnInfo ec = new EmbeddedColumnInfo( column.getName() );
+						boolean isPrimaryKeyColumn = isPrimaryKeyColumn( table, column );
 						log.debugf( "embedded column. class: %s ; property: %s", ec.getClassNames(), ec.getPropertyName() );
-						createEmbeddedColumn( createdEmbeddedClassSet, tableName, column, ec );
+						log.debugf( "is column from primary key: %s", isPrimaryKeyColumn );
+						if ( !isPrimaryKeyColumn ) {
+							createEmbeddedColumn( createdEmbeddedClassSet, tableName, column, ec );
+						}
+						else {
+							String columnName = column.getName().substring( column.getName().indexOf( "." ) + 1 );
+							SimpleValue simpleValue = (SimpleValue) column.getValue();
+							String propertyQuery = createValueProperyQuery( column, tableName, columnName,
+									simpleValue.getType().getClass() );
+							log.debugf( "create property query: %s", propertyQuery );
+							try {
+								provider.getConnection().createStatement().execute( propertyQuery );
+							}
+							catch (SQLException | OException e) {
+								log.error( "Exception:", e );
+								throw log.cannotGenerateProperty( column.getName(), table.getName(), e );
+							}
+						}
 					}
 					else {
 						String propertyQuery = createValueProperyQuery( tableName, column );
@@ -287,7 +308,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 				}
 				// @TODO think about primary key for mapping tables!
 				if ( table.hasPrimaryKey() && !isTablePerClassInheritance( table )
-						&& !isEmbeddedObjectTable( table ) && !isMapingTable( table ) ) {
+						&& !isEmbeddedObjectTable( table ) ) {
 					PrimaryKey primaryKey = table.getPrimaryKey();
 					if ( primaryKey != null ) {
 						log.debugf( "primaryKey: %s ", primaryKey.getTable().getName() );
@@ -312,14 +333,28 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 	}
 
 	private void createPrimaryKey(Connection connection, PrimaryKey primaryKey) {
-		String table = primaryKey.getTable().getName();
 		StringBuilder uniqueIndexQuery = new StringBuilder( 100 );
-		uniqueIndexQuery.append( "CREATE INDEX " ).append( table ).append( "_" );
-		String firstColumn = primaryKey.getColumn( 0 ).getName();
-		uniqueIndexQuery.append( firstColumn ).append( "_pk ON " ).append( table ).append( " (" ).append( firstColumn ).append( ") UNIQUE" );
+		uniqueIndexQuery.append( "CREATE INDEX " )
+		.append( primaryKey.getName() != null
+		? primaryKey.getName()
+				: PrimaryKey.generateName( primaryKey.generatedConstraintNamePrefix(), primaryKey.getTable(), primaryKey.getColumns() ) )
+		.append( " ON " ).append( primaryKey.getTable().getName() ).append( " (" );
+		for ( Iterator<Column> it = primaryKey.getColumns().iterator(); it.hasNext(); ) {
+			Column column = it.next();
+			String columnName = column.getName();
+			if ( columnName.contains( "." ) ) {
+				// it is like embedded column .... but it is column for IdClass
+				columnName = column.getName().substring( column.getName().indexOf( "." ) + 1 );
+			}
+			uniqueIndexQuery.append( columnName );
+			if ( it.hasNext() ) {
+				uniqueIndexQuery.append( "," );
+			}
+		}
+		uniqueIndexQuery.append( ") UNIQUE" );
 
 		try {
-			log.debugf( "query: %s", uniqueIndexQuery );
+			log.debugf( "primary key query: %s", uniqueIndexQuery );
 			connection.createStatement().execute( uniqueIndexQuery.toString() );
 		}
 		catch (SQLException e) {
@@ -338,11 +373,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 				throw log.cannotExecuteQuery( seq.toString(), e );
 			}
 		}
-	}
-
-	private String createValueProperyQuery(Table table, Column column) {
-		SimpleValue simpleValue = (SimpleValue) column.getValue();
-		return createValueProperyQuery( table, column, simpleValue.getType().getClass() );
 	}
 
 	private String createValueProperyQuery(String tableName, Column column) {
@@ -462,6 +492,18 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		log.debugf( "1.Column: %s, targetTypeClass: %s ", column.getName(), targetTypeClass );
 		return createValueProperyQuery( column, table.getName(), column.getName(), targetTypeClass );
 
+	}
+
+	private boolean isPrimaryKeyColumn(Table table, Column column) {
+		boolean result = false;
+
+		if ( table.hasPrimaryKey() ) {
+			PrimaryKey primaryKey = table.getPrimaryKey();
+			log.debugf( "isPrimaryKeyColumn:  primary key name: %s ", primaryKey.getName() );
+			result = primaryKey.containsColumn( column );
+		}
+
+		return result;
 	}
 
 	private boolean isMapingTable(Table table) {

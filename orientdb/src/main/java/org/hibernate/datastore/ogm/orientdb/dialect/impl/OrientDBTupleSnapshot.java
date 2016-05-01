@@ -72,16 +72,9 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 				value = Integer.valueOf( 0 );
 			}
 		}
-		/*
-		 * else if ( EntityKeyUtil.isEmbeddedColumn( targetColumnName ) ) { EmbeddedColumnInfo ec = new
-		 * EmbeddedColumnInfo( targetColumnName ); ODocument targetDocument = findEmbeddedClass( (ODocument)
-		 * dbNameValueMap.get( ec.getClassNames().get( 0 ) ), ec ); if (targetDocument!=null) { log.debugf(
-		 * "embedded column. class: %s ; property: %s", targetDocument.getClassName(), ec.getPropertyName() ); } else {
-		 * log.debugf( "embedded column.  class not found for property: %s", ec ); } value = targetDocument!=null ?
-		 * targetDocument.field( ec.getPropertyName() ) : null; log.debugf(
-		 * "targetColumnName: %s ; value: %s; class : %s", targetColumnName, value, ( value != null ? value.getClass() :
-		 * null ) ); }
-		 */
+		else if ( targetColumnName.startsWith( "_identifierMapper." ) ) {
+			value = dbNameValueMap.get( targetColumnName.substring( "_identifierMapper.".length() ) );
+		}
 		else if ( OrientDBConstant.MAPPING_FIELDS.containsKey( targetColumnName ) ) {
 			value = dbNameValueMap.get( OrientDBConstant.MAPPING_FIELDS.get( targetColumnName ) );
 		}

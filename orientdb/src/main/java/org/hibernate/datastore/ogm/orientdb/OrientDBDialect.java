@@ -78,6 +78,8 @@ import org.hibernate.type.Type;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.exception.OConcurrentModificationException;
 import com.orientechnologies.orient.core.id.ORecordId;
+import java.util.Arrays;
+import java.util.HashSet;
 import org.hibernate.datastore.ogm.orientdb.utils.InsertQueryGenerator;
 import org.hibernate.datastore.ogm.orientdb.utils.QueryUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.UpdateQueryGenerator;
@@ -161,7 +163,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		switch ( queryType ) {
 			case INSERT:
 				log.debugf( "insertOrUpdateTuple:Key: %s is new! Insert new record!", dbKeyName );
-				GenerationResult insertResult = INSERT_QUERY_GENERATOR.generate( key.getTable(), tuple );
+				GenerationResult insertResult = INSERT_QUERY_GENERATOR.generate( key.getTable(), tuple, true,
+						new HashSet<String>( Arrays.asList( key.getColumnNames() ) ) );
 				queryBuffer.append( insertResult.getExecutionQuery() );
 				preparedStatementParams = insertResult.getPreparedStatementParams();
 				break;
@@ -217,7 +220,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			dbKeyValue = (Long) SequenceUtil.getNextSequenceValue( connection, seqName );
 			tuple.put( dbKeyName, dbKeyValue );
 		}
-		InsertQueryGenerator.GenerationResult result = INSERT_QUERY_GENERATOR.generate( entityKeyMetadata.getTable(), tuple );
+		InsertQueryGenerator.GenerationResult result = INSERT_QUERY_GENERATOR.generate( entityKeyMetadata.getTable(), tuple, true,
+				new HashSet<String>( Arrays.asList( entityKeyMetadata.getColumnNames() ) ) );
 		query = result.getExecutionQuery();
 
 		log.debugf( "insertTuple: insertQuery: %s ", result.getExecutionQuery() );
@@ -395,7 +399,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			default:
 				throw new AssertionFailure( "Unrecognized associationKind: " + associationKey.getMetadata().getAssociationKind() );
 		}
-
 	}
 
 	private void createRelationshipWithEntityNode(AssociationKey associationKey, Tuple associationRow,
@@ -403,7 +406,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		log.debugf( "createRelationshipWithEntityNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
 		// @TODO equals with createRelationshipWithEmbeddedNode?
-		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow );
+		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
 		log.debugf( "createRelationshipWithEntityNode: query: %s", result.getExecutionQuery() );
 		try {
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
@@ -419,7 +422,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
 		log.debugf( "createRelationshipWithEmbeddedNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
-		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow );
+		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
 		log.debugf( "createRelationshipWithEmbeddedNode: query: %s", result.getExecutionQuery() );
 		try {
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
@@ -480,7 +483,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				log.debugf( "key: %s ; type: %s ; value: %s ", key, value.getType().getName(), value.getValue() );
 				try {
 					// @TODO move to Map
-                                        // TODO move to Map
+					// TODO move to Map
 					if ( value.getType().getName().equals( "string" ) ) {
 						pstmt.setString( 1, (String) value.getValue() );
 					}

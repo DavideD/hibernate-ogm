@@ -6,22 +6,18 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
-import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
-import javax.persistence.Query;
 import org.apache.log4j.Logger;
 import static org.hibernate.datastore.ogm.orientdb.OrientDBSimpleTest.MEMORY_TEST;
-import org.hibernate.datastore.ogm.orientdb.jpa.Customer;
 import org.hibernate.datastore.ogm.orientdb.jpa.Passport;
 import org.hibernate.datastore.ogm.orientdb.jpa.PassportPK;
-import org.hibernate.datastore.ogm.orientdb.jpa.Status;
 import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -30,12 +26,12 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OrientDBCompositeIdTest {
-    private static final Logger log = Logger.getLogger( OrientDBOptimisticLockTest.class.getName() );
+
+	private static final Logger log = Logger.getLogger( OrientDBCompositeIdTest.class.getName() );
 	private static EntityManager em;
 	private static EntityManagerFactory emf;
 
@@ -68,41 +64,47 @@ public class OrientDBCompositeIdTest {
 	public void tearDown() {
 		em.clear();
 	}
-        @Test
+
+	@Test
 	public void test1InsertNewPassport() {
 		log.debug( "start" );
 		try {
 			em.getTransaction().begin();
 			Passport newPassport = new Passport();
-			newPassport.setFio("fio1");
-			newPassport.setSeria(6002);
-                        newPassport.setNumber(11111111);
+			newPassport.setFio( "fio1" );
+			newPassport.setSeria( 6002 );
+			newPassport.setNumber( 11111111 );
 			log.debug( "New Passport ready for  persit" );
 			em.persist( newPassport );
 			em.getTransaction().commit();
-                        }
+			em.clear();
+		}
 		catch (Exception e) {
 			log.error( "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
-                
-                try {
-                        
-                        em.getTransaction().begin();
-                        PassportPK pk = new PassportPK();
-                        pk.setNumber(11111111);
-                        pk.setSeria(6002);
-                        Passport passport = em.find(Passport.class, pk);
-                        assertNotNull("Passport must be saved!", passport);
+
+		try {
+
+			em.getTransaction().begin();
+			PassportPK pk = new PassportPK();
+			pk.setNumber( 11111111 );
+			pk.setSeria( 6002 );
+			Passport passport = em.find( Passport.class, pk );
+			assertNotNull( "Passport must be saved!", passport );
+			assertNotNull( "Passport must have a seria!", passport.getSeria() );
+			assertEquals( "Seria must be a 6002", 6002, passport.getSeria() );
+
+			log.info( String.format( "passport: %s", passport ) );
 			em.getTransaction().commit();
-                        }
+		}
 		catch (Exception e) {
 			log.error( "Error", e );
 			em.getTransaction().rollback();
 			throw e;
 		}
-		
+
 	}
-    
+
 }

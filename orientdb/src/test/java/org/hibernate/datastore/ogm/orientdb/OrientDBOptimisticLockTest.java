@@ -121,7 +121,7 @@ public class OrientDBOptimisticLockTest {
 			RollbackException re = (RollbackException) e.getCause();
 			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716)",
 					( re.getCause().getCause() instanceof OConcurrentModificationException ) ||
-							( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) ) );
+					( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) ) );
 		}
 		if ( t1.isDone() && t2.isDone() ) {
 			if ( isAnyThreadSuccess( t1, t2 ) ) {
@@ -144,10 +144,8 @@ public class OrientDBOptimisticLockTest {
 			}
 		}
 	}
-        
-        
-        
-        @Test
+
+	@Test
 	public void test2ParallelUpdateDeleteEntity() throws Exception {
 		Writer writer = null;
 		try {
@@ -179,7 +177,7 @@ public class OrientDBOptimisticLockTest {
 
 		long t1Result = -1;
 		long t2Result = -1;
-                boolean isOrientDBEx = false;
+		boolean isOrientDBEx = false;
 		try {
 			t1Result = t1.get();
 			log.info( "t1 result:" + t1Result );
@@ -189,8 +187,8 @@ public class OrientDBOptimisticLockTest {
 		catch (ExecutionException e) {
 			log.error( "Error in task", e );
 			RollbackException re = (RollbackException) e.getCause();
-                        isOrientDBEx =( re.getCause().getCause() instanceof OConcurrentModificationException );
-			assertTrue( "Must be right exception (OConcurrentModificationException)", ( isOrientDBEx )  );
+			isOrientDBEx = ( re.getCause().getCause() instanceof OConcurrentModificationException );
+			assertTrue( "Must be right exception (OConcurrentModificationException)", ( isOrientDBEx ) );
 		}
 		if ( t1.isDone() && t2.isDone() ) {
 			if ( isAnyThreadSuccess( t1, t2 ) ) {
@@ -199,11 +197,11 @@ public class OrientDBOptimisticLockTest {
 					em.getTransaction().begin();
 					writer = em.find( Writer.class, 2l );
 					log.info( "Barto.getCount(): " + writer.getCount() );
-                                        if (isOrientDBEx) {
-                                            // update thread commited change,  delete thread get OrientDB exception   
-                                            assertEquals("Counter must be changed!", 2, writer.getCount() ); 
-                                        }
-					
+					if ( isOrientDBEx ) {
+						// update thread commited change, delete thread get OrientDB exception
+						assertEquals( "Counter must be changed!", 2, writer.getCount() );
+					}
+
 					em.getTransaction().commit();
 				}
 				catch (Exception e) {
@@ -226,23 +224,21 @@ public class OrientDBOptimisticLockTest {
 
 		private final Logger log = Logger.getLogger( WriterUpdateThread.class.getName() );
 		private final long taskId;
-                private final long writerId;
+		private final long writerId;
 		private final EntityManager localEm;
 
-                public WriterUpdateThread(long taskId, long writerId, EntityManager localEm) {
-                    this.taskId = taskId;
-                    this.writerId = writerId;
-                    this.localEm = localEm;
-                }
-
-		
+		public WriterUpdateThread(long taskId, long writerId, EntityManager localEm) {
+			this.taskId = taskId;
+			this.writerId = writerId;
+			this.localEm = localEm;
+		}
 
 		@Override
 		public Long call() throws Exception {
 			try {
 				log.info( "begin reading..." );
 				localEm.getTransaction().begin();
-				Query query = localEm.createNativeQuery( "select from writer where bKey="+writerId, Writer.class );
+				Query query = localEm.createNativeQuery( "select from writer where bKey=" + writerId, Writer.class );
 				List<Writer> results = query.getResultList();
 				assertFalse( "Writer must be!", results.isEmpty() );
 				Writer writer = results.get( 0 );
@@ -267,27 +263,29 @@ public class OrientDBOptimisticLockTest {
 			return taskId;
 		}
 	}
-        private class WriterDeleteThread implements Callable<Long> {
+
+	private class WriterDeleteThread implements Callable<Long> {
 
 		private final Logger log = Logger.getLogger( WriterDeleteThread.class.getName() );
 		private final long taskId;
-                private final long writerId;
+		private final long writerId;
 		private final EntityManager localEm;
 
-                public WriterDeleteThread(long taskId, long writerId, EntityManager localEm) {
-                    this.taskId = taskId;
-                    this.writerId = writerId;
-                    this.localEm = localEm;
-                }
+		public WriterDeleteThread(long taskId, long writerId, EntityManager localEm) {
+			this.taskId = taskId;
+			this.writerId = writerId;
+			this.localEm = localEm;
+		}
+
 		@Override
 		public Long call() throws Exception {
 			try {
 				log.info( "begin reading..." );
 				localEm.getTransaction().begin();
-				Query query = localEm.createNativeQuery( "select from writer where bKey="+writerId, Writer.class );
+				Query query = localEm.createNativeQuery( "select from writer where bKey=" + writerId, Writer.class );
 				List<Writer> results = query.getResultList();
 				assertFalse( "Writer must be!", results.isEmpty() );
-				Writer writer = results.get( 0 );				
+				Writer writer = results.get( 0 );
 				localEm.remove( writer );
 				log.info( "begin writing...." );
 				localEm.getTransaction().commit();

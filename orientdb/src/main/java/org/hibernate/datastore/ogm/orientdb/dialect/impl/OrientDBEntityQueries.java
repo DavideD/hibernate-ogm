@@ -33,6 +33,7 @@ import org.hibernate.ogm.model.spi.Tuple;
 
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import java.util.Arrays;
 import org.hibernate.datastore.ogm.orientdb.utils.ODocumentUtil;
 
 /**
@@ -50,7 +51,6 @@ public class OrientDBEntityQueries extends QueriesBase {
 			String columnName = entityKeyMetadata.getColumnNames()[i];
 			log.debugf( "column number: %d ; column name: %s", i, columnName );
 		}
-
 	}
 
 	/**
@@ -62,27 +62,31 @@ public class OrientDBEntityQueries extends QueriesBase {
 	 */
 
 	public Map<String, Object> findEntity(Connection connection, EntityKey entityKey) {
-		Map<String, Object> params = params( entityKey.getColumnValues() );
 		Map<String, Object> dbValues = new LinkedHashMap<>();
 		Object dbKeyValue = EntityKeyUtil.findPrimaryKeyValue( entityKey );
-		String dbKeyName = EntityKeyUtil.findPrimaryKeyName( entityKey );
 		StringBuilder query = new StringBuilder( "select from " );
 		try {
 			Statement stmt = connection.createStatement();
-			if ( params.size() == 1 ) {
-				if ( dbKeyValue instanceof ORecordId ) {
-					// search by @rid
-					ORecordId rid = (ORecordId) dbKeyValue;
-					query.append( rid );
-				}
-				else {
-					// search by business key
-					query.append( entityKey.getTable() ).append( " WHERE " ).append( dbKeyName ).append( " = " );
-					EntityKeyUtil.setFieldValue( query, dbKeyValue );
-				}
+			if ( entityKey.getColumnNames().length == 1 && dbKeyValue instanceof ORecordId ) {
+				// search by @rid
+				ORecordId rid = (ORecordId) dbKeyValue;
+				query.append( rid );
 			}
 			else {
-				throw new UnsupportedOperationException( "Not supported yet." );
+				// search by business key
+				log.debugf( "column names: %s", Arrays.asList( entityKey.getColumnNames() ) );
+				query.append( entityKey.getTable() ).append( " WHERE " );
+				for ( int i = 0; i < entityKey.getColumnNames().length; i++ ) {
+					String columnName = entityKey.getColumnNames()[i];
+					if ( columnName.contains( "." ) ) {
+						columnName = columnName.substring( columnName.indexOf( "." ) + 1 );
+					}
+					query.append( columnName ).append( "=" );
+					EntityKeyUtil.setFieldValue( query, entityKey.getColumnValues()[i] );
+					query.append( " AND " );
+				}
+				query.setLength( query.length() - " AND ".length() );
+
 			}
 			log.debugf( "find entiry query: %s", query.toString() );
 			ResultSet rs = stmt.executeQuery( query.toString() );
@@ -104,7 +108,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 					if ( dbValue instanceof Date ) {
 						String format = rs.getMetaData().getColumnTypeName( dbFieldNo ).equals( "DATETIME" )
 								? OrientDBConstant.DATETIME_FORMAT
-								: OrientDBConstant.DATE_FORMAT;
+										: OrientDBConstant.DATE_FORMAT;
 						dbValues.put( dbColumnName, new SimpleDateFormat( format ).format( dbValue ) );
 					}
 					else if ( dbValue instanceof ODocument ) {
@@ -116,7 +120,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 				log.debugf( " entity values from db:  %s", dbValues );
 			}
 			else {
-				log.debugf( " entity by primary key %s not found!", dbKeyValue );
+				log.debugf( " entity by primary key %s not found!", entityKey );
 				return null;
 			}
 			return dbValues;

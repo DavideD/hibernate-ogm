@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
@@ -30,18 +31,18 @@ public class InsertQueryGenerator extends AbstractQueryGenerator {
 
 	private static final Log log = LoggerFactory.getLogger();
 
-	public GenerationResult generate(String tableName, Tuple tuple) {
-		return generate( tableName, TupleUtil.toMap( tuple ) );
+	public GenerationResult generate(String tableName, Tuple tuple, boolean isStoreTuple, Set<String> keyColumnNames) {
+		return generate( tableName, TupleUtil.toMap( tuple ), isStoreTuple, keyColumnNames );
 	}
 
-	public GenerationResult generate(String tableName, Map<String, Object> valuesMap) {
-		QueryResult queryResult = createJSON( valuesMap );
+	public GenerationResult generate(String tableName, Map<String, Object> valuesMap, boolean isStoreTuple, Set<String> keyColumnNames) {
+		QueryResult queryResult = createJSON( isStoreTuple, keyColumnNames, valuesMap );
 		StringBuilder insertQuery = new StringBuilder( 100 );
 		insertQuery.append( "insert into " ).append( tableName ).append( " content " ).append( queryResult.getJson().toJSONString() );
 		return new GenerationResult( queryResult.getPreparedStatementParams(), insertQuery.toString() );
 	}
 
-	protected QueryResult createJSON(Map<String, Object> valuesMap) {
+	protected QueryResult createJSON(boolean isStoreTuple, Set<String> keyColumnNames, Map<String, Object> valuesMap) {
 		QueryResult result = new QueryResult();
 		for ( Map.Entry<String, Object> entry : valuesMap.entrySet() ) {
 			String columnName = entry.getKey();
@@ -49,14 +50,24 @@ public class InsertQueryGenerator extends AbstractQueryGenerator {
 			if ( OrientDBConstant.SYSTEM_FIELDS.contains( columnName ) || OrientDBConstant.MAPPING_FIELDS.containsKey( columnName ) ) {
 				continue;
 			}
-			log.debugf( "createJSON: Column %s; value: %s (class: %s) ", columnName, columnValue, ( columnValue != null ? columnValue.getClass() : null ) );
+			log.debugf( "createJSON: Column %s; value: %s (class: %s). is primary key: %b ",
+					columnName, columnValue, ( columnValue != null ? columnValue.getClass() : null ),
+					keyColumnNames.contains( columnName ) );
 			if ( EntityKeyUtil.isEmbeddedColumn( columnName ) ) {
-				EmbeddedColumnInfo ec = new EmbeddedColumnInfo( columnName );
-				if ( !result.getJson().containsKey( ec.getClassNames().get( 0 ) ) ) {
-					JSONObject embeddedFieldValue = createDefaultEmbeddedRow( ec.getClassNames().get( 0 ) );
-					result.getJson().put( ec.getClassNames().get( 0 ), embeddedFieldValue );
+				if ( isStoreTuple && keyColumnNames.contains( columnName ) ) {
+					// it is primary key column
+					columnName = columnName.substring( columnName.indexOf( "." ) + 1 );
+					// @TODO check type!!!!
+					result.getJson().put( columnName, columnValue );
 				}
-				setJsonValue( result, ec, columnValue );
+				else {
+					EmbeddedColumnInfo ec = new EmbeddedColumnInfo( columnName );
+					if ( !result.getJson().containsKey( ec.getClassNames().get( 0 ) ) ) {
+						JSONObject embeddedFieldValue = createDefaultEmbeddedRow( ec.getClassNames().get( 0 ) );
+						result.getJson().put( ec.getClassNames().get( 0 ), embeddedFieldValue );
+					}
+					setJsonValue( result, ec, columnValue );
+				}
 			}
 			else if ( columnValue != null && OrientDBConstant.BASE64_TYPES.contains( columnValue.getClass() ) ) {
 				if ( columnValue instanceof BigInteger ) {

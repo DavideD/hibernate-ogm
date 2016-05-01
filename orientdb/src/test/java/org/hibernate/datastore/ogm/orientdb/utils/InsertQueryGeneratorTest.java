@@ -6,6 +6,7 @@
  */
 package org.hibernate.datastore.ogm.orientdb.utils;
 
+import java.util.Collections;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -14,10 +15,6 @@ import java.util.Map;
 import org.apache.commons.codec.binary.Base64;
 
 import org.json.simple.JSONObject;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -27,22 +24,6 @@ import org.junit.Test;
 public class InsertQueryGeneratorTest {
 
 	private InsertQueryGenerator instance = new InsertQueryGenerator();
-
-	@BeforeClass
-	public static void setUpClass() {
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-	}
-
-	@Before
-	public void setUp() {
-	}
-
-	@After
-	public void tearDown() {
-	}
 
 	/**
 	 * Test of createJSON method, of class InsertQueryGenerator.
@@ -54,19 +35,19 @@ public class InsertQueryGeneratorTest {
 		Map<String, Object> valuesMap = new LinkedHashMap<>();
 		valuesMap.put( "field1", 1l );
 
-		result = instance.createJSON( valuesMap );
+		result = instance.createJSON( true, Collections.<String>emptySet(), valuesMap );
 		assertEquals( result.getJson().get( "field1" ), 1l );
 		assertTrue( "No parameters for prepare statement must be!", result.getPreparedStatementParams().isEmpty() );
 
 		valuesMap.put( "field2", new byte[]{ 1, 2, 3 } );
-		result = instance.createJSON( valuesMap );
+		result = instance.createJSON( true, Collections.<String>emptySet(), valuesMap );
 		assertEquals( result.getJson().get( "field2" ), new String( Base64.encodeBase64( new byte[]{ 1, 2, 3 } ) ) );
 		assertTrue( "No parameters for prepare statement must be!", result.getPreparedStatementParams().isEmpty() );
 
 		// using embedded fields
 		valuesMap.put( "field3.embeddedField1", "f1" );
 		valuesMap.put( "field3.embeddedField2", "f2" );
-		result = instance.createJSON( valuesMap );
+		result = instance.createJSON( true, Collections.<String>emptySet(), valuesMap );
 		assertTrue( "Field 'field3' must exists!", result.getJson().containsKey( "field3" ) );
 		assertEquals( result.getJson().get( "field3" ).getClass(), JSONObject.class );
 		JSONObject embeddedFiled = (JSONObject) result.getJson().get( "field3" );
@@ -83,7 +64,7 @@ public class InsertQueryGeneratorTest {
 		valuesMap.put( "field4.ef2l1.ef1l2", "f21" );
 		valuesMap.put( "field4.ef2l1.ef2l2", "f22" );
 		valuesMap.put( "field5", "http://www.hibernate.org/" );
-		result = instance.createJSON( valuesMap );
+		result = instance.createJSON( true, Collections.<String>emptySet(), valuesMap );
 		assertTrue( "Field 'field4' must exists!", result.getJson().containsKey( "field4" ) );
 		embeddedFiled = (JSONObject) result.getJson().get( "field4" );
 		assertTrue( "JSON must have key 'ef1l1'", embeddedFiled.containsKey( "ef1l1" ) );
