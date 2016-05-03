@@ -479,9 +479,10 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			for ( Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet() ) {
 				String key = entry.getKey();
 				TypedGridValue value = entry.getValue();
-				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s ", key, value.getType().getName(), value.getValue() );
+				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s ", 
+                                        key, value.getType().getName(), value.getValue().hashCode() );
 				try {
-					VALUE_SETTER_MAP.get(value.getType().getName()).setValue(pstmt, paramIndex, value);
+					VALUE_SETTER_MAP.get(value.getType().getName()).setValue(pstmt, paramIndex, value.getValue());
 				}
 				catch (SQLException sqle) {
 					throw log.cannotSetValueForParameter( paramIndex, sqle );
@@ -646,6 +647,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
         @Override
         public void setValue(PreparedStatement preparedStatement,int index, Integer value) throws SQLException {
+            log.debugf("IntegerValueSetter: value: %s", value);
             preparedStatement.setInt(index, value);
         }
             
