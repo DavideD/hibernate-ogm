@@ -66,7 +66,7 @@ public class EntityKeyUtil {
 		queryBuffer.append( " " );
 
 	}
-
+        @Deprecated
 	public static Object findPrimaryKeyValue(EntityKey key) {
 		Object dbKeyValue = null;
 		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
@@ -80,7 +80,7 @@ public class EntityKeyUtil {
 		}
 		return dbKeyValue;
 	}
-
+        @Deprecated
 	public static String findPrimaryKeyName(EntityKey key) {
 		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
 			String columnName = key.getColumnNames()[i];
@@ -91,22 +91,35 @@ public class EntityKeyUtil {
 		}
 		return null;
 	}
+        public static String generatePrimaryKeyPredicate(EntityKey key) {
+            StringBuilder buffer = new StringBuilder(100);
+            for (int i = 0; i < key.getColumnNames().length; i++) {
+                                                String columnName = key.getColumnNames()[i];
+                                                if (columnName.contains(".")) {
+                                                    columnName = columnName.substring( columnName.indexOf( "." ) + 1 );
+                                                }
+                                                Object columnValue = key.getColumnValues()[i];
+                                                buffer.append(columnName).append("=");
+                                                setFieldValue(buffer, columnValue);
+                                                buffer.append(" and ");
+                        }
+			buffer.setLength(buffer.length()-5);
+                        return buffer.toString();
+        }
 
 	public static boolean existsPrimaryKeyInDB(Connection connection, EntityKey key) {
-		String dbKeyName = key.getColumnNames()[0];
-		Object dbKeyValue = key.getColumnValues()[0];
 		boolean exists = false;
-		StringBuilder buffer = new StringBuilder();
+		StringBuilder buffer = new StringBuilder(100);
 		try {
 			Statement stmt = connection.createStatement();
-			buffer.append( "select count(" ).append( dbKeyName ).append( ") from " );
-			buffer.append( key.getTable() ).append( " where " ).append( dbKeyName );
-			buffer.append( " = " );
-			EntityKeyUtil.setFieldValue( buffer, dbKeyValue );
+			buffer.append( "select count(@rid) from " );
+			buffer.append( key.getTable() ).append( " where " );
+			buffer.append(generatePrimaryKeyPredicate(key));
+                        log.debugf( "existsPrimaryKeyInDB:query: %s ;", buffer );
 			ResultSet rs = stmt.executeQuery( buffer.toString() );
 			if ( rs.next() ) {
 				long count = rs.getLong( 1 );
-				log.debugf( "existsPrimaryKeyInDB:Key: %s ; count: %d", dbKeyName, count );
+				log.debugf( "existsPrimaryKeyInDB:Key: %s ; count: %d", key, count );
 				exists = count > 0;
 			}
 		}

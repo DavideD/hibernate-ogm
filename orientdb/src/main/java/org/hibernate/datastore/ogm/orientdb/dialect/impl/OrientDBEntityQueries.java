@@ -62,30 +62,20 @@ public class OrientDBEntityQueries extends QueriesBase {
 	 */
 
 	public Map<String, Object> findEntity(Connection connection, EntityKey entityKey) {
-		Map<String, Object> dbValues = new LinkedHashMap<>();
-		Object dbKeyValue = EntityKeyUtil.findPrimaryKeyValue( entityKey );
+		Map<String, Object> dbValues = new LinkedHashMap<>();		
 		StringBuilder query = new StringBuilder( "select from " );
 		try {
 			Statement stmt = connection.createStatement();
-			if ( entityKey.getColumnNames().length == 1 && dbKeyValue instanceof ORecordId ) {
+			if ( entityKey.getColumnNames().length == 1 && entityKey.getColumnValues()[0] instanceof ORecordId ) {
 				// search by @rid
-				ORecordId rid = (ORecordId) dbKeyValue;
+				ORecordId rid = (ORecordId) entityKey.getColumnValues()[0];
 				query.append( rid );
 			}
 			else {
 				// search by business key
 				log.debugf( "column names: %s", Arrays.asList( entityKey.getColumnNames() ) );
-				query.append( entityKey.getTable() ).append( " WHERE " );
-				for ( int i = 0; i < entityKey.getColumnNames().length; i++ ) {
-					String columnName = entityKey.getColumnNames()[i];
-					if ( columnName.contains( "." ) ) {
-						columnName = columnName.substring( columnName.indexOf( "." ) + 1 );
-					}
-					query.append( columnName ).append( "=" );
-					EntityKeyUtil.setFieldValue( query, entityKey.getColumnValues()[i] );
-					query.append( " AND " );
-				}
-				query.setLength( query.length() - " AND ".length() );
+				query.append( entityKey.getTable() ).append( " WHERE " ).append(EntityKeyUtil.generatePrimaryKeyPredicate(entityKey));
+				
 
 			}
 			log.debugf( "find entiry query: %s", query.toString() );

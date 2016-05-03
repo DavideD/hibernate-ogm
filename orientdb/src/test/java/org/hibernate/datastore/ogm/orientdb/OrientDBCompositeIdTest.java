@@ -6,10 +6,12 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
+import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
+import javax.persistence.Query;
 import org.apache.log4j.Logger;
 import static org.hibernate.datastore.ogm.orientdb.OrientDBSimpleTest.MEMORY_TEST;
 import org.hibernate.datastore.ogm.orientdb.jpa.Passport;
@@ -95,8 +97,8 @@ public class OrientDBCompositeIdTest {
 			assertNotNull( "Passport must be saved!", passport );
 			assertNotNull( "Passport must have a seria!", passport.getSeria() );
 			assertEquals( "Seria must be a 6002", 6002, passport.getSeria() );
-
-			log.info( String.format( "passport: %s", passport ) );
+                        assertEquals( "Seria must be a 11111111", 11111111, passport.getNumber() );
+                        assertEquals( "Seria must be a 'fio1'", "fio1", passport.getFio() );
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
@@ -105,6 +107,97 @@ public class OrientDBCompositeIdTest {
 			throw e;
 		}
 
+	}
+        
+        @Test
+	public void test2UpdatePassport() {
+		log.debug( "start" );
+                PassportPK pk = new PassportPK();
+		pk.setNumber( 11111111 );
+		pk.setSeria( 6002 );
+		try {
+
+			em.getTransaction().begin();
+			Passport passport = em.find( Passport.class, pk );
+			assertNotNull( "Passport must be saved!", passport );
+			assertNotNull( "Passport must have a seria!", passport.getSeria() );
+			assertEquals( "Seria must be a 6002", 6002, passport.getSeria() );
+                        passport.setFio("fio2");
+                        em.merge(passport);
+			em.getTransaction().commit();
+		}
+		catch (Exception e) {
+			log.error( "Error", e );
+                        if (em.getTransaction().isActive()) {
+                            em.getTransaction().rollback();
+                        }
+			throw e;
+		} finally {
+                    em.clear();
+                }
+                try {
+			em.getTransaction().begin();			
+			Passport passport = em.find( Passport.class, pk );
+			assertNotNull( "Passport must be saved!", passport );
+			assertNotNull( "Passport must have a seria!", passport.getSeria() );
+			assertEquals( "Seria must be a 6002", 6002, passport.getSeria() );
+                        assertEquals( "Seria must be a 11111111", 11111111, passport.getNumber() );
+                        assertEquals( "Seria must be a 'fio2'", "fio2", passport.getFio() );
+			em.getTransaction().commit();
+		}
+		catch (Exception e) {
+			log.error( "Error", e );
+			if (em.getTransaction().isActive()) {
+                            em.getTransaction().rollback();
+                        }
+			throw e;
+		}
+	}
+        
+        @Test
+	public void test3SearchByNativeQuery() {
+		log.debug( "start" );
+                PassportPK pk1 = new PassportPK();
+		pk1.setNumber( 11111111 );
+		pk1.setSeria( 6002 );
+                PassportPK pk2 = new PassportPK();
+		pk2.setNumber( 22222222 );
+		pk2.setSeria( 6002 );
+		try {
+
+			em.getTransaction().begin();
+			Passport newPassport = new Passport();
+			newPassport.setFio( "fio3" );
+			newPassport.setSeria( pk2.getSeria() );
+			newPassport.setNumber( pk2.getNumber() );
+			log.debug( "New Passport ready for  persit" );
+			em.persist( newPassport );			
+			em.getTransaction().commit();
+		}
+		catch (Exception e) {
+			log.error( "Error", e );
+                        if (em.getTransaction().isActive()) {
+                            em.getTransaction().rollback();
+                        }
+			throw e;
+		} finally {
+                    em.clear();
+                }
+                try {
+			em.getTransaction().begin();			
+			Query query = em.createNativeQuery("select from Passport where seria=:seria", Passport.class);
+                        query.setParameter("seria", pk1.getSeria());
+                        List<Passport>  passports = query.getResultList();
+                        assertEquals("Must be 2 passports!", 2, passports.size());
+			em.getTransaction().commit();
+		}
+		catch (Exception e) {
+			log.error( "Error", e );
+			if (em.getTransaction().isActive()) {
+                            em.getTransaction().rollback();
+                        }
+			throw e;
+		}
 	}
 
 }

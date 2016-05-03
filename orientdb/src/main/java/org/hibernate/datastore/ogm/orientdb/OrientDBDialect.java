@@ -103,6 +103,16 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	private ServiceRegistryImplementor serviceRegistry;
 	private Map<AssociationKeyMetadata, OrientDBAssociationQueries> associationQueries;
 	private Map<EntityKeyMetadata, OrientDBEntityQueries> entityQueries;
+        private static final Map<String, ValueSetter> VALUE_SETTER_MAP;
+        
+        static {
+            Map<String, ValueSetter> map = new HashMap<>();
+            map.put("sring", new StringValueSetter());
+             map.put("long", new LongValueSetter());
+              map.put("integer", new IntegerValueSetter());
+            VALUE_SETTER_MAP = map;
+        }
+        
 
 	public OrientDBDialect(OrientDBDatastoreProvider provider) {
 		this.provider = provider;
@@ -149,20 +159,12 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		log.debugf( "insertOrUpdateTuple: snapshot.isNew(): %b ,snapshot.isEmpty(): %b; exists in DB: %b; query type: %s ",
 				snapshot.isNew(), snapshot.isEmpty(), existsInDB, queryType );
 
-		StringBuilder queryBuffer = new StringBuilder();
-		String dbKeyName = key.getColumnNames()[0];
-		Object dbKeyValue = key.getColumnValues()[0];
-
-		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
-			String columnName = key.getColumnNames()[i];
-			Object columnValue = key.getColumnValues()[i];
-			log.debugf( "EntityKey: columnName: %s ;columnValue: %s  (class:%s)", columnName, columnValue, columnValue.getClass().getName() );
-		}
+		StringBuilder queryBuffer = new StringBuilder(100);		
 		List<Object> preparedStatementParams = Collections.emptyList();
 
 		switch ( queryType ) {
 			case INSERT:
-				log.debugf( "insertOrUpdateTuple:Key: %s is new! Insert new record!", dbKeyName );
+				log.debugf( "insertOrUpdateTuple:Key: %s is new! Insert new record!", key );
 				GenerationResult insertResult = INSERT_QUERY_GENERATOR.generate( key.getTable(), tuple, true,
 						new HashSet<String>( Arrays.asList( key.getColumnNames() ) ) );
 				queryBuffer.append( insertResult.getExecutionQuery() );
@@ -176,16 +178,16 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				queryBuffer.append( updateResult.getExecutionQuery() );
 				break;
 			case ERROR:
-				throw new StaleObjectStateException( key.getTable(), (Serializable) dbKeyValue );
+				throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate(key) );
 		}
 
 		try {
-			log.debugf( "insertOrUpdateTuple:Key: %s  ( %s ). Query: %s ", dbKeyName, dbKeyValue, queryBuffer );
+			log.debugf( "insertOrUpdateTuple:Key: %s; Query: %s; ", key, queryBuffer );
 			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
 			log.debugf( "insertOrUpdateTuple: exist parameters for preparedstatement : %d", preparedStatementParams.size() );
 			QueryUtil.setParameters( pstmt, preparedStatementParams );
 			int updateCount = pstmt.executeUpdate();
-			log.debugf( "insertOrUpdateTuple:Key: %s (%s) ;inserted or updated: %d ", dbKeyName, dbKeyValue, updateCount );
+			log.debugf( "insertOrUpdateTuple:Key: %s ;inserted or updated: %d ", key, updateCount );
 			if ( updateCount == 0 && queryType.equals( QueryType.UPDATE ) ) {
 				// primary key was in DB .... but during prepare query someone remove it from DB.
 				Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
@@ -196,7 +198,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			throw log.cannotExecuteQuery( queryBuffer.toString(), sqle );
 		}
 		catch (OConcurrentModificationException cme) {
-			throw new StaleObjectStateException( key.getTable(), (Serializable) dbKeyValue );
+			throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate(key) );
 		}
 	}
 
@@ -242,15 +244,12 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		log.debugf( "removeTuple:EntityKey: %s ; tupleContext %s ; current thread: %s",
 				key, tupleContext, Thread.currentThread().getName() );
 		Connection connection = provider.getConnection();
-		StringBuilder queryBuffer = new StringBuilder();
-		String dbKeyName = EntityKeyUtil.findPrimaryKeyName( key );
-		Object dbKeyValue = EntityKeyUtil.findPrimaryKeyValue( key );
+		StringBuilder queryBuffer = new StringBuilder(100);
 		try {
-			queryBuffer.append( "DELETE VERTEX " ).append( key.getTable() ).append( " where " ).append( dbKeyName ).append( " = " );
-			EntityKeyUtil.setFieldValue( queryBuffer, dbKeyValue );
-			log.debugf( "removeTuple:Key: %s (%s). query: %s ", dbKeyName, dbKeyValue, queryBuffer );
+			queryBuffer.append( "DELETE VERTEX " ).append( key.getTable() ).append( " where " ).append( EntityKeyUtil.generatePrimaryKeyPredicate(key) );
+			log.debugf( "removeTuple:Key: %s. query: %s ", key, queryBuffer );
 			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
-			log.debugf( "removeTuple:Key: %s (%s). remove: %s", dbKeyName, dbKeyValue, pstmt.executeUpdate() );
+			log.debugf( "removeTuple:Key: %s. remove: %s", key, pstmt.executeUpdate() );
 		}
 		catch (SQLException e) {
 			throw log.cannotExecuteQuery( queryBuffer.toString(), e );
@@ -480,16 +479,9 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			for ( Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet() ) {
 				String key = entry.getKey();
 				TypedGridValue value = entry.getValue();
-				log.debugf( "key: %s ; type: %s ; value: %s ", key, value.getType().getName(), value.getValue() );
+				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s ", key, value.getType().getName(), value.getValue() );
 				try {
-					// @TODO move to Map
-					// TODO move to Map
-					if ( value.getType().getName().equals( "string" ) ) {
-						pstmt.setString( 1, (String) value.getValue() );
-					}
-					else if ( value.getType().getName().equals( "long" ) ) {
-						pstmt.setLong( 1, (Long) value.getValue() );
-					}
+					VALUE_SETTER_MAP.get(value.getType().getName()).setValue(pstmt, paramIndex, value);
 				}
 				catch (SQLException sqle) {
 					throw log.cannotSetValueForParameter( paramIndex, sqle );
@@ -627,5 +619,36 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		}
 		return gridType;
 	}
+        
+        private static interface ValueSetter<T> {
+            void setValue(PreparedStatement preparedStatement,int index, T value ) throws SQLException;
+        }
+        
+        private static class StringValueSetter implements ValueSetter<String> {
+
+        @Override
+        public void setValue(PreparedStatement preparedStatement,int index, String value) throws SQLException {
+            preparedStatement.setString(index, value);
+        }
+            
+        }
+        
+        private static class LongValueSetter implements ValueSetter<Long> {
+
+        @Override
+        public void setValue(PreparedStatement preparedStatement,int index, Long value) throws SQLException {
+            preparedStatement.setLong(index, value);
+        }
+            
+        }
+        
+        private static class IntegerValueSetter implements ValueSetter<Integer> {
+
+        @Override
+        public void setValue(PreparedStatement preparedStatement,int index, Integer value) throws SQLException {
+            preparedStatement.setInt(index, value);
+        }
+            
+        }
 
 }
