@@ -80,12 +80,37 @@ import com.orientechnologies.orient.core.exception.OConcurrentModificationExcept
 import com.orientechnologies.orient.core.id.ORecordId;
 import java.util.Arrays;
 import java.util.HashSet;
+import org.hibernate.datastore.ogm.orientdb.query.impl.BigDecimalParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.BooleanParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.ByteParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.CharacterParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.DoubleParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.FloatParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.IntegerParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.LongParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.ParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.ShortParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.StringParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.utils.InsertQueryGenerator;
 import org.hibernate.datastore.ogm.orientdb.utils.QueryUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.UpdateQueryGenerator;
 import org.hibernate.datastore.ogm.orientdb.utils.AbstractQueryGenerator.GenerationResult;
 import org.hibernate.datastore.ogm.orientdb.utils.QueryTypeDefiner;
 import org.hibernate.datastore.ogm.orientdb.utils.QueryTypeDefiner.QueryType;
+import org.hibernate.ogm.type.impl.BigDecimalType;
+import org.hibernate.ogm.type.impl.BooleanType;
+import org.hibernate.ogm.type.impl.ByteType;
+import org.hibernate.ogm.type.impl.CharacterType;
+import org.hibernate.ogm.type.impl.DoubleType;
+import org.hibernate.ogm.type.impl.EnumType;
+import org.hibernate.ogm.type.impl.FloatType;
+import org.hibernate.ogm.type.impl.IntegerType;
+import org.hibernate.ogm.type.impl.LongType;
+import org.hibernate.ogm.type.impl.NumericBooleanType;
+import org.hibernate.ogm.type.impl.ShortType;
+import org.hibernate.ogm.type.impl.StringType;
+import org.hibernate.ogm.type.impl.TrueFalseType;
+import org.hibernate.ogm.type.impl.YesNoType;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
@@ -99,45 +124,26 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	private static final InsertQueryGenerator INSERT_QUERY_GENERATOR = new InsertQueryGenerator();
 	private static final UpdateQueryGenerator UPDATE_QUERY_GENERATOR = new UpdateQueryGenerator();
 	@SuppressWarnings("rawtypes")
-	private static final Map<String, ValueSetter> VALUE_SETTER_MAP;
+	private static final Map<GridType, ParamValueSetter> SIMPLE_VALUE_SETTER_MAP;
 
 	static {
-		Map<String, ValueSetter> map = new HashMap<>();
-		map.put( "string", new StringValueSetter() );
-		map.put( "long", new LongValueSetter() );
-		map.put( "integer", new IntegerValueSetter() );
-		VALUE_SETTER_MAP = map;
+		Map<GridType, ParamValueSetter> map = new HashMap<>();
+		//string types
+                map.put( StringType.INSTANCE, new StringParamValueSetter() );
+                map.put( CharacterType.INSTANCE, new CharacterParamValueSetter() );
+                //numeric types
+                map.put( ByteType.INSTANCE, new ByteParamValueSetter() );
+                map.put( ShortType.INSTANCE, new ShortParamValueSetter() );
+		map.put( IntegerType.INSTANCE, new IntegerParamValueSetter() );
+                map.put( LongType.INSTANCE, new LongParamValueSetter() );
+		
+                map.put( DoubleType.INSTANCE, new DoubleParamValueSetter() );
+                map.put( FloatType.INSTANCE, new FloatParamValueSetter() );
+                map.put( BigDecimalType.INSTANCE, new BigDecimalParamValueSetter() );
+                //boolean types
+                map.put( BooleanType.INSTANCE, new BooleanParamValueSetter() );
+		SIMPLE_VALUE_SETTER_MAP = map;
 	}
-
-	private interface ValueSetter<T> {
-
-		void setValue(PreparedStatement preparedStatement, int index, T value) throws SQLException;
-	}
-
-	private static class StringValueSetter implements ValueSetter<String> {
-
-		@Override
-		public void setValue(PreparedStatement preparedStatement, int index, String value) throws SQLException {
-			preparedStatement.setString( index, value );
-		}
-	}
-
-	private static class LongValueSetter implements ValueSetter<Long> {
-
-		@Override
-		public void setValue(PreparedStatement preparedStatement, int index, Long value) throws SQLException {
-			preparedStatement.setLong( index, value );
-		}
-	}
-
-	private static class IntegerValueSetter implements ValueSetter<Integer> {
-
-		@Override
-		public void setValue(PreparedStatement preparedStatement, int index, Integer value) throws SQLException {
-			preparedStatement.setInt( index, value );
-		}
-	}
-
 	private OrientDBDatastoreProvider provider;
 	private ServiceRegistryImplementor serviceRegistry;
 	private Map<AssociationKeyMetadata, OrientDBAssociationQueries> associationQueries;
@@ -509,9 +515,25 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				String key = entry.getKey();
 				TypedGridValue value = entry.getValue();
 				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s ",
-						key, value.getType().getName(), value.getValue() );
+						key, value.getType(), value.getValue() );
 				try {
-					VALUE_SETTER_MAP.get( value.getType().getName() ).setValue( pstmt, paramIndex, value.getValue() );
+                                    if (SIMPLE_VALUE_SETTER_MAP.containsKey( value.getType() )) {
+                                        SIMPLE_VALUE_SETTER_MAP.get( value.getType() ).setValue( pstmt, paramIndex, value.getValue() );
+                                    } else if (value.getType().getClass().equals(EnumType.class)) {    
+                                        EnumType enumType = (EnumType) value.getType();
+                                        ParamValueSetter setter = enumType.isOrdinal() ? 
+                                                SIMPLE_VALUE_SETTER_MAP.get(IntegerType.INSTANCE) :SIMPLE_VALUE_SETTER_MAP.get(StringType.INSTANCE);
+                                        setter.setValue( pstmt, paramIndex, value.getValue() );
+                                    } else if (value.getType().getClass().equals(NumericBooleanType.class)) {                                            
+                                        ParamValueSetter setter = SIMPLE_VALUE_SETTER_MAP.get(ShortType.INSTANCE);
+                                        setter.setValue( pstmt, paramIndex, value.getValue() );
+                                    } else if (value.getType().getClass().equals(YesNoType.class) || value.getType().getClass().equals(TrueFalseType.class)) {                                            
+                                        ParamValueSetter setter = SIMPLE_VALUE_SETTER_MAP.get(StringType.INSTANCE);
+                                        setter.setValue( pstmt, paramIndex, value.getValue() );
+                                    } else {
+                                        throw new UnsupportedOperationException("Type "+value.getType()+" is not supported!");
+                                    }
+					
 				}
 				catch (SQLException sqle) {
 					throw log.cannotSetValueForParameter( paramIndex, sqle );
