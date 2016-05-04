@@ -25,7 +25,6 @@ import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
-import org.hibernate.ogm.model.impl.DefaultEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
@@ -62,7 +61,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 	 */
 
 	public Map<String, Object> findEntity(Connection connection, EntityKey entityKey) {
-		Map<String, Object> dbValues = new LinkedHashMap<>();		
+		Map<String, Object> dbValues = new LinkedHashMap<>();
 		StringBuilder query = new StringBuilder( "select from " );
 		try {
 			Statement stmt = connection.createStatement();
@@ -74,8 +73,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 			else {
 				// search by business key
 				log.debugf( "column names: %s", Arrays.asList( entityKey.getColumnNames() ) );
-				query.append( entityKey.getTable() ).append( " WHERE " ).append(EntityKeyUtil.generatePrimaryKeyPredicate(entityKey));
-				
+				query.append( entityKey.getTable() ).append( " WHERE " ).append( EntityKeyUtil.generatePrimaryKeyPredicate( entityKey ) );
 
 			}
 			log.debugf( "find entiry query: %s", query.toString() );
@@ -98,7 +96,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 					if ( dbValue instanceof Date ) {
 						String format = rs.getMetaData().getColumnTypeName( dbFieldNo ).equals( "DATETIME" )
 								? OrientDBConstant.DATETIME_FORMAT
-										: OrientDBConstant.DATE_FORMAT;
+								: OrientDBConstant.DATE_FORMAT;
 						dbValues.put( dbColumnName, new SimpleDateFormat( format ).format( dbValue ) );
 					}
 					else if ( dbValue instanceof ODocument ) {
@@ -140,10 +138,6 @@ public class OrientDBEntityQueries extends QueriesBase {
 			}
 		}
 		return false;
-	}
-
-	private EntityKey createEntityKeyByRid(ORecordId rid) {
-		return new EntityKey( new DefaultEntityKeyMetadata( "", new String[]{ OrientDBConstant.SYSTEM_RID } ), new Object[]{ rid } );
 	}
 
 	public List<Map<String, Object>> findAssociation(Connection connection, AssociationKey associationKey,
@@ -213,23 +207,6 @@ public class OrientDBEntityQueries extends QueriesBase {
 		}
 
 		return result;
-	}
-
-	private String findColumnByName(String name) {
-		String index = "-1";
-		for ( int i = 0; i < entityKeyMetadata.getColumnNames().length; i++ ) {
-			String columnName = entityKeyMetadata.getColumnNames()[i];
-			if ( columnName.equals( name ) ) {
-				index = String.valueOf( i );
-				break;
-			}
-
-		}
-		return index;
-	}
-
-	private String findColumnByNum(int num) {
-		return !( num > entityKeyMetadata.getColumnNames().length - 1 ) ? entityKeyMetadata.getColumnNames()[num] : null;
 	}
 
 }

@@ -102,7 +102,7 @@ public class UpdateQueryGenerator extends AbstractQueryGenerator {
 		updateQuery.setCharAt( updateQuery.lastIndexOf( "," ), ' ' );
 		updateQuery.append( " where " );
 		// @TODO support multi column primary keys
-		updateQuery.append(EntityKeyUtil.generatePrimaryKeyPredicate(primaryKey));
+		updateQuery.append( EntityKeyUtil.generatePrimaryKeyPredicate( primaryKey ) );
 		// and version protection
 		if ( currentVersion != null ) {
 			log.debugf( "version of entity : %d", currentVersion );

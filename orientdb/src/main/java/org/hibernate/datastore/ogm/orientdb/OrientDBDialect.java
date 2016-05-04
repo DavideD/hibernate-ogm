@@ -98,21 +98,50 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	private static final Association ASSOCIATION_NOT_FOUND = null;
 	private static final InsertQueryGenerator INSERT_QUERY_GENERATOR = new InsertQueryGenerator();
 	private static final UpdateQueryGenerator UPDATE_QUERY_GENERATOR = new UpdateQueryGenerator();
+	@SuppressWarnings("rawtypes")
+	private static final Map<String, ValueSetter> VALUE_SETTER_MAP;
+
+	static {
+		Map<String, ValueSetter> map = new HashMap<>();
+		map.put( "string", new StringValueSetter() );
+		map.put( "long", new LongValueSetter() );
+		map.put( "integer", new IntegerValueSetter() );
+		VALUE_SETTER_MAP = map;
+	}
+
+	private interface ValueSetter<T> {
+
+		void setValue(PreparedStatement preparedStatement, int index, T value) throws SQLException;
+	}
+
+	private static class StringValueSetter implements ValueSetter<String> {
+
+		@Override
+		public void setValue(PreparedStatement preparedStatement, int index, String value) throws SQLException {
+			preparedStatement.setString( index, value );
+		}
+	}
+
+	private static class LongValueSetter implements ValueSetter<Long> {
+
+		@Override
+		public void setValue(PreparedStatement preparedStatement, int index, Long value) throws SQLException {
+			preparedStatement.setLong( index, value );
+		}
+	}
+
+	private static class IntegerValueSetter implements ValueSetter<Integer> {
+
+		@Override
+		public void setValue(PreparedStatement preparedStatement, int index, Integer value) throws SQLException {
+			preparedStatement.setInt( index, value );
+		}
+	}
 
 	private OrientDBDatastoreProvider provider;
 	private ServiceRegistryImplementor serviceRegistry;
 	private Map<AssociationKeyMetadata, OrientDBAssociationQueries> associationQueries;
 	private Map<EntityKeyMetadata, OrientDBEntityQueries> entityQueries;
-        private static final Map<String, ValueSetter> VALUE_SETTER_MAP;
-        
-        static {
-            Map<String, ValueSetter> map = new HashMap<>();
-            map.put("sring", new StringValueSetter());
-             map.put("long", new LongValueSetter());
-              map.put("integer", new IntegerValueSetter());
-            VALUE_SETTER_MAP = map;
-        }
-        
 
 	public OrientDBDialect(OrientDBDatastoreProvider provider) {
 		this.provider = provider;
@@ -159,7 +188,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		log.debugf( "insertOrUpdateTuple: snapshot.isNew(): %b ,snapshot.isEmpty(): %b; exists in DB: %b; query type: %s ",
 				snapshot.isNew(), snapshot.isEmpty(), existsInDB, queryType );
 
-		StringBuilder queryBuffer = new StringBuilder(100);		
+		StringBuilder queryBuffer = new StringBuilder( 100 );
 		List<Object> preparedStatementParams = Collections.emptyList();
 
 		switch ( queryType ) {
@@ -178,7 +207,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				queryBuffer.append( updateResult.getExecutionQuery() );
 				break;
 			case ERROR:
-				throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate(key) );
+				throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
 		}
 
 		try {
@@ -198,7 +227,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			throw log.cannotExecuteQuery( queryBuffer.toString(), sqle );
 		}
 		catch (OConcurrentModificationException cme) {
-			throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate(key) );
+			throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
 		}
 	}
 
@@ -244,9 +273,9 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		log.debugf( "removeTuple:EntityKey: %s ; tupleContext %s ; current thread: %s",
 				key, tupleContext, Thread.currentThread().getName() );
 		Connection connection = provider.getConnection();
-		StringBuilder queryBuffer = new StringBuilder(100);
+		StringBuilder queryBuffer = new StringBuilder( 100 );
 		try {
-			queryBuffer.append( "DELETE VERTEX " ).append( key.getTable() ).append( " where " ).append( EntityKeyUtil.generatePrimaryKeyPredicate(key) );
+			queryBuffer.append( "DELETE VERTEX " ).append( key.getTable() ).append( " where " ).append( EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
 			log.debugf( "removeTuple:Key: %s. query: %s ", key, queryBuffer );
 			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
 			log.debugf( "removeTuple:Key: %s. remove: %s", key, pstmt.executeUpdate() );
@@ -479,10 +508,10 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			for ( Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet() ) {
 				String key = entry.getKey();
 				TypedGridValue value = entry.getValue();
-				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s ", 
-                                        key, value.getType().getName(), value.getValue().hashCode() );
+				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s ",
+						key, value.getType().getName(), value.getValue() );
 				try {
-					VALUE_SETTER_MAP.get(value.getType().getName()).setValue(pstmt, paramIndex, value.getValue());
+					VALUE_SETTER_MAP.get( value.getType().getName() ).setValue( pstmt, paramIndex, value.getValue() );
 				}
 				catch (SQLException sqle) {
 					throw log.cannotSetValueForParameter( paramIndex, sqle );
@@ -620,37 +649,5 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		}
 		return gridType;
 	}
-        
-        private static interface ValueSetter<T> {
-            void setValue(PreparedStatement preparedStatement,int index, T value ) throws SQLException;
-        }
-        
-        private static class StringValueSetter implements ValueSetter<String> {
-
-        @Override
-        public void setValue(PreparedStatement preparedStatement,int index, String value) throws SQLException {
-            preparedStatement.setString(index, value);
-        }
-            
-        }
-        
-        private static class LongValueSetter implements ValueSetter<Long> {
-
-        @Override
-        public void setValue(PreparedStatement preparedStatement,int index, Long value) throws SQLException {
-            preparedStatement.setLong(index, value);
-        }
-            
-        }
-        
-        private static class IntegerValueSetter implements ValueSetter<Integer> {
-
-        @Override
-        public void setValue(PreparedStatement preparedStatement,int index, Integer value) throws SQLException {
-            log.debugf("IntegerValueSetter: value: %s", value);
-            preparedStatement.setInt(index, value);
-        }
-            
-        }
 
 }
