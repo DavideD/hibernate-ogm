@@ -10,14 +10,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-public class ShortParamValueSetter implements ParamValueSetter<Short>{
+public class ShortParamValueSetter implements ParamValueSetter<Short> {
 
-    @Override
-    public void setValue(PreparedStatement preparedStatement, int index, Short value) throws SQLException {
-        preparedStatement.setShort(index, value);
-    }
-    
+	@Override
+	public void setValue(PreparedStatement preparedStatement, int index, Short value) throws SQLException {
+		preparedStatement.setShort( index, value );
+	}
+
 }

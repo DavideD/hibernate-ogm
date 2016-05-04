@@ -127,21 +127,22 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	private static final Map<GridType, ParamValueSetter> SIMPLE_VALUE_SETTER_MAP;
 
 	static {
+		@SuppressWarnings("rawtypes")
 		Map<GridType, ParamValueSetter> map = new HashMap<>();
-		//string types
-                map.put( StringType.INSTANCE, new StringParamValueSetter() );
-                map.put( CharacterType.INSTANCE, new CharacterParamValueSetter() );
-                //numeric types
-                map.put( ByteType.INSTANCE, new ByteParamValueSetter() );
-                map.put( ShortType.INSTANCE, new ShortParamValueSetter() );
+		// string types
+		map.put( StringType.INSTANCE, new StringParamValueSetter() );
+		map.put( CharacterType.INSTANCE, new CharacterParamValueSetter() );
+		// numeric types
+		map.put( ByteType.INSTANCE, new ByteParamValueSetter() );
+		map.put( ShortType.INSTANCE, new ShortParamValueSetter() );
 		map.put( IntegerType.INSTANCE, new IntegerParamValueSetter() );
-                map.put( LongType.INSTANCE, new LongParamValueSetter() );
-		
-                map.put( DoubleType.INSTANCE, new DoubleParamValueSetter() );
-                map.put( FloatType.INSTANCE, new FloatParamValueSetter() );
-                map.put( BigDecimalType.INSTANCE, new BigDecimalParamValueSetter() );
-                //boolean types
-                map.put( BooleanType.INSTANCE, new BooleanParamValueSetter() );
+		map.put( LongType.INSTANCE, new LongParamValueSetter() );
+
+		map.put( DoubleType.INSTANCE, new DoubleParamValueSetter() );
+		map.put( FloatType.INSTANCE, new FloatParamValueSetter() );
+		map.put( BigDecimalType.INSTANCE, new BigDecimalParamValueSetter() );
+		// boolean types
+		map.put( BooleanType.INSTANCE, new BooleanParamValueSetter() );
 		SIMPLE_VALUE_SETTER_MAP = map;
 	}
 	private OrientDBDatastoreProvider provider;
@@ -440,7 +441,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		log.debugf( "createRelationshipWithEntityNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
 		// @TODO equals with createRelationshipWithEmbeddedNode?
-		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
+		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String> emptySet() );
 		log.debugf( "createRelationshipWithEntityNode: query: %s", result.getExecutionQuery() );
 		try {
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
@@ -456,7 +457,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
 		log.debugf( "createRelationshipWithEmbeddedNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
-		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
+		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String> emptySet() );
 		log.debugf( "createRelationshipWithEmbeddedNode: query: %s", result.getExecutionQuery() );
 		try {
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
@@ -503,10 +504,11 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		return true;
 	}
 
+	@SuppressWarnings(value = { "unchecked", "rawtypes" })
 	@Override
 	public ClosableIterator<Tuple> executeBackendQuery(BackendQuery<String> backendQuery, QueryParameters queryParameters) {
 
-		Map<String, Object> parameters = getNamedParameterValuesConvertedByGridType( queryParameters );
+		// Map<String, Object> parameters = getNamedParameterValuesConvertedByGridType( queryParameters );
 		String nativeQuery = buildNativeQuery( backendQuery, queryParameters );
 		try {
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( nativeQuery );
@@ -517,23 +519,29 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s ",
 						key, value.getType(), value.getValue() );
 				try {
-                                    if (SIMPLE_VALUE_SETTER_MAP.containsKey( value.getType() )) {
-                                        SIMPLE_VALUE_SETTER_MAP.get( value.getType() ).setValue( pstmt, paramIndex, value.getValue() );
-                                    } else if (value.getType().getClass().equals(EnumType.class)) {    
-                                        EnumType enumType = (EnumType) value.getType();
-                                        ParamValueSetter setter = enumType.isOrdinal() ? 
-                                                SIMPLE_VALUE_SETTER_MAP.get(IntegerType.INSTANCE) :SIMPLE_VALUE_SETTER_MAP.get(StringType.INSTANCE);
-                                        setter.setValue( pstmt, paramIndex, value.getValue() );
-                                    } else if (value.getType().getClass().equals(NumericBooleanType.class)) {                                            
-                                        ParamValueSetter setter = SIMPLE_VALUE_SETTER_MAP.get(ShortType.INSTANCE);
-                                        setter.setValue( pstmt, paramIndex, value.getValue() );
-                                    } else if (value.getType().getClass().equals(YesNoType.class) || value.getType().getClass().equals(TrueFalseType.class)) {                                            
-                                        ParamValueSetter setter = SIMPLE_VALUE_SETTER_MAP.get(StringType.INSTANCE);
-                                        setter.setValue( pstmt, paramIndex, value.getValue() );
-                                    } else {
-                                        throw new UnsupportedOperationException("Type "+value.getType()+" is not supported!");
-                                    }
-					
+					if ( SIMPLE_VALUE_SETTER_MAP.containsKey( value.getType() ) ) {
+						SIMPLE_VALUE_SETTER_MAP.get( value.getType() ).setValue( pstmt, paramIndex, value.getValue() );
+					}
+					else if ( value.getType().getClass().equals( EnumType.class ) ) {
+						EnumType enumType = (EnumType) value.getType();
+						ParamValueSetter setter = enumType.isOrdinal()
+								? SIMPLE_VALUE_SETTER_MAP.get( IntegerType.INSTANCE )
+								: SIMPLE_VALUE_SETTER_MAP.get( StringType.INSTANCE );
+						setter.setValue( pstmt, paramIndex, value.getValue() );
+					}
+					else if ( value.getType().getClass().equals( NumericBooleanType.class ) ) {
+						ParamValueSetter<Short> setter = SIMPLE_VALUE_SETTER_MAP.get( ShortType.INSTANCE );
+						setter.setValue( pstmt, paramIndex, (Short) value.getValue() );
+					}
+					else if ( value.getType().getClass().equals( YesNoType.class ) || value.getType().getClass().equals( TrueFalseType.class ) ) {
+						ParamValueSetter<String> setter = SIMPLE_VALUE_SETTER_MAP.get( StringType.INSTANCE );
+						setter.setValue( pstmt, paramIndex, (String) value.getValue() );
+					}
+					else {
+						// @TODO: support dates!
+						throw new UnsupportedOperationException( "Type " + value.getType() + " is not supported!" );
+					}
+
 				}
 				catch (SQLException sqle) {
 					throw log.cannotSetValueForParameter( paramIndex, sqle );

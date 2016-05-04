@@ -10,14 +10,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-public class BooleanParamValueSetter implements ParamValueSetter<Boolean>{
+public class BooleanParamValueSetter implements ParamValueSetter<Boolean> {
 
-    @Override
-    public void setValue(PreparedStatement preparedStatement, int index, Boolean value) throws SQLException {
-        preparedStatement.setBoolean(index, value);
-    }
-    
+	@Override
+	public void setValue(PreparedStatement preparedStatement, int index, Boolean value) throws SQLException {
+		preparedStatement.setBoolean( index, value );
+	}
+
 }

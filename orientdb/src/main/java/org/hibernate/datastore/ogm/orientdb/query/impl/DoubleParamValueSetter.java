@@ -10,14 +10,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-public class DoubleParamValueSetter implements ParamValueSetter<Double>{
+public class DoubleParamValueSetter implements ParamValueSetter<Double> {
 
-    @Override
-    public void setValue(PreparedStatement preparedStatement, int index, Double value) throws SQLException {
-        preparedStatement.setDouble(index, value );
-    }
-    
+	@Override
+	public void setValue(PreparedStatement preparedStatement, int index, Double value) throws SQLException {
+		preparedStatement.setDouble( index, value );
+	}
+
 }

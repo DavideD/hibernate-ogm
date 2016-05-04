@@ -10,11 +10,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
 public interface ParamValueSetter<T> {
-    
-    void setValue(PreparedStatement preparedStatement, int index, T value) throws SQLException;
-    
+
+	void setValue(PreparedStatement preparedStatement, int index, T value) throws SQLException;
+
 }

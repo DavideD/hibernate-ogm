@@ -10,14 +10,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-public class CharacterParamValueSetter implements ParamValueSetter<Character>{
+public class CharacterParamValueSetter implements ParamValueSetter<Character> {
 
-    @Override
-    public void setValue(PreparedStatement preparedStatement, int index, Character value) throws SQLException {
-        preparedStatement.setString(index, value.toString());
-    }
-    
+	@Override
+	public void setValue(PreparedStatement preparedStatement, int index, Character value) throws SQLException {
+		preparedStatement.setString( index, value.toString() );
+	}
+
 }

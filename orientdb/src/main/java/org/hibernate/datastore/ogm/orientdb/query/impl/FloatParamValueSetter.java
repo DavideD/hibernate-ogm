@@ -10,14 +10,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-public class FloatParamValueSetter implements ParamValueSetter<Float>{
+public class FloatParamValueSetter implements ParamValueSetter<Float> {
 
-    @Override
-    public void setValue(PreparedStatement preparedStatement, int index, Float value) throws SQLException {
-        preparedStatement.setFloat(index, value);
-    }
-    
+	@Override
+	public void setValue(PreparedStatement preparedStatement, int index, Float value) throws SQLException {
+		preparedStatement.setFloat( index, value );
+	}
+
 }

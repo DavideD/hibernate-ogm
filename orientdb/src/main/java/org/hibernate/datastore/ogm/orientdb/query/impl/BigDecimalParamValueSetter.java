@@ -11,14 +11,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- *
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
  */
-public class BigDecimalParamValueSetter implements ParamValueSetter<BigDecimal>{
+public class BigDecimalParamValueSetter implements ParamValueSetter<BigDecimal> {
 
-    @Override
-    public void setValue(PreparedStatement preparedStatement, int index, BigDecimal value) throws SQLException {
-        preparedStatement.setBigDecimal(index, value);
-    }
-    
+	@Override
+	public void setValue(PreparedStatement preparedStatement, int index, BigDecimal value) throws SQLException {
+		preparedStatement.setBigDecimal( index, value );
+	}
+
 }
