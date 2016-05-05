@@ -69,7 +69,6 @@ public class Iso8601DateTypeDescriptor extends DateTypeDescriptor {
 			public String toString(Date value) {
 				Calendar calendar = Calendar.getInstance( TimeZone.getTimeZone( "UTC" ) );
 				calendar.setTime( value );
-				cleartMilliseconds( calendar );
 				return DatatypeConverter.printDate( calendar );
 			}
 		},
@@ -85,7 +84,6 @@ public class Iso8601DateTypeDescriptor extends DateTypeDescriptor {
 			public String toString(Date value) {
 				Calendar calendar = Calendar.getInstance( TimeZone.getTimeZone( "UTC" ) );
 				calendar.setTime( value );
-				cleartMilliseconds( calendar );
 				return DatatypeConverter.printTime( calendar );
 			}
 		},
@@ -101,17 +99,9 @@ public class Iso8601DateTypeDescriptor extends DateTypeDescriptor {
 			public String toString(Date value) {
 				Calendar calendar = Calendar.getInstance( TimeZone.getTimeZone( "UTC" ) );
 				calendar.setTime( value );
-				cleartMilliseconds( calendar );
 				return DatatypeConverter.printDateTime( calendar );
 			}
 		};
-
-		protected void cleartMilliseconds(Calendar calendar) {
-			if ( calendar.isSet( Calendar.MILLISECOND ) ) {
-				calendar.clear( Calendar.MILLISECOND );
-			}
-
-		}
 
 		public abstract Date fromString(String string);
 
