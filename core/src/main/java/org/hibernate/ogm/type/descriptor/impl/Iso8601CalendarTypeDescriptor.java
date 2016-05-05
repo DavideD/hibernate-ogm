@@ -77,7 +77,6 @@ public class Iso8601CalendarTypeDescriptor extends CalendarDateTypeDescriptor {
 
 			@Override
 			public String toString(Calendar value) {
-				clearCalendar( value );
 				return DatatypeConverter.printDate( value );
 			}
 		},
@@ -91,7 +90,6 @@ public class Iso8601CalendarTypeDescriptor extends CalendarDateTypeDescriptor {
 
 			@Override
 			public String toString(Calendar value) {
-				clearCalendar( value );
 				return DatatypeConverter.printTime( value );
 			}
 		},
@@ -105,7 +103,6 @@ public class Iso8601CalendarTypeDescriptor extends CalendarDateTypeDescriptor {
 
 			@Override
 			public String toString(Calendar value) {
-				clearCalendar( value );
 				return DatatypeConverter.printDateTime( value );
 			}
 		};
@@ -114,10 +111,5 @@ public class Iso8601CalendarTypeDescriptor extends CalendarDateTypeDescriptor {
 
 		public abstract String toString(Calendar value);
 
-		protected void clearCalendar(Calendar value) {
-			if ( value.isSet( Calendar.MILLISECOND ) ) {
-				value.clear( Calendar.MILLISECOND );
-			}
-		}
 	}
 }
