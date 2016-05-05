@@ -39,8 +39,7 @@ public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 	@Override
 	public Tuple get(RowKey rowKey) {
 		log.debug( "get: rowKey :" + rowKey );
-		Tuple tuple = tuples.get( rowKey );
-		return tuple;
+		return tuples.get( rowKey );
 	}
 
 	@Override

@@ -63,16 +63,11 @@ import org.hibernate.ogm.model.spi.AssociationOperation;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.persister.impl.OgmCollectionPersister;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
-import org.hibernate.ogm.type.impl.Iso8601StringCalendarType;
-import org.hibernate.ogm.type.impl.Iso8601StringDateType;
-import org.hibernate.ogm.type.impl.SerializableAsStringType;
 import org.hibernate.ogm.type.spi.GridType;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.service.spi.ServiceRegistryAwareService;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
-import org.hibernate.type.SerializableToBlobType;
-import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.type.Type;
 
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
@@ -259,7 +254,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			tuple.put( dbKeyName, dbKeyValue );
 		}
 		InsertQueryGenerator.GenerationResult result = INSERT_QUERY_GENERATOR.generate( entityKeyMetadata.getTable(), tuple, true,
-				new HashSet<String>( Arrays.asList( entityKeyMetadata.getColumnNames() ) ) );
+				new HashSet<>( Arrays.asList( entityKeyMetadata.getColumnNames() ) ) );
 		query = result.getExecutionQuery();
 
 		log.debugf( "insertTuple: insertQuery: %s ", result.getExecutionQuery() );
@@ -303,10 +298,12 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			return ASSOCIATION_NOT_FOUND;
 		}
 		Map<RowKey, Tuple> tuples = createAssociationMap( associationKey, associationContext );
+		log.debugf( "getAssociation:tuples map: %s ; ", tuples );
 		return new Association( new OrientDBAssociationSnapshot( tuples ) );
 	}
 
 	private Map<RowKey, Tuple> createAssociationMap(AssociationKey associationKey, AssociationContext associationContext) {
+		log.debugf( "createAssociationMap:AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
 		Connection connection = provider.getConnection();
 		List<Map<String, Object>> relationships = entityQueries.get( associationKey.getEntityKey().getMetadata() )
 				.findAssociation( connection, associationKey, associationContext );
@@ -316,18 +313,17 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		for ( Map<String, Object> relationship : relationships ) {
 			OrientDBTupleAssociationSnapshot snapshot = new OrientDBTupleAssociationSnapshot( relationship, associationKey,
 					associationContext );
-			RowKey rowKey = convert( associationKey, snapshot );
-			tuples.put( rowKey, new Tuple( snapshot ) );
+			tuples.put( convertToRowKey( associationKey, snapshot ), new Tuple( snapshot ) );
 		}
 		return tuples;
 	}
 
-	private RowKey convert(AssociationKey associationKey, OrientDBTupleAssociationSnapshot snapshot) {
+	private RowKey convertToRowKey(AssociationKey associationKey, OrientDBTupleAssociationSnapshot snapshot) {
 		String[] columnNames = associationKey.getMetadata().getRowKeyColumnNames();
 		Object[] values = new Object[columnNames.length];
 		for ( int i = 0; i < columnNames.length; i++ ) {
-			values[i] = snapshot.get( columnNames[i] );
-			log.debugf( "convert: columnName: %s ; value: %s ", columnNames[i], values[i] );
+			String columnName = columnNames[i];
+			values[i] = snapshot.get( columnName );
 		}
 		return new RowKey( columnNames, values );
 	}
@@ -441,7 +437,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		log.debugf( "createRelationshipWithEntityNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
 		// @TODO equals with createRelationshipWithEmbeddedNode?
-		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String> emptySet() );
+		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
 		log.debugf( "createRelationshipWithEntityNode: query: %s", result.getExecutionQuery() );
 		try {
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
@@ -457,7 +453,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
 		log.debugf( "createRelationshipWithEmbeddedNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
-		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String> emptySet() );
+		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
 		log.debugf( "createRelationshipWithEmbeddedNode: query: %s", result.getExecutionQuery() );
 		try {
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
@@ -652,27 +648,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		}
 		else if ( type.getReturnedClass().equals( ORidBag.class ) ) {
 			gridType = ORidBagGridType.INSTANCE;
-		}
-		// persist calendars as ISO8601 strings, including TZ info
-		else if ( type == StandardBasicTypes.CALENDAR ) {
-			return Iso8601StringCalendarType.DATE_TIME;
-		}
-		else if ( type == StandardBasicTypes.CALENDAR_DATE ) {
-			return Iso8601StringCalendarType.DATE;
-		}
-		// persist date as ISO8601 strings, in UTC, without TZ info
-		else if ( type == StandardBasicTypes.DATE ) {
-			return Iso8601StringDateType.DATE;
-		}
-		else if ( type == StandardBasicTypes.TIME ) {
-			return Iso8601StringDateType.TIME;
-		}
-		else if ( type == StandardBasicTypes.TIMESTAMP ) {
-			return Iso8601StringDateType.DATE_TIME;
-		}
-		else if ( type instanceof SerializableToBlobType ) {
-			SerializableToBlobType<?> exposedType = (SerializableToBlobType<?>) type;
-			return new SerializableAsStringType<>( exposedType.getJavaTypeDescriptor() );
 		}
 		else {
 			gridType = super.overrideType( type );

@@ -12,8 +12,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -86,20 +84,11 @@ public class OrientDBEntityQueries extends QueriesBase {
 				for ( int i = 0; i < rs.getMetaData().getColumnCount(); i++ ) {
 					int dbFieldNo = i + 1;
 					String dbColumnName = metadata.getColumnName( dbFieldNo );
-					/*
-					 * if ( isLinkedProperty( dbColumnName ) ) { continue; }
-					 */
 					Object dbValue = rs.getObject( dbColumnName );
 					log.debugf( "%d dbColumnName: %s dbValue class:", i, dbColumnName, ( dbValue != null ? dbValue.getClass() : null ) );
 					log.debugf( "%d dbColumnName: %s ; sql type: %s", i, dbColumnName, rs.getMetaData().getColumnTypeName( dbFieldNo ) );
 					dbValues.put( dbColumnName, dbValue );
-					if ( dbValue instanceof Date ) {
-						String format = rs.getMetaData().getColumnTypeName( dbFieldNo ).equals( "DATETIME" )
-								? OrientDBConstant.DATETIME_FORMAT
-								: OrientDBConstant.DATE_FORMAT;
-						dbValues.put( dbColumnName, new SimpleDateFormat( format ).format( dbValue ) );
-					}
-					else if ( dbValue instanceof ODocument ) {
+					if ( dbValue instanceof ODocument ) {
 						dbValues.remove( dbColumnName );
 						dbValues.putAll( ODocumentUtil.extractNamesTree( dbColumnName, (ODocument) dbValue ) );
 					}
@@ -174,7 +163,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 				log.debugf( " entiry values from db: %s", dbValues );
 				association.add( dbValues );
 			}
-			log.debugf( "findAssociation: rows %d:" + association.size() );
+			log.debugf( "findAssociation: rows %s:" + association.size() );
 		}
 		catch (SQLException sqle) {
 			throw log.cannotExecuteQuery( query.toString(), sqle );

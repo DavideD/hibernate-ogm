@@ -21,9 +21,6 @@ import java.util.Set;
 
 public class OrientDBConstant {
 
-	public static final String DATE_FORMAT = "yyyy-MM-dd'Z'";
-	// public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-	public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 	public static final Set<String> LINK_FIELDS;
 	public static final Set<String> SYSTEM_FIELDS;
 
@@ -43,7 +40,7 @@ public class OrientDBConstant {
 		set.add( SYSTEM_VERSION );
 		set.add( SYSTEM_CLASS );
 		SYSTEM_FIELDS = Collections.unmodifiableSet( set );
-		LINK_FIELDS = Collections.unmodifiableSet( new HashSet<String>( Arrays.asList( new String[]{ "in_", "out_" } ) ) );
+		LINK_FIELDS = Collections.unmodifiableSet( new HashSet<>( Arrays.asList( new String[]{ "in_", "out_" } ) ) );
 		Map<String, String> map = new HashMap<>();
 		map.put( "version", "@version" );
 		MAPPING_FIELDS = Collections.unmodifiableMap( map );
@@ -54,7 +51,7 @@ public class OrientDBConstant {
 		BASE64_TYPES = Collections.unmodifiableSet( set1 );
 
 		SYSTEM_CLASS_SET = Collections
-				.unmodifiableSet( new HashSet<String>( Arrays.asList( "V", "OSequence", "ORestricted", "OTriggered", "OIdentity", "ORole", "OSchedule",
+				.unmodifiableSet( new HashSet<>( Arrays.asList( "V", "OSequence", "ORestricted", "OTriggered", "OIdentity", "ORole", "OSchedule",
 						"OUser", "OFunction", "E" ) ) );
 
 	}

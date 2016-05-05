@@ -86,7 +86,7 @@ public class InsertQueryGenerator extends AbstractQueryGenerator {
 				else if ( columnValue instanceof Calendar ) {
 					calendar = (Calendar) columnValue;
 				}
-				String formattedStr = ( getFormatter().get() ).format( calendar.getTime() );
+				String formattedStr = FormatterUtil.getDateTimeFormater().get().format( calendar.getTime() );
 				result.getJson().put( columnName, formattedStr );
 			}
 			else if ( columnValue instanceof Character ) {

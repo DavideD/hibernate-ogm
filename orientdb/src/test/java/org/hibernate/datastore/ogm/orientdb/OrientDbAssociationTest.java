@@ -87,15 +87,10 @@ public class OrientDbAssociationTest {
 		try {
 			em.getTransaction().begin();
 
-			// PhoneNumber phoneNumber = new PhoneNumber(new PhoneNumber.PhoneNumberId("+7", 4957778899L), "home");
-			// em.persist(phoneNumber);
-
+			log.debug( "create entities ..." );
 			Customer customer = new Customer();
 			customer.setName( "Ivahoe" );
 			em.persist( customer );
-
-			// customer.setPhones(new LinkedList<PhoneNumber>(Arrays.asList(phoneNumber)));
-			// em.merge(customer);
 
 			BuyingOrder buyingOrder1 = new BuyingOrder();
 			buyingOrder1.setOrderKey( "2233" );
@@ -133,6 +128,8 @@ public class OrientDbAssociationTest {
 			pizza2.setName( "Cheese" );
 			em.persist( pizza2 );
 
+			log.debug( "create associations ..." );
+
 			pizza2.setProducts( new LinkedList<>( Arrays.asList( cheese, olive ) ) );
 			pizza2 = em.merge( pizza2 );
 
@@ -144,18 +141,17 @@ public class OrientDbAssociationTest {
 			olive.setPizzas( new LinkedList<>( Arrays.asList( pizza1, pizza2 ) ) );
 			olive = em.merge( olive );
 			sausage.setPizzas( new LinkedList<>( Arrays.asList( pizza1 ) ) );
+			sausage = em.merge( sausage );
 
 			buyingOrder1.setOwner( customer );
-			em.merge( buyingOrder1 );
+			buyingOrder1 = em.merge( buyingOrder1 );
 
 			buyingOrder2.setOwner( customer );
-			em.merge( buyingOrder2 );
+			buyingOrder2 = em.merge( buyingOrder2 );
 
-			List<BuyingOrder> linkedOrders = new LinkedList<>();
-			linkedOrders.addAll( Arrays.asList( buyingOrder1, buyingOrder2 ) );
+			List<BuyingOrder> linkedOrders = new LinkedList<>( Arrays.asList( buyingOrder1, buyingOrder2 ) );
 			customer.setOrders( linkedOrders );
-			em.merge( customer );
-
+			customer = em.merge( customer );
 			em.getTransaction().commit();
 		}
 		catch (Exception e) {
@@ -179,8 +175,12 @@ public class OrientDbAssociationTest {
 			buyingOrder3.setOwner( customer );
 			buyingOrder3 = em.merge( buyingOrder3 );
 
-			List<BuyingOrder> list = customer.getOrders();
-			list.add( buyingOrder3 );
+			List<BuyingOrder> orders = customer.getOrders();
+			assertEquals( 2l, orders.size() );
+
+			List<BuyingOrder> newOrders = new LinkedList<>( orders );
+			newOrders.add( buyingOrder3 );
+			customer.setOrders( newOrders );
 			customer = em.merge( customer );
 			em.getTransaction().commit();
 
@@ -190,8 +190,8 @@ public class OrientDbAssociationTest {
 
 			query = em.createNativeQuery( "select from Customer where name='Ivahoe'", Customer.class );
 			customer = (Customer) query.getResultList().get( 0 );
-			list = customer.getOrders();
-			assertEquals( 3l, list.size() );
+			orders = customer.getOrders();
+			assertEquals( 3l, orders.size() );
 			em.getTransaction().commit();
 
 		}

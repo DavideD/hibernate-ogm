@@ -17,6 +17,8 @@
 				value="filesystem" />
 			<property name="hibernate.search.default.indexBase" value="./target/lucene/indexes" />
 			<property name="hibernate.show_sql" value="true" />
+                        <property name="hibernate.ogm.orientdb.format.datetime" value="yyyy-MM-dd HH:mm:ss" />
+                        <property name="hibernate.ogm.orientdb.format.date" value="yyyy-MM-dd" />
 		</properties>
 	</persistence-unit>
 </persistence>

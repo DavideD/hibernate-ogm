@@ -72,8 +72,6 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "String value does not match", bookmark.getDescription(), loadedBookmark.getDescription() );
 	}
 
-	@SkipByGridDialect(value = {
-			GridDialectType.ORIENTDB }, comment = "OrientDB not supports JSON escaping (https://github.com/orientechnologies/orientdb/issues/5911)")
 	@Test
 	public void testCharacterSupport() throws Exception {
 		bookmark.setDelimiter( '/' );
@@ -163,7 +161,6 @@ public class BuiltInTypeTest extends OgmTestCase {
 	}
 
 	// byte arrays
-	@SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void testByteArrayAsLobSupport() throws Exception {
 		byte[] testData = new byte[200];
@@ -193,7 +190,6 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "Original and loaded data do not match!", text, loadedBookmark.getLobWithString() );
 	}
 
-	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "Byte array not supported in JSON")
 	@Test
 	public void testByteArraySupport() throws Exception {
 		byte[] testData = new byte[200];
@@ -250,7 +246,6 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "Time zones doe not match", expectedTimeZoneOffset, actualTimeZoneOffset );
 	}
 
-	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "Time is not supports in DB")
 	@Test
 	public void testDatePersistedAsTemporalTypeTimeSupport() throws Exception {
 		Date updateTime = new Date();
@@ -299,6 +294,7 @@ public class BuiltInTypeTest extends OgmTestCase {
 				loadedBookmark.getDestructionCalendar().getTime() );
 	}
 
+	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "Calendar is not supports in DB")
 	@Test
 	public void testCalendarPersistedAsTemporalTypeDateSupport() throws Exception {
 		Calendar creationCalendar = Calendar.getInstance();
@@ -324,8 +320,6 @@ public class BuiltInTypeTest extends OgmTestCase {
 	}
 
 	// Misc
-	@SkipByGridDialect(value = {
-			GridDialectType.ORIENTDB }, comment = "OrientDB not supports JSON escaping (https://github.com/orientechnologies/orientdb/issues/5911)")
 	@Test
 	public void testURLSupport() throws Exception {
 		bookmark.setUrl( new URL( "http://www.hibernate.org/" ) );

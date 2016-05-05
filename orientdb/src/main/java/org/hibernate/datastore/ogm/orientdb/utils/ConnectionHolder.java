@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
@@ -75,25 +74,11 @@ public class ConnectionHolder extends ThreadLocal<Connection> {
 			properties.setProperty( "db.usePool", "true" );
 			connection = (OrientJdbcConnection) DriverManager.getConnection( jdbcUrl, info );
 			connection.setAutoCommit( false );
-			initConnection( connection );
 		}
 		catch (SQLException sqle) {
 			throw log.cannotCreateConnection( sqle );
 		}
 		return (OrientJdbcConnection) connection;
-	}
-
-	private void initConnection(Connection connection) {
-		String[] queries = new String[]{ "ALTER DATABASE DATETIMEFORMAT \"" + OrientDBConstant.DATETIME_FORMAT + "\"",
-				"ALTER DATABASE DATEFORMAT \"" + OrientDBConstant.DATE_FORMAT + "\"" };
-		for ( String query : queries ) {
-			try {
-				connection.createStatement().execute( query );
-			}
-			catch (SQLException sqle) {
-				throw log.cannotExecuteQuery( query, sqle );
-			}
-		}
 	}
 
 }

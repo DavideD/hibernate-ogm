@@ -8,14 +8,18 @@ package org.hibernate.datastore.ogm.orientdb.impl;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import java.sql.Connection;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.Properties;
 
 import org.hibernate.datastore.ogm.orientdb.OrientDBDialect;
+import org.hibernate.datastore.ogm.orientdb.OrientDBProperties;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.datastore.ogm.orientdb.transaction.impl.OrientDbTransactionCoordinatorBuilder;
 import org.hibernate.datastore.ogm.orientdb.utils.ConnectionHolder;
+import org.hibernate.datastore.ogm.orientdb.utils.FormatterUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
 import org.hibernate.engine.jndi.spi.JndiService;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
@@ -35,7 +39,7 @@ import org.hibernate.service.spi.Stoppable;
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class OrientDBDatastoreProvider extends BaseDatastoreProvider
-		implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
+implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
 	private static Log log = LoggerFactory.getLogger();
 	private ConnectionHolder connectionHolder;
@@ -66,7 +70,26 @@ public class OrientDBDatastoreProvider extends BaseDatastoreProvider
 				createInMemoryDB();
 				connectionHolder = new ConnectionHolder( jdbcUrl, info );
 			}
+			FormatterUtil.setDateFormater( new ThreadLocal<DateFormat>() {
 
+				@Override
+				protected DateFormat initialValue() {
+					SimpleDateFormat f = new SimpleDateFormat(
+							propertyReader.property( OrientDBProperties.DATE_FORMAT, String.class ).withDefault( "yyyy-MM-dd" ).getValue() );
+					return f;
+				}
+
+			} );
+			FormatterUtil.setDateTimeFormater( new ThreadLocal<DateFormat>() {
+
+				@Override
+				protected DateFormat initialValue() {
+					SimpleDateFormat f = new SimpleDateFormat(
+							propertyReader.property( OrientDBProperties.DATETIME_FORMAT, String.class ).withDefault( "yyyy-MM-dd HH:mm:ss" ).getValue() );
+					return f;
+				}
+
+			} );
 		}
 		catch (Exception e) {
 			throw log.unableToStartDatastoreProvider( e );

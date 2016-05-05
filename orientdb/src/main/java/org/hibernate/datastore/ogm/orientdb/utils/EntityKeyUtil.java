@@ -11,18 +11,17 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
-import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.mapping.Column;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 
 import com.orientechnologies.orient.core.id.ORecordId;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 
 /**
  * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
@@ -57,7 +56,7 @@ public class EntityKeyUtil {
 			else if ( dbKeyValue instanceof Calendar ) {
 				calendar = (Calendar) dbKeyValue;
 			}
-			String formattedStr = ( new SimpleDateFormat( OrientDBConstant.DATETIME_FORMAT ) ).format( calendar.getTime() );
+			String formattedStr = ( FormatterUtil.getDateTimeFormater().get() ).format( calendar.getTime() );
 			queryBuffer.append( "'" ).append( formattedStr ).append( "'" );
 		}
 		else {

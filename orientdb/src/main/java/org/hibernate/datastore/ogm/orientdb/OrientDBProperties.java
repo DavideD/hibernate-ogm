@@ -13,6 +13,15 @@ import org.hibernate.ogm.cfg.OgmProperties;
  */
 public class OrientDBProperties implements OgmProperties {
 
+	/**
+	 * Format of datetime. Default value 'yyyy-MM-dd HH:mm:ss'
+	 */
+	public static final String DATETIME_FORMAT = "hibernate.ogm.orientdb.format.datetime";
+	/**
+	 * Format of date. Default value 'yyyy-MM-dd'
+	 */
+	public static final String DATE_FORMAT = "hibernate.ogm.orientdb.format.date";
+
 	private OrientDBProperties() {
 	}
 }

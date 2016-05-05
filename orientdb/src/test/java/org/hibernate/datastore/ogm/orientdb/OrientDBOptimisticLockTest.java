@@ -19,6 +19,7 @@ import java.util.concurrent.ForkJoinTask;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
+import javax.persistence.OptimisticLockException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 import javax.persistence.RollbackException;
@@ -30,6 +31,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -121,7 +123,7 @@ public class OrientDBOptimisticLockTest {
 			RollbackException re = (RollbackException) e.getCause();
 			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716)",
 					( re.getCause().getCause() instanceof OConcurrentModificationException ) ||
-					( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) ) );
+							( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) ) );
 		}
 		if ( t1.isDone() && t2.isDone() ) {
 			if ( isAnyThreadSuccess( t1, t2 ) ) {
@@ -178,6 +180,8 @@ public class OrientDBOptimisticLockTest {
 		long t1Result = -1;
 		long t2Result = -1;
 		boolean isOrientDBEx = false;
+		boolean isOptimisticLockEx = false;
+		boolean isNotActualVersion = false;
 		try {
 			t1Result = t1.get();
 			log.info( "t1 result:" + t1Result );
@@ -188,7 +192,15 @@ public class OrientDBOptimisticLockTest {
 			log.error( "Error in task", e );
 			RollbackException re = (RollbackException) e.getCause();
 			isOrientDBEx = ( re.getCause().getCause() instanceof OConcurrentModificationException );
-			assertTrue( "Must be right exception (OConcurrentModificationException)", ( isOrientDBEx ) );
+			isOptimisticLockEx = ( re.getCause().getCause() instanceof OptimisticLockException );
+			try {
+				isNotActualVersion = ( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) );
+				log.info( "re.getCause().getCause().getClass():" + re.getCause().getCause().getCause().getClass() );
+			}
+			catch (NullPointerException e1) {
+			}
+			assertTrue( "Must be right exception (OConcurrentModificationException or OptimisticLockException or HibernateException (id OGM001716) )",
+					( isOrientDBEx || isOptimisticLockEx || isNotActualVersion ) );
 		}
 		if ( t1.isDone() && t2.isDone() ) {
 			if ( isAnyThreadSuccess( t1, t2 ) ) {
@@ -196,12 +208,7 @@ public class OrientDBOptimisticLockTest {
 					em.clear();
 					em.getTransaction().begin();
 					writer = em.find( Writer.class, 2l );
-					log.info( "Barto.getCount(): " + writer.getCount() );
-					if ( isOrientDBEx ) {
-						// update thread commited change, delete thread get OrientDB exception
-						assertEquals( "Counter must be changed!", 2, writer.getCount() );
-					}
-
+					assertNull( "Writer must be deleted!", writer );
 					em.getTransaction().commit();
 				}
 				catch (Exception e) {

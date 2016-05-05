@@ -82,7 +82,7 @@ public class UpdateQueryGenerator extends AbstractQueryGenerator {
 				else if ( columnValue instanceof Calendar ) {
 					calendar = (Calendar) columnValue;
 				}
-				String formattedStr = ( getFormatter().get() ).format( calendar.getTime() );
+				String formattedStr = ( FormatterUtil.getDateTimeFormater().get() ).format( calendar.getTime() );
 				updateQuery.append( "\"" ).append( formattedStr ).append( "\"" );
 			}
 			else if ( columnValue instanceof String ) {
@@ -104,7 +104,7 @@ public class UpdateQueryGenerator extends AbstractQueryGenerator {
 		// @TODO support multi column primary keys
 		updateQuery.append( EntityKeyUtil.generatePrimaryKeyPredicate( primaryKey ) );
 		// and version protection
-		if ( currentVersion != null ) {
+		if ( currentVersion != null && currentVersion > 0 ) {
 			log.debugf( "version of entity : %d", currentVersion );
 			updateQuery.append( " AND " ).append( OrientDBConstant.SYSTEM_VERSION ).append( "=" ).append( currentVersion );
 		}
