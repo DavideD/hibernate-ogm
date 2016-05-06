@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OrientDBCompositeIdTest {

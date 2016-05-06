@@ -40,7 +40,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  * @see https://blogs.oracle.com/enterprisetechtips/entry/locking_and_concurrency_in_java
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -120,6 +120,9 @@ public class OrientDBOptimisticLockTest {
 		}
 		catch (ExecutionException e) {
 			log.error( "Error in task", e );
+			if ( e.getCause() instanceof AssertionError ) {
+				throw e;
+			}
 			RollbackException re = (RollbackException) e.getCause();
 			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716)",
 					( re.getCause().getCause() instanceof OConcurrentModificationException ) ||
@@ -190,6 +193,9 @@ public class OrientDBOptimisticLockTest {
 		}
 		catch (ExecutionException e) {
 			log.error( "Error in task", e );
+			if ( e.getCause() instanceof AssertionError ) {
+				throw e;
+			}
 			RollbackException re = (RollbackException) e.getCause();
 			isOrientDBEx = ( re.getCause().getCause() instanceof OConcurrentModificationException );
 			isOptimisticLockEx = ( re.getCause().getCause() instanceof OptimisticLockException );
@@ -205,10 +211,15 @@ public class OrientDBOptimisticLockTest {
 		if ( t1.isDone() && t2.isDone() ) {
 			if ( isAnyThreadSuccess( t1, t2 ) ) {
 				try {
+					log.debug( String.format( "Exception flags: OConcurrentModificationException: %s;OptimisticLockException:%s;HibernateException:%s",
+							isOrientDBEx, isOptimisticLockEx, isNotActualVersion ) );
 					em.clear();
 					em.getTransaction().begin();
 					writer = em.find( Writer.class, 2l );
-					assertNull( "Writer must be deleted!", writer );
+					if ( !isOrientDBEx ) {
+						// delete thread get exception and not delete entity
+						assertNull( "Writer must be deleted!", writer );
+					}
 					em.getTransaction().commit();
 				}
 				catch (Exception e) {

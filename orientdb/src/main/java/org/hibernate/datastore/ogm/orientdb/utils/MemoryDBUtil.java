@@ -11,7 +11,7 @@ import org.jboss.logging.Logger;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class MemoryDBUtil {
 

@@ -23,7 +23,7 @@ import com.orientechnologies.orient.core.tx.OTransaction;
 import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBJtaTransactionCoordinator extends ForwardingTransactionCoordinator {
 

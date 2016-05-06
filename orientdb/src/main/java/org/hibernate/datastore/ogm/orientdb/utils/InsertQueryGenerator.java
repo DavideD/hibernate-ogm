@@ -25,7 +25,7 @@ import org.json.simple.JSONObject;
 /**
  * Util class for generate query for insert entity
  *
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class InsertQueryGenerator extends AbstractQueryGenerator {
 

@@ -42,7 +42,7 @@ import org.junit.runners.MethodSorters;
 /**
  * Test checks CRUD for entities with associations (with links with other entities)
  *
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OrientDbAssociationTest {

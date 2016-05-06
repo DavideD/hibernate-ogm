@@ -9,7 +9,7 @@ package org.hibernate.datastore.ogm.orientdb.utils;
 import java.util.List;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public abstract class AbstractQueryGenerator {
 

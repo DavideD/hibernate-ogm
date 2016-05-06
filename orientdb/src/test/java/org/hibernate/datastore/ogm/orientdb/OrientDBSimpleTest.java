@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
 /**
  * Test checks CRUD for simple entities (without links with other entities)
  *
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OrientDBSimpleTest {

@@ -20,7 +20,7 @@ import org.hibernate.ogm.transaction.impl.ForwardingTransactionDriver;
 import org.hibernate.resource.transaction.TransactionCoordinator;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCoordinator {
 

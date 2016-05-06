@@ -25,7 +25,7 @@ import org.hibernate.ogm.model.spi.Tuple;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 public class UpdateQueryGenerator extends AbstractQueryGenerator {

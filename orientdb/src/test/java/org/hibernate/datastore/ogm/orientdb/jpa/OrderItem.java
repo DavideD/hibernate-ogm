@@ -23,7 +23,7 @@ import org.hibernate.search.annotations.Indexed;
 import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 @Entity

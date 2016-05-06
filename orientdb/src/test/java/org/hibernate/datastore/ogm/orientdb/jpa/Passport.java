@@ -11,7 +11,7 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 @Entity
 @IdClass(PassportPK.class)

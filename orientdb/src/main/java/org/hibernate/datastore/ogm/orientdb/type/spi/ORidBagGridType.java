@@ -16,7 +16,7 @@ import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 public class ORidBagGridType extends AbstractGenericBasicType<ORidBag> {

@@ -24,7 +24,7 @@ import com.orientechnologies.orient.core.id.ORecordId;
 import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 public class EntityKeyUtil {

@@ -10,7 +10,7 @@ package org.hibernate.datastore.ogm.orientdb.utils;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 public class ORidBagUtil {

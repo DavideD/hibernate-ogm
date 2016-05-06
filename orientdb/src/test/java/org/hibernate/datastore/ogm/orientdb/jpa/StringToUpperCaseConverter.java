@@ -11,7 +11,7 @@ import javax.persistence.AttributeConverter;
 /**
  * Show direct value from database
  *
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class StringToUpperCaseConverter implements AttributeConverter<String, String> {
 

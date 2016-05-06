@@ -20,7 +20,7 @@ import javax.persistence.Id;
 import org.hibernate.search.annotations.Indexed;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 @Entity
 @Indexed(index = "Car")

@@ -9,7 +9,7 @@ package org.hibernate.datastore.ogm.orientdb.jpa;
 import java.io.Serializable;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 public class PassportPK implements Serializable {

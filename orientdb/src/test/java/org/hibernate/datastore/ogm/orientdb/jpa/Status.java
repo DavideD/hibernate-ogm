@@ -7,7 +7,7 @@
 package org.hibernate.datastore.ogm.orientdb.jpa;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public enum Status {
 	USUAL, VIP;

@@ -10,7 +10,7 @@ import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 
 /**
- * @author Sergey Chernolyas <sergey.chernolyas@gmail.com>
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 @Embeddable
 public class EngineInfo {
