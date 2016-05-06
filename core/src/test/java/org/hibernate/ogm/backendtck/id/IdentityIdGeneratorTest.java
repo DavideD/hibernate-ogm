@@ -20,6 +20,7 @@ import org.junit.Test;
 /**
  * @author Nabeel Ali Memon &lt;nabeel@nabeelalimemon.com&gt;
  */
+@SkipByGridDialect(value = { GridDialectType.HASHMAP }, comment = "Id generation strategy IDENTITY is not supported by the current grid dialect")
 public class IdentityIdGeneratorTest extends JpaTestCase {
 
 	private EntityManager em;
