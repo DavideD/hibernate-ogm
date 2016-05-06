@@ -24,6 +24,7 @@ import javax.persistence.Persistence;
 import javax.persistence.Query;
 import javax.persistence.RollbackException;
 import org.apache.log4j.Logger;
+import org.hibernate.HibernateException;
 
 import org.hibernate.datastore.ogm.orientdb.jpa.Writer;
 import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
@@ -231,23 +232,41 @@ public class OrientDBOptimisticLockTest {
 	}
 
 	private static boolean isNotActualVersion(RollbackException re) {
-		boolean isNotActualVersion = false;
-		try {
-			isNotActualVersion = ( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) );
-			log.info( "re.getCause().getCause().getClass():" + re.getCause().getCause().getCause().getClass() );
-		}
-		catch (NullPointerException e1) {
-		}
+            
+                boolean isNotActualVersion = false;
+                Throwable t = searchThrowable(re, HibernateException.class);
+                log.debug( "!HibernateException", t );
+                if (t!=null) {
+                    HibernateException he = (HibernateException) t;
+                    isNotActualVersion = ( he.getMessage().contains( "OGM001716" ) );
+                }
 		return isNotActualVersion;
 	}
 
 	private static boolean isOptimisticLockException(RollbackException re) {
-		return re.getCause().getCause() instanceof OptimisticLockException;
+		//return re.getCause().getCause() instanceof OptimisticLockException;
+                Throwable t = searchThrowable(re, OptimisticLockException.class);
+                log.debug( "!OptimisticLockException", t );
+                return t!=null;
 	}
 
-	private static boolean isOConcurrentModificationException(RollbackException re) {
-		return re.getCause().getCause() instanceof OConcurrentModificationException;
+	private static boolean isOConcurrentModificationException(RollbackException re) {                
+		//return re.getCause().getCause() instanceof OConcurrentModificationException || re.getCause() instanceof OConcurrentModificationException;
+                Throwable t = searchThrowable(re, OConcurrentModificationException.class);
+                log.debug( "!OConcurrentModificationException", t );
+                return t!=null;
 	}
+        
+        private static Throwable searchThrowable(Throwable currentThrowable, Class requiredThrowableClass) {            
+            Throwable requiredThrowable = null;
+            if (currentThrowable.getClass().equals(requiredThrowableClass)) {
+                requiredThrowable = currentThrowable;
+            } else if (currentThrowable.getCause()!=null) {
+                requiredThrowable = searchThrowable(currentThrowable.getCause(), requiredThrowableClass);
+            }
+            
+            return requiredThrowable;
+        }
 
 	private boolean isAnyThreadSuccess(ForkJoinTask<Long> t1, ForkJoinTask<Long> t2) {
 		return t1.isCompletedNormally() || t2.isCompletedNormally();
