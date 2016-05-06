@@ -125,7 +125,7 @@ public class OrientDBOptimisticLockTest {
 			}
 			RollbackException re = (RollbackException) e.getCause();
 			boolean isNotActualVersion = isNotActualVersion( re );
-			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716)",
+			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716). Now: class:"+re.getCause().getClass().getName()+". Message:"+re.getCause().getMessage(),
 					isOConcurrentModificationException( re ) ||
 							( isNotActualVersion ) );
 		}
@@ -201,7 +201,7 @@ public class OrientDBOptimisticLockTest {
 			isOrientDBEx = isOConcurrentModificationException( re );
 			isOptimisticLockEx = isOptimisticLockException( re );
 			isNotActualVersion = isNotActualVersion( re );
-			assertTrue( "Must be right exception (OConcurrentModificationException or OptimisticLockException or HibernateException (id OGM001716) )",
+			assertTrue( "Must be right exception (OConcurrentModificationException or OptimisticLockException or HibernateException (id OGM001716) ).Now: class:"+re.getCause().getClass().getName()+". Message:"+re.getCause().getMessage(),
 					( isOrientDBEx || isOptimisticLockEx || isNotActualVersion ) );
 		}
 		if ( t1.isDone() && t2.isDone() ) {
