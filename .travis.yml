@@ -1,15 +1,10 @@
 sudo: false
 language: java
-cache:
-  directories:
-  - $HOME/.m2
-install: mvn clean install -pl orientdb -am  
+install: /bin/true
+script: mvn clean install -pl orientdb -am  
 branches:
   only:
   - all_last_changes5
 jdk:
   - oraclejdk8
-after_failure:
-  - cat core/target/surefire-reports/*.txt
-  - cat orientdb/target/surefire-reports/*.txt
  
