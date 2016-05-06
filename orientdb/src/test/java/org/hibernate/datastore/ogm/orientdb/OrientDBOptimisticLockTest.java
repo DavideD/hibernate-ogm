@@ -126,7 +126,8 @@ public class OrientDBOptimisticLockTest {
 			}
 			RollbackException re = (RollbackException) e.getCause();
 			boolean isNotActualVersion = isNotActualVersion( re );
-			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716). Now: class:"+re.getCause().getClass().getName()+". Message:"+re.getCause().getMessage(),
+			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716). Now: class:"
+					+ re.getCause().getClass().getName() + ". Message:" + re.getCause().getMessage(),
 					isOConcurrentModificationException( re ) ||
 							( isNotActualVersion ) );
 		}
@@ -202,7 +203,9 @@ public class OrientDBOptimisticLockTest {
 			isOrientDBEx = isOConcurrentModificationException( re );
 			isOptimisticLockEx = isOptimisticLockException( re );
 			isNotActualVersion = isNotActualVersion( re );
-			assertTrue( "Must be right exception (OConcurrentModificationException or OptimisticLockException or HibernateException (id OGM001716) ).Now: class:"+re.getCause().getClass().getName()+". Message:"+re.getCause().getMessage(),
+			assertTrue(
+					"Must be right exception (OConcurrentModificationException or OptimisticLockException or HibernateException (id OGM001716) ).Now: class:"
+							+ re.getCause().getClass().getName() + ". Message:" + re.getCause().getMessage(),
 					( isOrientDBEx || isOptimisticLockEx || isNotActualVersion ) );
 		}
 		if ( t1.isDone() && t2.isDone() ) {
@@ -232,41 +235,43 @@ public class OrientDBOptimisticLockTest {
 	}
 
 	private static boolean isNotActualVersion(RollbackException re) {
-            
-                boolean isNotActualVersion = false;
-                Throwable t = searchThrowable(re, HibernateException.class);
-                log.debug( "!HibernateException", t );
-                if (t!=null) {
-                    HibernateException he = (HibernateException) t;
-                    isNotActualVersion = ( he.getMessage().contains( "OGM001716" ) );
-                }
+
+		boolean isNotActualVersion = false;
+		Throwable t = searchThrowable( re, HibernateException.class );
+		log.debug( "!HibernateException", t );
+		if ( t != null ) {
+			HibernateException he = (HibernateException) t;
+			isNotActualVersion = ( he.getMessage().contains( "OGM001716" ) );
+		}
 		return isNotActualVersion;
 	}
 
 	private static boolean isOptimisticLockException(RollbackException re) {
-		//return re.getCause().getCause() instanceof OptimisticLockException;
-                Throwable t = searchThrowable(re, OptimisticLockException.class);
-                log.debug( "!OptimisticLockException", t );
-                return t!=null;
+		// return re.getCause().getCause() instanceof OptimisticLockException;
+		Throwable t = searchThrowable( re, OptimisticLockException.class );
+		log.debug( "!OptimisticLockException", t );
+		return t != null;
 	}
 
-	private static boolean isOConcurrentModificationException(RollbackException re) {                
-		//return re.getCause().getCause() instanceof OConcurrentModificationException || re.getCause() instanceof OConcurrentModificationException;
-                Throwable t = searchThrowable(re, OConcurrentModificationException.class);
-                log.debug( "!OConcurrentModificationException", t );
-                return t!=null;
+	private static boolean isOConcurrentModificationException(RollbackException re) {
+		// return re.getCause().getCause() instanceof OConcurrentModificationException || re.getCause() instanceof
+		// OConcurrentModificationException;
+		Throwable t = searchThrowable( re, OConcurrentModificationException.class );
+		log.debug( "!OConcurrentModificationException", t );
+		return t != null;
 	}
-        
-        private static Throwable searchThrowable(Throwable currentThrowable, Class requiredThrowableClass) {            
-            Throwable requiredThrowable = null;
-            if (currentThrowable.getClass().equals(requiredThrowableClass)) {
-                requiredThrowable = currentThrowable;
-            } else if (currentThrowable.getCause()!=null) {
-                requiredThrowable = searchThrowable(currentThrowable.getCause(), requiredThrowableClass);
-            }
-            
-            return requiredThrowable;
-        }
+
+	private static Throwable searchThrowable(Throwable currentThrowable, Class requiredThrowableClass) {
+		Throwable requiredThrowable = null;
+		if ( currentThrowable.getClass().equals( requiredThrowableClass ) ) {
+			requiredThrowable = currentThrowable;
+		}
+		else if ( currentThrowable.getCause() != null ) {
+			requiredThrowable = searchThrowable( currentThrowable.getCause(), requiredThrowableClass );
+		}
+
+		return requiredThrowable;
+	}
 
 	private boolean isAnyThreadSuccess(ForkJoinTask<Long> t1, ForkJoinTask<Long> t2) {
 		return t1.isCompletedNormally() || t2.isCompletedNormally();
