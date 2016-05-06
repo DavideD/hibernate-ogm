@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import org.hibernate.boot.model.relational.Namespace;
 import org.hibernate.datastore.ogm.orientdb.dto.EmbeddedColumnInfo;
@@ -305,7 +304,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 					}
 				}
-				
+
 				if ( table.hasPrimaryKey() && !isTablePerClassInheritance( table )
 						&& !isEmbeddedObjectTable( table ) ) {
 					PrimaryKey primaryKey = table.getPrimaryKey();
@@ -334,10 +333,10 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 	private void createPrimaryKey(Connection connection, PrimaryKey primaryKey) {
 		StringBuilder uniqueIndexQuery = new StringBuilder( 100 );
 		uniqueIndexQuery.append( "CREATE INDEX " )
-		.append( primaryKey.getName() != null
-		? primaryKey.getName()
-				: PrimaryKey.generateName( primaryKey.generatedConstraintNamePrefix(), primaryKey.getTable(), primaryKey.getColumns() ) )
-		.append( " ON " ).append( primaryKey.getTable().getName() ).append( " (" );
+				.append( primaryKey.getName() != null
+						? primaryKey.getName()
+						: PrimaryKey.generateName( primaryKey.generatedConstraintNamePrefix(), primaryKey.getTable(), primaryKey.getColumns() ) )
+				.append( " ON " ).append( primaryKey.getTable().getName() ).append( " (" );
 		for ( Iterator<Column> it = primaryKey.getColumns().iterator(); it.hasNext(); ) {
 			Column column = it.next();
 			String columnName = column.getName();

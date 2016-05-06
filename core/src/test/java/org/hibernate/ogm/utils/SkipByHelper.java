@@ -12,11 +12,10 @@ public class SkipByHelper {
 
 	public static boolean skipForGridDialect(GridDialectType requiredType) {
 		Class<? extends GridDialect> currentGridDialectClass = TestHelper.getCurrentGridDialect();
-		if ( requiredType == null || requiredType.loadGridDialectClass() == null ) {
-			// can be used for all dialects
-			return true;
+		boolean skipForGridDialect = false;
+		if ( requiredType != null && requiredType.loadGridDialectClass() != null ) {
+			skipForGridDialect = ( requiredType.loadGridDialectClass().equals( currentGridDialectClass ) );
 		}
-		return ( requiredType.loadGridDialectClass().isAssignableFrom( currentGridDialectClass ) );
+		return skipForGridDialect;
 	}
-
 }
