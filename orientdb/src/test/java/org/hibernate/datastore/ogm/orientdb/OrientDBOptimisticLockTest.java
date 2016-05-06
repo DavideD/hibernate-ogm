@@ -124,9 +124,10 @@ public class OrientDBOptimisticLockTest {
 				throw e;
 			}
 			RollbackException re = (RollbackException) e.getCause();
+			boolean isNotActualVersion = isNotActualVersion( re );
 			assertTrue( "Must be right exception (OConcurrentModificationException or HibernateException (id OGM001716)",
-					( re.getCause().getCause() instanceof OConcurrentModificationException ) ||
-							( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) ) );
+					isOConcurrentModificationException( re ) ||
+							( isNotActualVersion ) );
 		}
 		if ( t1.isDone() && t2.isDone() ) {
 			if ( isAnyThreadSuccess( t1, t2 ) ) {
@@ -197,14 +198,9 @@ public class OrientDBOptimisticLockTest {
 				throw e;
 			}
 			RollbackException re = (RollbackException) e.getCause();
-			isOrientDBEx = ( re.getCause().getCause() instanceof OConcurrentModificationException );
-			isOptimisticLockEx = ( re.getCause().getCause() instanceof OptimisticLockException );
-			try {
-				isNotActualVersion = ( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) );
-				log.info( "re.getCause().getCause().getClass():" + re.getCause().getCause().getCause().getClass() );
-			}
-			catch (NullPointerException e1) {
-			}
+			isOrientDBEx = isOConcurrentModificationException( re );
+			isOptimisticLockEx = isOptimisticLockException( re );
+			isNotActualVersion = isNotActualVersion( re );
 			assertTrue( "Must be right exception (OConcurrentModificationException or OptimisticLockException or HibernateException (id OGM001716) )",
 					( isOrientDBEx || isOptimisticLockEx || isNotActualVersion ) );
 		}
@@ -232,6 +228,25 @@ public class OrientDBOptimisticLockTest {
 				assertTrue( "No success threads!", false );
 			}
 		}
+	}
+
+	private static boolean isNotActualVersion(RollbackException re) {
+		boolean isNotActualVersion = false;
+		try {
+			isNotActualVersion = ( re.getCause().getCause().getCause().getMessage().contains( "OGM001716" ) );
+			log.info( "re.getCause().getCause().getClass():" + re.getCause().getCause().getCause().getClass() );
+		}
+		catch (NullPointerException e1) {
+		}
+		return isNotActualVersion;
+	}
+
+	private static boolean isOptimisticLockException(RollbackException re) {
+		return re.getCause().getCause() instanceof OptimisticLockException;
+	}
+
+	private static boolean isOConcurrentModificationException(RollbackException re) {
+		return re.getCause().getCause() instanceof OConcurrentModificationException;
 	}
 
 	private boolean isAnyThreadSuccess(ForkJoinTask<Long> t1, ForkJoinTask<Long> t2) {
