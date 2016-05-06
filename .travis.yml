@@ -9,3 +9,7 @@ branches:
   - all_last_changes5
 jdk:
   - oraclejdk8
+after_failure:
+  - cat core/target/surefire-reports/*.txt
+  - cat orientdb/target/surefire-reports/*.txt
+ 
