@@ -68,7 +68,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 	private static final String CREATE_PROPERTY_TEMPLATE = "create property {0}.{1} {2}";
 	private static final String CREATE_EMBEDDED_PROPERTY_TEMPLATE = "create property {0}.{1} embedded {2}";
 	private static final Log log = LoggerFactory.getLogger();
-	private static final Pattern PATTERN = Pattern.compile( "directed([a-zA-Z_0-9])\\.(.+)" );
 	private static final Set<Class> RELATIONS_TYPES;
 	private static final Map<Class, Class> RETURNED_CLASS_TYPE_MAPPING;
 
@@ -306,7 +305,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 					}
 				}
-				// @TODO think about primary key for mapping tables!
+				
 				if ( table.hasPrimaryKey() && !isTablePerClassInheritance( table )
 						&& !isEmbeddedObjectTable( table ) ) {
 					PrimaryKey primaryKey = table.getPrimaryKey();
