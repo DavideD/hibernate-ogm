@@ -1,6 +1,6 @@
 sudo: false
 language: java
-install: mvn clean install -pl orientdb -am  
+script: mvn clean install -pl orientdb -am  
 branches:
   only:
   - all_last_changes5
