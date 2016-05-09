@@ -257,11 +257,9 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 					Column column = columnIterator.next();
 					log.debugf( "column: %s ", column );
 					log.debugf( "relation type: %s", column.getValue().getType().getClass() );
-					if ( column.getName().startsWith( "_identifierMapper" ) ) {
-						continue;
-					}
 
-					if ( OrientDBConstant.SYSTEM_FIELDS.contains( column.getName() ) ||
+					if ( column.getName().startsWith( "_identifierMapper" ) ||
+							OrientDBConstant.SYSTEM_FIELDS.contains( column.getName() ) ||
 							( isTablePerClassInheritance( table ) && isAlreadyCreatedInParent( table, column, namespace.getTables() ) ) ) {
 						continue;
 					}
@@ -540,24 +538,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		return result;
 	}
 
-	private boolean isMapingTable(Table table) {
-		Set<String> tableColumns = new HashSet<>();
-		Set<String> primaryKeyColumns = new HashSet<>();
-		for ( Iterator<Column> iterator = table.getColumnIterator(); iterator.hasNext(); ) {
-			Column column = iterator.next();
-			tableColumns.add( column.getName() );
-		}
-		log.debugf( "isMapingTable: Table: %s, primary key: %s ", table.getName(), table.getPrimaryKey() );
-		if ( table.hasPrimaryKey() ) {
-			for ( Column column : table.getPrimaryKey().getColumns() ) {
-				primaryKeyColumns.add( column.getName() );
-			}
-		}
-		// @TODO think about multucolumn index in OrientDB!
-		return ( !table.hasPrimaryKey() && tableColumns.size() == 2 ) ||
-				( tableColumns.equals( primaryKeyColumns ) );
-	}
-
 	private boolean isEmbeddedObjectTable(Table table) {
 		return table.getName().contains( "_" );
 	}
@@ -566,20 +546,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		int p1 = table.getName().indexOf( "_" );
 		int p2 = table.getName().indexOf( ".", p1 );
 		return p1 > -1 && p2 > p1;
-	}
-
-	private String searchMappedByName(SchemaDefinitionContext context, Collection<Table> tables, EntityType type, Column currentColumn) {
-		String columnName = currentColumn.getName();
-		String tableName = type.getAssociatedJoinable( context.getSessionFactory() ).getTableName();
-
-		String primaryKeyName = null;
-		for ( Table table : tables ) {
-			if ( table.getName().equals( tableName ) ) {
-				primaryKeyName = table.getPrimaryKey().getColumn( 0 ).getName();
-			}
-		}
-		return columnName.replace( "_" + primaryKeyName, "" );
-
 	}
 
 	private Class searchMappedByReturnedClass(SchemaDefinitionContext context, Collection<Table> tables, EntityType type, Column currentColumn) {
