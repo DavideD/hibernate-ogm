@@ -162,8 +162,31 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 			Reader reader = new InputStreamReader( is, "utf-8" );
 			char[] chars = new char[2000];
 			CharBuffer buffer = CharBuffer.wrap( chars );
-			int realReadChars = reader.read( buffer );
-			log.debugf( "getTableSeqValue query: %s ; realReadChars: %d", new String( buffer.array() ).trim(), realReadChars );
+			reader.read( buffer );
+			connection.createStatement().execute( new String( buffer.array() ).trim() );
+		}
+		catch (SQLException | IOException e) {
+			throw log.cannotCreateStoredProcedure( "getTableSeqValue", e );
+		}
+	}
+
+	private void createExecuteQueryFunc(Connection connection) {
+		try {
+			OrientJdbcConnection orientDBConnection = (OrientJdbcConnection) connection;
+			Set<String> functions = orientDBConnection.getDatabase().getMetadata().getFunctionLibrary().getFunctionNames();
+			log.debugf( " functions : %s", functions );
+			if ( functions.contains( "executeQuery".toUpperCase() ) ) {
+				log.debug( " function 'executeQuery' exists!" );
+				return;
+			}
+			for ( OClass oc : orientDBConnection.getDatabase().getMetadata().getSchema().getClasses() ) {
+				log.debugf( " class: %s", oc.getName() );
+			}
+			InputStream is = OrientDBSchemaDefiner.class.getResourceAsStream( "executeQuery.sql" );
+			Reader reader = new InputStreamReader( is, "utf-8" );
+			char[] chars = new char[2000];
+			CharBuffer buffer = CharBuffer.wrap( chars );
+			reader.read( buffer );
 			connection.createStatement().execute( new String( buffer.array() ).trim() );
 		}
 		catch (SQLException | IOException e) {
@@ -550,11 +573,12 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
 	private Class searchMappedByReturnedClass(SchemaDefinitionContext context, Collection<Table> tables, EntityType type, Column currentColumn) {
 		String tableName = type.getAssociatedJoinable( context.getSessionFactory() ).getTableName();
+		log.debugf( "associated entity name: %s", type.getAssociatedEntityName() );
 
 		Class primaryKeyClass = null;
 		for ( Table table : tables ) {
 			if ( table.getName().equals( tableName ) ) {
-				log.debug( "primary key type: " + table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass() );
+				log.debugf( "primary key type: %s", table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass() );
 				primaryKeyClass = table.getPrimaryKey().getColumn( 0 ).getValue().getType().getReturnedClass();
 			}
 		}
@@ -571,6 +595,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		createSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE, 0, 1 );
 		createTableSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE_TABLE, "key", "seed" );
 		createGetTableSeqValueFunc( connection );
+		createExecuteQueryFunc( connection );
 		createEntities( connection, context );
 	}
 
