@@ -79,6 +79,7 @@ import org.hibernate.datastore.ogm.orientdb.query.impl.BigDecimalParamValueSette
 import org.hibernate.datastore.ogm.orientdb.query.impl.BooleanParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.query.impl.ByteParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.query.impl.CharacterParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.DateParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.query.impl.DoubleParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.query.impl.FloatParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.query.impl.IntegerParamValueSetter;
@@ -86,6 +87,7 @@ import org.hibernate.datastore.ogm.orientdb.query.impl.LongParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.query.impl.ParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.query.impl.ShortParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.query.impl.StringParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.TimestampParamValueSetter;
 import org.hibernate.datastore.ogm.orientdb.utils.InsertQueryGenerator;
 import org.hibernate.datastore.ogm.orientdb.utils.QueryUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.UpdateQueryGenerator;
@@ -96,16 +98,14 @@ import org.hibernate.ogm.type.impl.BigDecimalType;
 import org.hibernate.ogm.type.impl.BooleanType;
 import org.hibernate.ogm.type.impl.ByteType;
 import org.hibernate.ogm.type.impl.CharacterType;
+import org.hibernate.ogm.type.impl.DateType;
 import org.hibernate.ogm.type.impl.DoubleType;
-import org.hibernate.ogm.type.impl.EnumType;
 import org.hibernate.ogm.type.impl.FloatType;
 import org.hibernate.ogm.type.impl.IntegerType;
 import org.hibernate.ogm.type.impl.LongType;
-import org.hibernate.ogm.type.impl.NumericBooleanType;
 import org.hibernate.ogm.type.impl.ShortType;
 import org.hibernate.ogm.type.impl.StringType;
-import org.hibernate.ogm.type.impl.TrueFalseType;
-import org.hibernate.ogm.type.impl.YesNoType;
+import org.hibernate.ogm.type.impl.TimestampType;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
@@ -138,6 +138,10 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		map.put( BigDecimalType.INSTANCE, new BigDecimalParamValueSetter() );
 		// boolean types
 		map.put( BooleanType.INSTANCE, new BooleanParamValueSetter() );
+
+		// date types
+		map.put( TimestampType.INSTANCE, new TimestampParamValueSetter() );
+		map.put( DateType.INSTANCE, new DateParamValueSetter() );
 		SIMPLE_VALUE_SETTER_MAP = map;
 	}
 	private OrientDBDatastoreProvider provider;
@@ -503,35 +507,24 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	@SuppressWarnings(value = { "unchecked", "rawtypes" })
 	@Override
 	public ClosableIterator<Tuple> executeBackendQuery(BackendQuery<String> backendQuery, QueryParameters queryParameters) {
+		Map<String, Object> parameters = getNamedParameterValuesConvertedByGridType( queryParameters );
+		log.debugf( "executeBackendQuery: parameters: %s ; ",
+				parameters.keySet() );
+		String nativeQuery = backendQuery.getQuery();
+		log.debugf( "executeBackendQuery: nativeQuery: %s ; metadata: %s",
+				backendQuery.getQuery(), backendQuery.getSingleEntityKeyMetadataOrNull() );
 
-		// Map<String, Object> parameters = getNamedParameterValuesConvertedByGridType( queryParameters );
-		String nativeQuery = buildNativeQuery( backendQuery, queryParameters );
 		try {
 			PreparedStatement pstmt = provider.getConnection().prepareStatement( nativeQuery );
 			int paramIndex = 1;
 			for ( Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet() ) {
 				String key = entry.getKey();
 				TypedGridValue value = entry.getValue();
-				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s ",
-						key, value.getType(), value.getValue() );
+				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s; type class: %s ",
+						key, value.getType(), value.getValue(), value.getType().getReturnedClass() );
 				try {
 					if ( SIMPLE_VALUE_SETTER_MAP.containsKey( value.getType() ) ) {
 						SIMPLE_VALUE_SETTER_MAP.get( value.getType() ).setValue( pstmt, paramIndex, value.getValue() );
-					}
-					else if ( value.getType().getClass().equals( EnumType.class ) ) {
-						EnumType enumType = (EnumType) value.getType();
-						ParamValueSetter setter = enumType.isOrdinal()
-								? SIMPLE_VALUE_SETTER_MAP.get( IntegerType.INSTANCE )
-								: SIMPLE_VALUE_SETTER_MAP.get( StringType.INSTANCE );
-						setter.setValue( pstmt, paramIndex, value.getValue() );
-					}
-					else if ( value.getType().getClass().equals( NumericBooleanType.class ) ) {
-						ParamValueSetter<Short> setter = SIMPLE_VALUE_SETTER_MAP.get( ShortType.INSTANCE );
-						setter.setValue( pstmt, paramIndex, (Short) value.getValue() );
-					}
-					else if ( value.getType().getClass().equals( YesNoType.class ) || value.getType().getClass().equals( TrueFalseType.class ) ) {
-						ParamValueSetter<String> setter = SIMPLE_VALUE_SETTER_MAP.get( StringType.INSTANCE );
-						setter.setValue( pstmt, paramIndex, (String) value.getValue() );
 					}
 					else {
 						// @TODO: support dates!
@@ -550,10 +543,6 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		catch (SQLException e) {
 			throw log.cannotExecuteQuery( nativeQuery, e );
 		}
-	}
-
-	private String buildNativeQuery(BackendQuery<String> customQuery, QueryParameters queryParameters) {
-		return customQuery.getQuery();
 	}
 
 	/**
