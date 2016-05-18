@@ -8,17 +8,17 @@
 		<provider>org.hibernate.ogm.jpa.HibernateOgmPersistence</provider>
 		<properties>
 			<property name="hibernate.ogm.datastore.provider" value="orientdb" />
-			<property name="javax.persistence.jdbc.url" value="jdbc:orient:memory:test" />			
-			<property name="javax.persistence.jdbc.driver"
-				value="com.orientechnologies.orient.jdbc.OrientJdbcDriver" />
-			<property name="javax.persistence.jdbc.user" value="admin" />
-			<property name="javax.persistence.jdbc.password" value="admin" />
+                        <property name="hibernate.ogm.datastore.database" value="test" />
+                        <property name="hibernate.ogm.datastore.username" value="admin" />
+			<property name="hibernate.ogm.datastore.password" value="admin" />
+                        <property name="hibernate.ogm.orientdb.mode" value="memory" />
+                        <property name="hibernate.ogm.orientdb.format.datetime" value="yyyy-MM-dd HH:mm:ss" />
+                        <property name="hibernate.ogm.orientdb.format.date" value="yyyy-MM-dd" />
+                
 			<property name="hibernate.search.Rules.directory_provider"
 				value="filesystem" />
 			<property name="hibernate.search.default.indexBase" value="./target/lucene/indexes" />
-			<property name="hibernate.show_sql" value="true" />
-                        <property name="hibernate.ogm.orientdb.format.datetime" value="yyyy-MM-dd HH:mm:ss" />
-                        <property name="hibernate.ogm.orientdb.format.date" value="yyyy-MM-dd" />
+			<property name="hibernate.show_sql" value="true" />                        
 		</properties>
 	</persistence-unit>
 </persistence>

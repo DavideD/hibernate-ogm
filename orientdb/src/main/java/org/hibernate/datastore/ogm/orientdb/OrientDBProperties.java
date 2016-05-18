@@ -22,6 +22,15 @@ public class OrientDBProperties implements OgmProperties {
 	 */
 	public static final String DATE_FORMAT = "hibernate.ogm.orientdb.format.date";
 
+	/**
+	 * Type of database. Possible values: memory,remote,plocal
+	 */
+	public static final String DATEBASE_TYPE = "hibernate.ogm.orientdb.dbtype";
+
 	private OrientDBProperties() {
+	}
+
+	public static enum DatabaseTypeEnum {
+		memory, plocal, remote
 	}
 }

@@ -23,11 +23,11 @@ import org.hibernate.datastore.ogm.orientdb.utils.FormatterUtil;
 import org.hibernate.datastore.ogm.orientdb.utils.MemoryDBUtil;
 import org.hibernate.engine.jndi.spi.JndiService;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
+import org.hibernate.ogm.cfg.OgmProperties;
 import org.hibernate.ogm.datastore.spi.BaseDatastoreProvider;
 import org.hibernate.ogm.datastore.spi.SchemaDefiner;
 import org.hibernate.ogm.dialect.spi.GridDialect;
 import org.hibernate.ogm.util.configurationreader.spi.ConfigurationPropertyReader;
-import org.hibernate.ogm.util.configurationreader.spi.PropertyReaderContext;
 import org.hibernate.resource.transaction.TransactionCoordinatorBuilder;
 import org.hibernate.service.spi.Configurable;
 import org.hibernate.service.spi.ServiceRegistryAwareService;
@@ -47,7 +47,6 @@ implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 	private ServiceRegistryImplementor registry;
 	private JtaPlatform jtaPlatform;
 	private JndiService jndiService;
-	private String jdbcUrl;
 	private Properties info;
 
 	@Override
@@ -59,17 +58,32 @@ implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 	public void start() {
 		log.debug( "---start---" );
 		try {
-			PropertyReaderContext<String> jdbcUrlPropery = propertyReader.property( "javax.persistence.jdbc.url", String.class );
-			if ( jdbcUrlPropery != null ) {
-				jdbcUrl = jdbcUrlPropery.getValue();
-				log.warn( "jdbcUrl:" + jdbcUrl );
-				Class.forName( propertyReader.property( "javax.persistence.jdbc.driver", String.class ).getValue() ).newInstance();
-				info = new Properties();
-				info.put( "user", propertyReader.property( "javax.persistence.jdbc.user", String.class ).getValue() );
-				info.put( "password", propertyReader.property( "javax.persistence.jdbc.password", String.class ).getValue() );
-				createInMemoryDB();
-				connectionHolder = new ConnectionHolder( jdbcUrl, info );
+			Class.forName( "com.orientechnologies.orient.jdbc.OrientJdbcDriver" ).newInstance();
+			OrientDBProperties.DatabaseTypeEnum databaseType = propertyReader
+					.property( OrientDBProperties.DATEBASE_TYPE, OrientDBProperties.DatabaseTypeEnum.class )
+					.withDefault( OrientDBProperties.DatabaseTypeEnum.memory ).getValue();
+			String user = propertyReader.property( OgmProperties.USERNAME, String.class ).getValue();
+			String password = propertyReader.property( OgmProperties.PASSWORD, String.class ).getValue();
+			StringBuilder jdbcUrl = new StringBuilder( 100 );
+			jdbcUrl.append( "jdbc:orient:" ).append( databaseType );
+			switch ( databaseType ) {
+				case memory:
+					jdbcUrl.append( ":" ).append( propertyReader.property( OgmProperties.DATABASE, String.class ).getValue() );
+					break;
+				case remote:
+					jdbcUrl.append( ":" ).append( propertyReader.property( OgmProperties.HOST, String.class ).withDefault( "localhost" ).getValue() );
+					jdbcUrl.append( "/" ).append( propertyReader.property( OgmProperties.DATABASE, String.class ).getValue() );
+					break;
+				default:
+					throw new UnsupportedOperationException( String.format( "Database type %s unsupported!", databaseType ) );
 			}
+			log.infof( "jdbcUrl: %s", jdbcUrl );
+			info = new Properties();
+			info.put( "user", user );
+			info.put( "password", password );
+			createInMemoryDB( jdbcUrl.toString() );
+			connectionHolder = new ConnectionHolder( jdbcUrl.toString(), info );
+
 			FormatterUtil.setDateFormater( new ThreadLocal<DateFormat>() {
 
 				@Override
@@ -96,18 +110,19 @@ implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 		}
 	}
 
-	private void createInMemoryDB() {
+	private void createInMemoryDB(String jdbcUrl) {
 
-		String orientDbUrl = propertyReader.property( "javax.persistence.jdbc.url", String.class ).getValue().substring( "jdbc:orient:".length() );
-		if ( orientDbUrl.startsWith( "memory" ) ) {
+		OrientDBProperties.DatabaseTypeEnum databaseType = propertyReader
+				.property( OrientDBProperties.DATEBASE_TYPE, OrientDBProperties.DatabaseTypeEnum.class )
+				.withDefault( OrientDBProperties.DatabaseTypeEnum.memory ).getValue();
+		if ( databaseType.equals( OrientDBProperties.DatabaseTypeEnum.memory ) ) {
 			if ( MemoryDBUtil.getOrientGraphFactory() != null ) {
 				log.debugf( "getCreatedInstancesInPool: %d", MemoryDBUtil.getOrientGraphFactory().getCreatedInstancesInPool() );
 			}
-			ODatabaseDocumentTx db = MemoryDBUtil.createDbFactory( orientDbUrl );
+			ODatabaseDocumentTx db = MemoryDBUtil.createDbFactory( jdbcUrl.substring( jdbcUrl.indexOf( OrientDBProperties.DatabaseTypeEnum.memory.name() ) ) );
 			log.debugf( "in-memory database exists: %b ", db.exists() );
 			log.debugf( "in-memory database closed: %b ", db.isClosed() );
 		}
-
 	}
 
 	public Connection getConnection() {
