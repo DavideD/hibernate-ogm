@@ -110,5 +110,6 @@ public class Iso8601CalendarTypeDescriptor extends CalendarDateTypeDescriptor {
 		public abstract Calendar fromString(String string);
 
 		public abstract String toString(Calendar value);
+
 	}
 }

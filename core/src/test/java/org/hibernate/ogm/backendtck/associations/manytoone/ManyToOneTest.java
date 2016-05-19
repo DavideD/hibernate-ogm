@@ -17,6 +17,8 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.hibernate.ogm.utils.TestForIssue;
 import org.hibernate.ogm.utils.TestHelper;
 import org.junit.Test;
@@ -231,8 +233,8 @@ public class ManyToOneTest extends OgmTestCase {
 		assertThat( hoegaarden ).isNotNull();
 		assertThat( hoegaarden.getBrewery() ).isNotNull();
 		assertThat( hoegaarden.getBrewery().getBeers() )
-			.hasSize( 1 )
-			.containsOnly( hoegaarden );
+		.hasSize( 1 )
+		.containsOnly( hoegaarden );
 		Beer citron = new Beer();
 		hoeBrewery = hoegaarden.getBrewery();
 		hoeBrewery.getBeers().remove( hoegaarden );
@@ -246,8 +248,8 @@ public class ManyToOneTest extends OgmTestCase {
 		tx = session.beginTransaction();
 		citron = get( session, Beer.class, citron.getId() );
 		assertThat( citron.getBrewery().getBeers() )
-			.hasSize( 1 )
-			.containsOnly( citron );
+		.hasSize( 1 )
+		.containsOnly( citron );
 		hoeBrewery = citron.getBrewery();
 		citron.setBrewery( null );
 		hoeBrewery.getBeers().clear();
@@ -306,6 +308,7 @@ public class ManyToOneTest extends OgmTestCase {
 		checkCleanCache();
 	}
 
+	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "CompositeId not supported")
 	@Test
 	public void testDefaultBiDirManyToOneCompositeKeyTest() throws Exception {
 		Session session = openSession();
@@ -351,17 +354,29 @@ public class ManyToOneTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] {
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			return new Class<?>[]{
 				JUG.class,
 				Member.class,
 				SalesForce.class,
 				SalesGuy.class,
 				Beer.class,
 				Brewery.class,
-				Game.class,
-				Court.class,
 				Employee.class,
 				Employer.class
+			};
+		}
+		return new Class<?>[]{
+			JUG.class,
+			Member.class,
+			SalesForce.class,
+			SalesGuy.class,
+			Beer.class,
+			Brewery.class,
+			Game.class,
+			Court.class,
+			Employee.class,
+			Employer.class
 		};
 	}
 }

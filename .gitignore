@@ -35,3 +35,4 @@ transaction.log
 infinispan.log
 
 #Netbeans
+/orientdb/nbproject/

@@ -21,7 +21,9 @@ import org.hibernate.ogm.datastore.map.impl.MapDialect;
 import org.hibernate.ogm.model.impl.DefaultEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.type.spi.GridType;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.hibernate.ogm.utils.TestHelper;
 import org.hibernate.type.BinaryType;
 import org.hibernate.type.Type;
@@ -33,6 +35,7 @@ import org.junit.Test;
  *
  * @author Gunnar Morling
  */
+@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "@Converter test move to specified db test")
 public class JpaAttributeConverterGridTypeApplicationTest extends OgmTestCase {
 
 	/**

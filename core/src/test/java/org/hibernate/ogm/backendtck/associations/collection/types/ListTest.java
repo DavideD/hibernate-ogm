@@ -10,7 +10,10 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.junit.Test;
 
 /**
@@ -64,7 +67,7 @@ public class ListTest extends OgmTestCase {
 
 	@Test
 	public void testUpdateToElementOfOrderedListIsApplied() throws Exception {
-		//insert entity with embedded collection
+		// insert entity with embedded collection
 		Session session = openSession();
 		Transaction tx = session.beginTransaction();
 		GrandChild luke = new GrandChild();
@@ -79,7 +82,7 @@ public class ListTest extends OgmTestCase {
 
 		session.clear();
 
-		//do an update to one of the elements
+		// do an update to one of the elements
 		tx = session.beginTransaction();
 		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 		assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Luke", "Leia" );
@@ -88,7 +91,7 @@ public class ListTest extends OgmTestCase {
 		tx.commit();
 		session.clear();
 
-		//assert update has been propagated
+		// assert update has been propagated
 		tx = session.beginTransaction();
 		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 		assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Lisa", "Leia" );
@@ -103,7 +106,7 @@ public class ListTest extends OgmTestCase {
 
 	@Test
 	public void testRemovalOfElementFromOrderedListIsApplied() throws Exception {
-		//insert entity with embedded collection
+		// insert entity with embedded collection
 		Session session = openSession();
 		Transaction tx = session.beginTransaction();
 		GrandChild luke = new GrandChild();
@@ -118,14 +121,14 @@ public class ListTest extends OgmTestCase {
 
 		session.clear();
 
-		//remove one of the elements
+		// remove one of the elements
 		tx = session.beginTransaction();
 		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 		grandMother.getGrandChildren().remove( 0 );
 		tx.commit();
 		session.clear();
 
-		//assert removal has been propagated
+		// assert removal has been propagated
 		tx = session.beginTransaction();
 		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 		assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Leia" );
@@ -138,6 +141,7 @@ public class ListTest extends OgmTestCase {
 		checkCleanCache();
 	}
 
+	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "CompositeId not supported")
 	@Test
 	public void testOrderedListAndCompositeId() throws Exception {
 		Session session = openSession();
@@ -174,7 +178,14 @@ public class ListTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] {
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			return new Class<?>[]{
+					Father.class,
+					GrandMother.class,
+					Child.class
+			};
+		}
+		return new Class<?>[]{
 				Father.class,
 				GrandMother.class,
 				Child.class,

@@ -22,10 +22,7 @@ import static org.hibernate.ogm.utils.TestHelper.getNumberOfEntities;
 /**
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
  */
-@SkipByGridDialect(
-		value = { GridDialectType.CASSANDRA },
-		comment = "Classroom.students list - bag semantics unsupported (no primary key)"
-)
+@SkipByGridDialect(value = { GridDialectType.CASSANDRA }, comment = "Classroom.students list - bag semantics unsupported (no primary key)")
 public class ManyToManyExtraTest extends OgmTestCase {
 
 	@Test
@@ -75,6 +72,10 @@ public class ManyToManyExtraTest extends OgmTestCase {
 		if ( TestHelper.getCurrentDialectType().equals( GridDialectType.NEO4J ) ) {
 			// In Neo4j relationships are bidirectional
 			return 1;
+		}
+		else if ( TestHelper.getCurrentDialectType().equals( GridDialectType.ORIENTDB ) ) {
+			// In OrientDB ManyToMany relationships is like in RDBMS
+			return 3;
 		}
 		else {
 			return 2;

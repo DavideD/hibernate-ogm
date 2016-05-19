@@ -12,8 +12,9 @@ import static org.hibernate.ogm.utils.GridDialectType.COUCHDB;
 import static org.hibernate.ogm.utils.GridDialectType.EHCACHE;
 import static org.hibernate.ogm.utils.GridDialectType.HASHMAP;
 import static org.hibernate.ogm.utils.GridDialectType.INFINISPAN;
-import static org.hibernate.ogm.utils.GridDialectType.REDIS_JSON;
 import static org.hibernate.ogm.utils.GridDialectType.REDIS_HASH;
+import static org.hibernate.ogm.utils.GridDialectType.REDIS_JSON;
+import static org.hibernate.ogm.utils.GridDialectType.ORIENTDB;
 import static org.hibernate.ogm.utils.SessionHelper.asProjectionResults;
 import static org.hibernate.ogm.utils.SessionHelper.delete;
 import static org.hibernate.ogm.utils.SessionHelper.persist;
@@ -42,11 +43,10 @@ import org.junit.rules.ExpectedException;
 /**
  * @author Davide D'Alto
  */
-@SkipByGridDialect(
-	value = { CASSANDRA, COUCHDB, EHCACHE, HASHMAP, INFINISPAN, REDIS_JSON, REDIS_HASH },
-	comment = "Hibernate Search does not store properties of the @EmbeddedId by default in the index, it requires the use of @FieldBridge."
-			+ "It is also not sufficient to add a custom field bridge because the properties of the embedded id won't be recognized as properties of the entity."
-			+ "There is a JIRA to keep track of this: OGM-849")
+@SkipByGridDialect(value = { CASSANDRA, COUCHDB, EHCACHE, HASHMAP, INFINISPAN, REDIS_JSON,
+		REDIS_HASH,ORIENTDB }, comment = "Hibernate Search does not store properties of the @EmbeddedId by default in the index, it requires the use of @FieldBridge."
+				+ "It is also not sufficient to add a custom field bridge because the properties of the embedded id won't be recognized as properties of the entity."
+				+ "There is a JIRA to keep track of this: OGM-849")
 public class CompositeIdQueriesTest extends OgmTestCase {
 
 	@TestSessionFactory
@@ -86,14 +86,17 @@ public class CompositeIdQueriesTest extends OgmTestCase {
 
 	@Test
 	public void testSingleAttributeProjection() throws Exception {
-		String result = (String) session.createQuery( "SELECT n.newsId.title FROM News n WHERE n.newsId.title = '" + ogmHowTo.getNewsId().getTitle() + "'" ).uniqueResult();
+		String result = (String) session.createQuery( "SELECT n.newsId.title FROM News n WHERE n.newsId.title = '" + ogmHowTo.getNewsId().getTitle() + "'" )
+				.uniqueResult();
 		assertThat( result ).isEqualTo( ogmHowTo.getNewsId().getTitle() );
 	}
 
 	@Test
 	public void testProjections() throws Exception {
-		List<ProjectionResult> result = asProjectionResults( session, "SELECT n.newsId.title, n.newsId.author, n.content FROM News n WHERE n.newsId.title = '" + ogmHowTo.getNewsId().getTitle() + "'" );
-		assertThat( result ).containsExactly( new ProjectionResult( ogmHowTo.getNewsId().getTitle(), ogmHowTo.getNewsId().getAuthor(), ogmHowTo.getContent() ) );
+		List<ProjectionResult> result = asProjectionResults( session,
+				"SELECT n.newsId.title, n.newsId.author, n.content FROM News n WHERE n.newsId.title = '" + ogmHowTo.getNewsId().getTitle() + "'" );
+		assertThat( result )
+		.containsExactly( new ProjectionResult( ogmHowTo.getNewsId().getTitle(), ogmHowTo.getNewsId().getAuthor(), ogmHowTo.getContent() ) );
 	}
 
 	@Before
@@ -122,6 +125,6 @@ public class CompositeIdQueriesTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] { News.class, Label.class };
+		return new Class<?>[]{ News.class, Label.class };
 	}
 }

@@ -6,22 +6,43 @@
  */
 package org.hibernate.datastore.ogm.orientdb;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.hibernate.AssertionFailure;
+import org.hibernate.StaleObjectStateException;
+import org.hibernate.datastore.ogm.orientdb.constant.OrientDBConstant;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationQueries;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBAssociationSnapshot;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBEntityQueries;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleAssociationSnapshot;
 import org.hibernate.datastore.ogm.orientdb.dialect.impl.OrientDBTupleSnapshot;
+import org.hibernate.datastore.ogm.orientdb.dialect.impl.ResultSetTupleIterator;
 import org.hibernate.datastore.ogm.orientdb.impl.OrientDBDatastoreProvider;
+import org.hibernate.datastore.ogm.orientdb.impl.OrientDBSchemaDefiner;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.Log;
 import org.hibernate.datastore.ogm.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.datastore.ogm.orientdb.query.impl.OrientDBParameterMetadataBuilder;
 import org.hibernate.datastore.ogm.orientdb.type.spi.ORecordIdGridType;
+import org.hibernate.datastore.ogm.orientdb.type.spi.ORidBagGridType;
+import org.hibernate.datastore.ogm.orientdb.utils.EntityKeyUtil;
+import org.hibernate.datastore.ogm.orientdb.utils.SequenceUtil;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.dialect.identity.spi.IdentityColumnAwareGridDialect;
+import org.hibernate.ogm.dialect.query.spi.BackendQuery;
+import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
+import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
+import org.hibernate.ogm.dialect.query.spi.QueryParameters;
+import org.hibernate.ogm.dialect.query.spi.QueryableGridDialect;
+import org.hibernate.ogm.dialect.query.spi.TypedGridValue;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
 import org.hibernate.ogm.dialect.spi.AssociationTypeContext;
 import org.hibernate.ogm.dialect.spi.BaseGridDialect;
@@ -30,30 +51,101 @@ import org.hibernate.ogm.dialect.spi.NextValueRequest;
 import org.hibernate.ogm.dialect.spi.SessionFactoryLifecycleAwareDialect;
 import org.hibernate.ogm.dialect.spi.TupleAlreadyExistsException;
 import org.hibernate.ogm.dialect.spi.TupleContext;
+import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.key.spi.AssociationKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
+import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata.IdSourceType;
+import org.hibernate.ogm.model.key.spi.RowKey;
 import org.hibernate.ogm.model.spi.Association;
+import org.hibernate.ogm.model.spi.AssociationOperation;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.persister.impl.OgmCollectionPersister;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
 import org.hibernate.ogm.type.spi.GridType;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.type.Type;
 
+import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
+import com.orientechnologies.orient.core.exception.OConcurrentModificationException;
 import com.orientechnologies.orient.core.id.ORecordId;
+import java.util.Arrays;
+import java.util.HashSet;
+import org.hibernate.datastore.ogm.orientdb.query.impl.BigDecimalParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.BooleanParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.ByteParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.CharacterParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.DateParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.DoubleParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.FloatParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.IntegerParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.LongParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.ParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.ShortParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.StringParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.query.impl.TimestampParamValueSetter;
+import org.hibernate.datastore.ogm.orientdb.utils.InsertQueryGenerator;
+import org.hibernate.datastore.ogm.orientdb.utils.QueryUtil;
+import org.hibernate.datastore.ogm.orientdb.utils.UpdateQueryGenerator;
+import org.hibernate.datastore.ogm.orientdb.utils.AbstractQueryGenerator.GenerationResult;
+import org.hibernate.datastore.ogm.orientdb.utils.QueryTypeDefiner;
+import org.hibernate.datastore.ogm.orientdb.utils.QueryTypeDefiner.QueryType;
+import org.hibernate.ogm.type.impl.BigDecimalType;
+import org.hibernate.ogm.type.impl.BooleanType;
+import org.hibernate.ogm.type.impl.ByteType;
+import org.hibernate.ogm.type.impl.CharacterType;
+import org.hibernate.ogm.type.impl.DateType;
+import org.hibernate.ogm.type.impl.DoubleType;
+import org.hibernate.ogm.type.impl.FloatType;
+import org.hibernate.ogm.type.impl.IntegerType;
+import org.hibernate.ogm.type.impl.LongType;
+import org.hibernate.ogm.type.impl.ShortType;
+import org.hibernate.ogm.type.impl.StringType;
+import org.hibernate.ogm.type.impl.TimestampType;
 
 /**
  * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
-public class OrientDBDialect extends BaseGridDialect
-		implements SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+public class OrientDBDialect extends BaseGridDialect implements QueryableGridDialect<String>,
+		ServiceRegistryAwareService, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
 
+	private static final long serialVersionUID = 1L;
 	private static final Log log = LoggerFactory.getLogger();
+	private static final Association ASSOCIATION_NOT_FOUND = null;
+	private static final InsertQueryGenerator INSERT_QUERY_GENERATOR = new InsertQueryGenerator();
+	private static final UpdateQueryGenerator UPDATE_QUERY_GENERATOR = new UpdateQueryGenerator();
+	@SuppressWarnings("rawtypes")
+	private static final Map<GridType, ParamValueSetter> SIMPLE_VALUE_SETTER_MAP;
 
+	static {
+		@SuppressWarnings("rawtypes")
+		Map<GridType, ParamValueSetter> map = new HashMap<>();
+		// string types
+		map.put( StringType.INSTANCE, new StringParamValueSetter() );
+		map.put( CharacterType.INSTANCE, new CharacterParamValueSetter() );
+		// numeric types
+		map.put( ByteType.INSTANCE, new ByteParamValueSetter() );
+		map.put( ShortType.INSTANCE, new ShortParamValueSetter() );
+		map.put( IntegerType.INSTANCE, new IntegerParamValueSetter() );
+		map.put( LongType.INSTANCE, new LongParamValueSetter() );
+
+		map.put( DoubleType.INSTANCE, new DoubleParamValueSetter() );
+		map.put( FloatType.INSTANCE, new FloatParamValueSetter() );
+		map.put( BigDecimalType.INSTANCE, new BigDecimalParamValueSetter() );
+		// boolean types
+		map.put( BooleanType.INSTANCE, new BooleanParamValueSetter() );
+
+		// date types
+		map.put( TimestampType.INSTANCE, new TimestampParamValueSetter() );
+		map.put( DateType.INSTANCE, new DateParamValueSetter() );
+		SIMPLE_VALUE_SETTER_MAP = map;
+	}
 	private OrientDBDatastoreProvider provider;
+	private ServiceRegistryImplementor serviceRegistry;
 	private Map<AssociationKeyMetadata, OrientDBAssociationQueries> associationQueries;
 	private Map<EntityKeyMetadata, OrientDBEntityQueries> entityQueries;
 
@@ -63,123 +155,318 @@ public class OrientDBDialect extends BaseGridDialect
 
 	@Override
 	public Tuple getTuple(EntityKey key, TupleContext tupleContext) {
-		log.info( "getTuple:EntityKey:" + key + "; tupleContext" + tupleContext );
-		ORecordId dbKey = null;
-		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
-			String columnName = key.getColumnNames()[i];
-			Object columnValue = key.getColumnValues()[i];
-			log.info( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
-			if ( columnName.equals( "@rid" ) ) {
-				dbKey = (ORecordId) columnValue;
-			}
-		}
-
-		if ( dbKey.getClusterPosition() == ORecordId.EMPTY_RECORD_ID.getClusterPosition() ) {
-			// is is temporary value. no entity in db with this key
-			log.info( "getTuple:Key:" + dbKey + "is temporary!" );
+		log.debugf( "getTuple:EntityKey: %s ; tupleContext: %s; current thread: %s ", key, tupleContext, Thread.currentThread().getName() );
+		Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getConnection(), key );
+		if ( dbValuesMap == null || dbValuesMap.isEmpty() ) {
 			return null;
 		}
+		return new Tuple(
+				new OrientDBTupleSnapshot( dbValuesMap, tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), key.getMetadata() ) );
 
-		try {
-			Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getConnection(), key.getColumnValues() );
-			return new Tuple(
-					new OrientDBTupleSnapshot( dbValuesMap, tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), key.getMetadata() ) );
-		}
-		catch (SQLException e) {
-			log.error( "Can not find entity", e );
-		}
-		return null;
+	}
+
+	@Override
+	public void forEachTuple(ModelConsumer consumer, EntityKeyMetadata... entityKeyMetadatas) {
+		throw new UnsupportedOperationException( "Not supported yet!" );
 	}
 
 	@Override
 	public Tuple createTuple(EntityKey key, TupleContext tupleContext) {
-		log.info( "createTuple:EntityKey:" + key + "; tupleContext" + tupleContext );
-		return new Tuple( new OrientDBTupleSnapshot( key.getMetadata() ) );
+		log.debugf( "createTuple:EntityKey: %s ; tupleContext: %s ", key, tupleContext );
+		return new Tuple( new OrientDBTupleSnapshot( tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), key.getMetadata() ) );
 	}
 
 	@Override
 	public Tuple createTuple(EntityKeyMetadata entityKeyMetadata, TupleContext tupleContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+		log.debugf( "createTuple:EntityKeyMetadata: %s ; tupleContext: ", entityKeyMetadata, tupleContext );
+		return new Tuple( new OrientDBTupleSnapshot( tupleContext.getAllAssociatedEntityKeyMetadata(), tupleContext.getAllRoles(), entityKeyMetadata ) );
 	}
 
 	@Override
 	public void insertOrUpdateTuple(EntityKey key, Tuple tuple, TupleContext tupleContext) throws TupleAlreadyExistsException {
-		log.info( "insertOrUpdateTuple:EntityKey:" + key + "; tupleContext" + tupleContext + "; tuple:" + tuple );
+
+		log.debugf( "insertOrUpdateTuple:EntityKey: %s ; tupleContext: %s ; tuple: %s ; thread: %s",
+				key, tupleContext, tuple, Thread.currentThread().getName() );
 		Connection connection = provider.getConnection();
+		OrientDBTupleSnapshot snapshot = (OrientDBTupleSnapshot) tuple.getSnapshot();
+		boolean existsInDB = EntityKeyUtil.existsPrimaryKeyInDB( connection, key );
+		QueryType queryType = QueryTypeDefiner.define( existsInDB, snapshot.isNew() );
+		log.debugf( "insertOrUpdateTuple: snapshot.isNew(): %b ,snapshot.isEmpty(): %b; exists in DB: %b; query type: %s ",
+				snapshot.isNew(), snapshot.isEmpty(), existsInDB, queryType );
 
-		StringBuilder queryBuffer = new StringBuilder();
-		ORecordId dbKey = null;
-		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
-			String columnName = key.getColumnNames()[i];
-			Object columnValue = key.getColumnValues()[i];
-			log.info( "EntityKey: columnName: " + columnName + ";columnValue: " + columnValue + " (class:" + columnValue.getClass().getName() + ");" );
-			if ( columnName.equals( "@rid" ) ) {
-				dbKey = (ORecordId) columnValue;
+		StringBuilder queryBuffer = new StringBuilder( 100 );
+		List<Object> preparedStatementParams = Collections.emptyList();
+
+		switch ( queryType ) {
+			case INSERT:
+				log.debugf( "insertOrUpdateTuple:Key: %s is new! Insert new record!", key );
+				GenerationResult insertResult = INSERT_QUERY_GENERATOR.generate( key.getTable(), tuple, true,
+						new HashSet<String>( Arrays.asList( key.getColumnNames() ) ) );
+				queryBuffer.append( insertResult.getExecutionQuery() );
+				preparedStatementParams = insertResult.getPreparedStatementParams();
+				break;
+			case UPDATE:
+				Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
+				log.debugf( "insertOrUpdateTuple:@version: %s. current tread: %s;",
+						snapshot.get( OrientDBConstant.SYSTEM_VERSION ), Thread.currentThread().getName() );
+				GenerationResult updateResult = UPDATE_QUERY_GENERATOR.generate( key.getTable(), tuple, key, currentVersion );
+				queryBuffer.append( updateResult.getExecutionQuery() );
+				break;
+			case ERROR:
+				throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
+		}
+
+		try {
+			log.debugf( "insertOrUpdateTuple:Key: %s; Query: %s; ", key, queryBuffer );
+			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
+			log.debugf( "insertOrUpdateTuple: exist parameters for preparedstatement : %d", preparedStatementParams.size() );
+			QueryUtil.setParameters( pstmt, preparedStatementParams );
+			int updateCount = pstmt.executeUpdate();
+			log.debugf( "insertOrUpdateTuple:Key: %s ;inserted or updated: %d ", key, updateCount );
+			if ( updateCount == 0 && queryType.equals( QueryType.UPDATE ) ) {
+				// primary key was in DB .... but during prepare query someone remove it from DB.
+				Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
+				throw log.versionNotActual( key, currentVersion );
 			}
 		}
-		if ( dbKey.getClusterPosition() == ORecordId.EMPTY_RECORD_ID.getClusterPosition() ) {
-			// it is new record =>insert a new record!
-			log.info( "insertOrUpdateTuple:Key:" + dbKey + "is temporary!. Insert new record" );
-
-			queryBuffer.append( "insert into " ).append( key.getTable() );
-			if ( tuple.getColumnNames().size() > 1 ) {
-				queryBuffer.append( " set " );
-			}
-			for ( String columnName : tuple.getColumnNames() ) {
-				if ( columnName.equals( "@rid" ) ) {
-					continue;
-				}
-				// @TODO correct type
-				queryBuffer.append( " " ).append( columnName ).append( "='" ).append( tuple.get( columnName ) ).append( "'," );
-			}
-			queryBuffer.setLength( queryBuffer.length() - 1 );
-			log.info( "insertOrUpdateTuple:Key:" + dbKey + ". insert query:" + queryBuffer.toString() );
-			try {
-				PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
-				log.info( "insertOrUpdateTuple:Key:" + dbKey + ". inserted: " + pstmt.executeUpdate() );
-			}
-			catch (SQLException e) {
-				log.error( "Can not find entity", e );
-				throw new RuntimeException( e );
-			}
-
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( queryBuffer.toString(), sqle );
 		}
-		else {
-			// it is old record =>update the record
-			log.info( "insertOrUpdateTuple:Key:" + dbKey + "is persistent!. Update old record" );
+		catch (OConcurrentModificationException cme) {
+			throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
 		}
 	}
 
 	@Override
 	public void insertTuple(EntityKeyMetadata entityKeyMetadata, Tuple tuple, TupleContext tupleContext) {
-		log.info( "insertTuple:EntityKeyMetadata:" + entityKeyMetadata + "; tupleContext" + tupleContext + "; tuple:" + tuple );
-		throw new UnsupportedOperationException( "Not supported yet." );
+		log.debugf( "insertTuple:EntityKeyMetadata: %s ; tupleContext: %s ; tuple: %s ",
+				entityKeyMetadata, tupleContext, tuple );
+
+		String dbKeyName = entityKeyMetadata.getColumnNames()[0];
+		Long dbKeyValue = null;
+		Connection connection = provider.getConnection();
+		String query = null;
+
+		if ( dbKeyName.equals( OrientDBConstant.SYSTEM_RID ) ) {
+			// use @RID for key
+			throw new UnsupportedOperationException( "Can not use @RID as primary key!" );
+		}
+		else {
+			// use business key. get new id from sequence
+			String seqName = OrientDBSchemaDefiner.generateSeqName( entityKeyMetadata.getTable(), dbKeyName );
+			dbKeyValue = (Long) SequenceUtil.getNextSequenceValue( connection, seqName );
+			tuple.put( dbKeyName, dbKeyValue );
+		}
+		InsertQueryGenerator.GenerationResult result = INSERT_QUERY_GENERATOR.generate( entityKeyMetadata.getTable(), tuple, true,
+				new HashSet<>( Arrays.asList( entityKeyMetadata.getColumnNames() ) ) );
+		query = result.getExecutionQuery();
+
+		log.debugf( "insertTuple: insertQuery: %s ", result.getExecutionQuery() );
+		try {
+			PreparedStatement pstmt = connection.prepareStatement( result.getExecutionQuery() );
+			if ( result.getPreparedStatementParams() != null ) {
+				QueryUtil.setParameters( pstmt, result.getPreparedStatementParams() );
+			}
+			log.debugf( "insertTuple:Key: %s (%s) ;inserted or updated: %d ", dbKeyName, dbKeyValue, pstmt.executeUpdate() );
+		}
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( query, sqle );
+		}
 	}
 
 	@Override
 	public void removeTuple(EntityKey key, TupleContext tupleContext) {
-		log.info( "removeTuple:EntityKey:" + key + "; tupleContext" + tupleContext );
-		throw new UnsupportedOperationException( "Not supported yet." );
+		log.debugf( "removeTuple:EntityKey: %s ; tupleContext %s ; current thread: %s",
+				key, tupleContext, Thread.currentThread().getName() );
+		Connection connection = provider.getConnection();
+		StringBuilder queryBuffer = new StringBuilder( 100 );
+		try {
+			queryBuffer.append( "DELETE VERTEX " ).append( key.getTable() ).append( " where " ).append( EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
+			log.debugf( "removeTuple:Key: %s. query: %s ", key, queryBuffer );
+			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
+			log.debugf( "removeTuple:Key: %s. remove: %s", key, pstmt.executeUpdate() );
+		}
+		catch (SQLException e) {
+			throw log.cannotExecuteQuery( queryBuffer.toString(), e );
+		}
 	}
 
 	@Override
-	public Association getAssociation(AssociationKey key, AssociationContext associationContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+	public Association getAssociation(AssociationKey associationKey, AssociationContext associationContext) {
+		log.debugf( "getAssociation:AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
+		EntityKey entityKey = associationKey.getEntityKey();
+		Connection connection = provider.getConnection();
+		boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( connection, entityKey );
+		if ( !existsPrimaryKey ) {
+			// Entity now extists
+			return ASSOCIATION_NOT_FOUND;
+		}
+		Map<RowKey, Tuple> tuples = createAssociationMap( associationKey, associationContext );
+		log.debugf( "getAssociation:tuples map: %s ; ", tuples );
+		return new Association( new OrientDBAssociationSnapshot( tuples ) );
+	}
+
+	private Map<RowKey, Tuple> createAssociationMap(AssociationKey associationKey, AssociationContext associationContext) {
+		log.debugf( "createAssociationMap:AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
+		Connection connection = provider.getConnection();
+		List<Map<String, Object>> relationships = entityQueries.get( associationKey.getEntityKey().getMetadata() )
+				.findAssociation( connection, associationKey, associationContext );
+
+		Map<RowKey, Tuple> tuples = new HashMap<>();
+
+		for ( Map<String, Object> relationship : relationships ) {
+			OrientDBTupleAssociationSnapshot snapshot = new OrientDBTupleAssociationSnapshot( relationship, associationKey,
+					associationContext );
+			tuples.put( convertToRowKey( associationKey, snapshot ), new Tuple( snapshot ) );
+		}
+		return tuples;
+	}
+
+	private RowKey convertToRowKey(AssociationKey associationKey, OrientDBTupleAssociationSnapshot snapshot) {
+		String[] columnNames = associationKey.getMetadata().getRowKeyColumnNames();
+		Object[] values = new Object[columnNames.length];
+		for ( int i = 0; i < columnNames.length; i++ ) {
+			String columnName = columnNames[i];
+			values[i] = snapshot.get( columnName );
+		}
+		return new RowKey( columnNames, values );
 	}
 
 	@Override
-	public Association createAssociation(AssociationKey key, AssociationContext associationContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+	public Association createAssociation(AssociationKey associationKey, AssociationContext associationContext) {
+		log.debugf( "createAssociation: %s ; AssociationContext: %s", associationKey, associationContext );
+		return new Association();
 	}
 
 	@Override
-	public void insertOrUpdateAssociation(AssociationKey key, Association association, AssociationContext associationContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+	public void insertOrUpdateAssociation(AssociationKey associationKey, Association association, AssociationContext associationContext) {
+		log.debugf( "insertOrUpdateAssociation: AssociationKey: %s ; AssociationContext: %s ; association: %s", associationKey, associationContext,
+				association );
+		log.debugf( "insertOrUpdateAssociation: EntityKey: %s ;", associationKey.getEntityKey() );
+		log.debugf( "insertOrUpdateAssociation: operations: %s ;", association.getOperations() );
+
+		for ( AssociationOperation action : association.getOperations() ) {
+			applyAssociationOperation( association, associationKey, action, associationContext );
+		}
+
+	}
+
+	private void applyAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation operation,
+			AssociationContext associationContext) {
+		switch ( operation.getType() ) {
+			case CLEAR:
+				log.debugf( "applyAssociationOperation: CLEAR operation for: %s ;", associationKey );
+				removeAssociation( associationKey, associationContext );
+				break;
+			case PUT:
+				log.debugf( "applyAssociationOperation: PUT operation for: %s ;", associationKey );
+				putAssociationOperation( association, associationKey, operation,
+						associationContext.getAssociationTypeContext().getAssociatedEntityKeyMetadata() );
+				break;
+			case REMOVE:
+				log.debugf( "applyAssociationOperation: REMOVE operation for: %s ;", associationKey );
+				removeAssociationOperation( association, associationKey, operation,
+						associationContext.getAssociationTypeContext().getAssociatedEntityKeyMetadata() );
+				break;
+		}
 	}
 
 	@Override
 	public void removeAssociation(AssociationKey key, AssociationContext associationContext) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+		// Remove the list of tuples corresponding to a given association
+		// If this is the inverse side of a bi-directional association, we don't manage the relationship from this side
+		if ( key.getMetadata().isInverse() ) {
+			return;
+		}
+
+		associationQueries.get( key.getMetadata() ).removeAssociation( provider.getConnection(), key, associationContext );
+	}
+
+	private void removeAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
+			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "removeAssociationOperation: action key: %s ;action value: %s ; metadata: %s; association:%s;associatedEntityKeyMetadata:%s",
+				action.getKey(), action.getValue(), associationKey.getMetadata(), association, associatedEntityKeyMetadata );
+		log.debugf( "removeAssociationOperation: contains key :%b",
+				associationQueries.containsKey( associationKey.getMetadata() ) );
+		if ( associationKey.getMetadata().isInverse() ) {
+			return;
+		}
+		associationQueries.get( associationKey.getMetadata() ).removeAssociationRow( provider.getConnection(), associationKey, action.getKey() );
+	}
+
+	private void putAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
+			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "putAssociationOperation: : action: %s ; metadata: %s; association:%s", action, associationKey.getMetadata(), association );
+		Connection connection = provider.getConnection();
+		if ( associationQueries.containsKey( associationKey.getMetadata() ) ) {
+			List<Map<String, Object>> relationship = associationQueries.get( associationKey.getMetadata() ).findRelationship( connection,
+					associationKey, action.getKey() );
+			if ( relationship.isEmpty() ) {
+				// create
+				createRelationship( associationKey, action.getValue(), associatedEntityKeyMetadata );
+			}
+			else {
+				log.debugf( "putAssociationOperation: :  associations for  metadata: %s is %d", associationKey.getMetadata(), relationship.size() );
+				// relationship = createRelationship( associationKey, action.getValue(), associatedEntityKeyMetadata );
+				// throw new UnsupportedOperationException("putAssociationOperation: relations not empty not
+				// supported!");
+			}
+		}
+		else {
+			log.debugf( "putAssociationOperation: no associations for  metadata: %s", associationKey.getMetadata() );
+		}
+
+	}
+
+	private void createRelationship(AssociationKey associationKey, Tuple associationRow, AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "createRelationship: associationKey.getMetadata(): %s ; associationRow: %s", associationKey.getMetadata(), associationRow );
+		log.debugf( "createRelationship: getAssociationKind: %s", associationKey.getMetadata().getAssociationKind() );
+		log.debugf( "createRelationship: getAssociationType:%s", associationKey.getMetadata().getAssociationType() );
+		switch ( associationKey.getMetadata().getAssociationKind() ) {
+			case EMBEDDED_COLLECTION:
+				log.debug( "createRelationship:EMBEDDED_COLLECTION" );
+				createRelationshipWithEmbeddedNode( associationKey, associationRow, associatedEntityKeyMetadata );
+				break;
+			case ASSOCIATION:
+				log.debug( "createRelationship:ASSOCIATION" );
+				createRelationshipWithEntityNode( associationKey, associationRow, associatedEntityKeyMetadata );
+				break;
+			default:
+				throw new AssertionFailure( "Unrecognized associationKind: " + associationKey.getMetadata().getAssociationKind() );
+		}
+	}
+
+	private void createRelationshipWithEntityNode(AssociationKey associationKey, Tuple associationRow,
+			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "createRelationshipWithEntityNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
+				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
+		// @TODO equals with createRelationshipWithEmbeddedNode?
+		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
+		log.debugf( "createRelationshipWithEntityNode: query: %s", result.getExecutionQuery() );
+		try {
+			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
+			QueryUtil.setParameters( pstmt, result.getPreparedStatementParams() );
+			log.debugf( "createRelationshipWithEntityNode: execute insert query: %d", pstmt.executeUpdate() );
+		}
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( result.getExecutionQuery(), sqle );
+		}
+	}
+
+	private void createRelationshipWithEmbeddedNode(AssociationKey associationKey, Tuple associationRow,
+			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		log.debugf( "createRelationshipWithEmbeddedNode: associationKey.getMetadata(): %s ; associationRow: %s ; associatedEntityKeyMetadata: %s",
+				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
+		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
+		log.debugf( "createRelationshipWithEmbeddedNode: query: %s", result.getExecutionQuery() );
+		try {
+			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
+			QueryUtil.setParameters( pstmt, result.getPreparedStatementParams() );
+			log.debugf( "createRelationshipWithEmbeddedNode: execute insert query: %d", pstmt.executeUpdate() );
+		}
+		catch (SQLException sqle) {
+			throw log.cannotExecuteQuery( result.getExecutionQuery(), sqle );
+		}
 	}
 
 	@Override
@@ -189,23 +476,109 @@ public class OrientDBDialect extends BaseGridDialect
 
 	@Override
 	public Number nextValue(NextValueRequest request) {
-		log.info( "NextValueRequest:" + request + "; " );
-		return ORecordId.EMPTY_RECORD_ID.getClusterPosition();
+		log.debugf( "NextValueRequest: %s", request );
+		long nextValue = 0;
+		Connection connection = provider.getConnection();
+		IdSourceType type = request.getKey().getMetadata().getType();
+		switch ( type ) {
+			case SEQUENCE:
+				String seqName = request.getKey().getMetadata().getName();
+				nextValue = SequenceUtil.getNextSequenceValue( connection, seqName );
+				break;
+			case TABLE:
+				String seqTableName = "sequences";
+				String pkColumnName = "key";
+				String valueColumnName = "seed";
+				String pkColumnValue = (String) request.getKey().getColumnValues()[0];
+				log.debugf( "seqTableName:%s, pkColumnName:%s, pkColumnValue:%s, valueColumnName:%s",
+						seqTableName, pkColumnName, pkColumnValue, valueColumnName );
+				nextValue = SequenceUtil.getNextTableValue( connection, seqTableName, pkColumnName, pkColumnValue, valueColumnName,
+						request.getInitialValue(), request.getIncrement() );
+		}
+		log.debugf( "nextValue: %d", nextValue );
+		return nextValue;
 	}
 
 	@Override
 	public boolean supportsSequences() {
-		return super.supportsSequences(); // To change body of generated methods, choose Tools | Templates.
+		return true;
+	}
+
+	@SuppressWarnings(value = { "unchecked", "rawtypes" })
+	@Override
+	public ClosableIterator<Tuple> executeBackendQuery(BackendQuery<String> backendQuery, QueryParameters queryParameters) {
+		Map<String, Object> parameters = getNamedParameterValuesConvertedByGridType( queryParameters );
+		log.debugf( "executeBackendQuery: parameters: %s ; ",
+				parameters.keySet() );
+		String nativeQuery = backendQuery.getQuery();
+		log.debugf( "executeBackendQuery: nativeQuery: %s ; metadata: %s",
+				backendQuery.getQuery(), backendQuery.getSingleEntityKeyMetadataOrNull() );
+
+		try {
+			PreparedStatement pstmt = provider.getConnection().prepareStatement( nativeQuery );
+			int paramIndex = 1;
+			for ( Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet() ) {
+				String key = entry.getKey();
+				TypedGridValue value = entry.getValue();
+				log.debugf( "executeBackendQuery: key: %s ; type: %s ; value: %s; type class: %s ",
+						key, value.getType(), value.getValue(), value.getType().getReturnedClass() );
+				try {
+					if ( SIMPLE_VALUE_SETTER_MAP.containsKey( value.getType() ) ) {
+						SIMPLE_VALUE_SETTER_MAP.get( value.getType() ).setValue( pstmt, paramIndex, value.getValue() );
+					}
+					else {
+						// @TODO: support dates!
+						throw new UnsupportedOperationException( "Type " + value.getType() + " is not supported!" );
+					}
+
+				}
+				catch (SQLException sqle) {
+					throw log.cannotSetValueForParameter( paramIndex, sqle );
+				}
+				paramIndex++;
+			}
+			ResultSet rs = pstmt.executeQuery();
+			return new ResultSetTupleIterator( rs );
+		}
+		catch (SQLException e) {
+			throw log.cannotExecuteQuery( nativeQuery, e );
+		}
+	}
+
+	/**
+	 * Returns a map with the named parameter values from the given parameters object, converted by the {@link GridType}
+	 * corresponding to each parameter type.
+	 */
+	private Map<String, Object> getNamedParameterValuesConvertedByGridType(QueryParameters queryParameters) {
+		Map<String, Object> parameterValues = new HashMap<>( queryParameters.getNamedParameters().size() );
+		Tuple dummy = new Tuple();
+
+		for ( Map.Entry<String, TypedGridValue> parameter : queryParameters.getNamedParameters().entrySet() ) {
+			parameter.getValue().getType().nullSafeSet( dummy, parameter.getValue().getValue(), new String[]{ parameter.getKey() }, null );
+			parameterValues.put( parameter.getKey(), dummy.get( parameter.getKey() ) );
+		}
+
+		return parameterValues;
 	}
 
 	@Override
-	public void forEachTuple(ModelConsumer consumer, EntityKeyMetadata... entityKeyMetadatas) {
-		throw new UnsupportedOperationException( "Not supported yet." );
+	public ParameterMetadataBuilder getParameterMetadataBuilder() {
+		return new OrientDBParameterMetadataBuilder();
+	}
+
+	@Override
+	public String parseNativeQuery(String nativeQuery) {
+		return nativeQuery;
+
+	}
+
+	@Override
+	public void injectServices(ServiceRegistryImplementor serviceRegistry) {
+		this.serviceRegistry = serviceRegistry;
 	}
 
 	@Override
 	public void sessionFactoryCreated(SessionFactoryImplementor sessionFactoryImplementor) {
-
 		this.associationQueries = initializeAssociationQueries( sessionFactoryImplementor );
 		this.entityQueries = initializeEntityQueries( sessionFactoryImplementor, associationQueries );
 	}
@@ -224,7 +597,7 @@ public class OrientDBDialect extends BaseGridDialect
 	}
 
 	private Map<EntityKeyMetadata, OrientDBEntityQueries> initializeEntityQueries(SessionFactoryImplementor sessionFactoryImplementor) {
-		Map<EntityKeyMetadata, OrientDBEntityQueries> queryMap = new HashMap<EntityKeyMetadata, OrientDBEntityQueries>();
+		Map<EntityKeyMetadata, OrientDBEntityQueries> queryMap = new HashMap<>();
 		Collection<EntityPersister> entityPersisters = sessionFactoryImplementor.getEntityPersisters().values();
 		for ( EntityPersister entityPersister : entityPersisters ) {
 			if ( entityPersister instanceof OgmEntityPersister ) {
@@ -236,13 +609,19 @@ public class OrientDBDialect extends BaseGridDialect
 	}
 
 	private Map<AssociationKeyMetadata, OrientDBAssociationQueries> initializeAssociationQueries(SessionFactoryImplementor sessionFactoryImplementor) {
-		Map<AssociationKeyMetadata, OrientDBAssociationQueries> queryMap = new HashMap<AssociationKeyMetadata, OrientDBAssociationQueries>();
+		Map<AssociationKeyMetadata, OrientDBAssociationQueries> queryMap = new HashMap<>();
 		Collection<CollectionPersister> collectionPersisters = sessionFactoryImplementor.getCollectionPersisters().values();
 		for ( CollectionPersister collectionPersister : collectionPersisters ) {
 			if ( collectionPersister instanceof OgmCollectionPersister ) {
 				OgmCollectionPersister ogmCollectionPersister = (OgmCollectionPersister) collectionPersister;
+
+				log.debugf( "initializeAssociationQueries: ogmCollectionPersister : %s", ogmCollectionPersister );
 				EntityKeyMetadata ownerEntityKeyMetadata = ( (OgmEntityPersister) ( ogmCollectionPersister.getOwnerEntityPersister() ) ).getEntityKeyMetadata();
+
+				log.debugf( "initializeAssociationQueries: ownerEntityKeyMetadata : %s", ownerEntityKeyMetadata );
 				AssociationKeyMetadata associationKeyMetadata = ogmCollectionPersister.getAssociationKeyMetadata();
+
+				log.debugf( "initializeAssociationQueries: associationKeyMetadata : %s", associationKeyMetadata );
 				queryMap.put( associationKeyMetadata, new OrientDBAssociationQueries( ownerEntityKeyMetadata, associationKeyMetadata ) );
 			}
 		}
@@ -251,13 +630,16 @@ public class OrientDBDialect extends BaseGridDialect
 
 	@Override
 	public GridType overrideType(Type type) {
-		log.info( "overrideType:" + type.getName() + ";" + type.getReturnedClass() );
 		GridType gridType = null;
-		if ( type.getName().equals( "com.orientechnologies.orient.core.id.ORecordId" ) ) {
+
+		if ( type.getReturnedClass().equals( ORecordId.class ) ) {
 			gridType = ORecordIdGridType.INSTANCE;
 		}
+		else if ( type.getReturnedClass().equals( ORidBag.class ) ) {
+			gridType = ORidBagGridType.INSTANCE;
+		}
 		else {
-			gridType = super.overrideType( type ); // To change body of generated methods, choose Tools | Templates.
+			gridType = super.overrideType( type );
 		}
 		return gridType;
 	}

@@ -7,46 +7,37 @@
 package org.hibernate.ogm.backendtck.id;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 import javax.persistence.EntityManager;
 
-import org.hibernate.HibernateException;
 import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.SkipByGridDialect;
-import org.hibernate.ogm.utils.Throwables;
 import org.hibernate.ogm.utils.jpa.JpaTestCase;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 /**
  * @author Nabeel Ali Memon &lt;nabeel@nabeelalimemon.com&gt;
  */
+@SkipByGridDialect(value = { GridDialectType.HASHMAP }, comment = "Id generation strategy IDENTITY is not supported by the current grid dialect")
 public class IdentityIdGeneratorTest extends JpaTestCase {
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
+	private EntityManager em;
 
-	@Override
 	@Before
-	public void createFactory() throws Throwable {
-		thrown.expect( HibernateException.class );
-		thrown.expectMessage( "OGM000065" );
-		try {
-			super.createFactory();
-			fail( "Expected session factory set-up to fail as IDENTITY columns are not supported" );
-		}
-		catch (Exception e) {
-			throw Throwables.getRootCause( e );
-		}
+	public void setUp() {
+		em = getFactory().createEntityManager();
+	}
+
+	@After
+	public void tearDown() {
+		em.close();
 	}
 
 	@Test
 	@SkipByGridDialect(value = GridDialectType.MONGODB, comment = "MongoDB supports IDENTITY columns, but not of type Long.")
 	public void testIdentityGenerator() throws Exception {
-		final EntityManager em = getFactory().createEntityManager();
 		em.getTransaction().begin();
 		Animal jungleKing = new Animal();
 		Animal fish = new Animal();
@@ -74,14 +65,12 @@ public class IdentityIdGeneratorTest extends JpaTestCase {
 		assertThat( animal.getName() ).isEqualTo( "Shark" );
 		em.remove( animal );
 		em.getTransaction().commit();
-
-		em.close();
 	}
 
 	@Override
 	public Class<?>[] getEntities() {
-		return new Class<?>[] {
-				Animal.class
+		return new Class<?>[]{
+			Animal.class
 		};
 	}
 }

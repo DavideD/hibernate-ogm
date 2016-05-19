@@ -6,6 +6,7 @@
  */
 package org.hibernate.ogm.backendtck.embeddable;
 
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Version;
@@ -15,6 +16,7 @@ import javax.persistence.Version;
  */
 @Entity
 public class Account {
+
 	private String login;
 	private String password;
 	private Address homeAddress;
@@ -37,6 +39,7 @@ public class Account {
 		this.password = password;
 	}
 
+	@Embedded
 	public Address getHomeAddress() {
 		return homeAddress;
 	}

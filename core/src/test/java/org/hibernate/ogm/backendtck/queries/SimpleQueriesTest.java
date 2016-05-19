@@ -333,14 +333,14 @@ public class SimpleQueriesTest extends OgmTestCase {
 
 	@Test
 	public void testLikeQueryOnMultiwordsNoMatch() throws Exception {
-		//It is case-sensitive, as Analysis is disabled on wildcard queries:
+		// It is case-sensitive, as Analysis is disabled on wildcard queries:
 		List<?> result = session.createQuery( "from Hypothesis h where h.description LIKE 'there are more than%'" ).list();
 		assertThat( result ).isEmpty();
 	}
 
 	@Test
 	public void testLikeQueryOnMultiwordsAsPrefix() throws Exception {
-		//It is case-sensitive, as Analysis is disabled on wildcard queries:
+		// It is case-sensitive, as Analysis is disabled on wildcard queries:
 		List<?> result = session.createQuery( "from Hypothesis h where h.description LIKE '%e'" ).list();
 		assertThat( result ).onProperty( "id" ).containsOnly( "13", "14" );
 	}
@@ -353,7 +353,7 @@ public class SimpleQueriesTest extends OgmTestCase {
 
 	@Test
 	public void testNegatedLikeQueryOnMultiwords() throws Exception {
-		//Matching out:
+		// Matching out:
 		// "13" - "There are more than two dimensions over the shadows we see out of the cave"
 		// "17" - "Is the truth out there?"
 		// "18" - "The truth out there."
@@ -420,8 +420,7 @@ public class SimpleQueriesTest extends OgmTestCase {
 				"The truth out there.",
 				"There are more than two dimensions over the shadows we see out of the cave",
 				"There are more than two fools in our team.",
-				"stuff works"
-		);
+				"stuff works" );
 	}
 
 	@Test
@@ -435,16 +434,14 @@ public class SimpleQueriesTest extends OgmTestCase {
 				"Peano's curve and then Hilbert's space filling curve proof the connection from mono-dimensional to bi-dimensional space",
 				"Is the truth out there?",
 				"Hilbert's proof of connection to 2 dimensions can be induced to reason on N dimensions",
-				null
-		);
+				null );
 	}
 
 	@Test
 	public void testOrderedDescByNumericFieldWithCustomColumnNameQuery() throws Exception {
 		List<?> result = session.createQuery( "from Hypothesis h order by h.position desc" ).list();
 		assertThat( result ).onProperty( "position" ).containsExactly(
-				7, 6, 5, 4, 4, 3, 2, 1
-		);
+				7, 6, 5, 4, 4, 3, 2, 1 );
 	}
 
 	@Test
@@ -452,11 +449,9 @@ public class SimpleQueriesTest extends OgmTestCase {
 		List<?> result = session.createQuery( "from Helicopter h order by h.make desc, h.name" ).list();
 
 		assertThat( result ).onProperty( "make" ).ignoreNullOrder().containsExactly(
-				"Lama", "Lama", "Howard", "Crusoe", null
-		);
+				"Lama", "Lama", "Howard", "Crusoe", null );
 		assertThat( result ).onProperty( "name" ).ignoreNullOrder().containsExactly(
-				"Lama", "No creative clue", null, "No creative clue", null
-		);
+				"Lama", "No creative clue", null, "No creative clue", null );
 	}
 
 	@Test
@@ -467,8 +462,7 @@ public class SimpleQueriesTest extends OgmTestCase {
 				new ProjectionResult( "Lama", "Lama" ),
 				new ProjectionResult( "No creative clue", "Lama" ),
 				new ProjectionResult( null, "Howard" ),
-				new ProjectionResult( "No creative clue", "Crusoe" )
-		);
+				new ProjectionResult( "No creative clue", "Crusoe" ) );
 	}
 
 	@Test
@@ -504,15 +498,17 @@ public class SimpleQueriesTest extends OgmTestCase {
 		hypothesis.setDescription( "In the morning it's darker than outside" );
 		hypothesis.setPosition( 30 );
 		session.persist( hypothesis );
-
-		if ( TestHelper.getCurrentDialectType().supportsQueries() ) {
-			assertQuery( session, query, 1, "Newly inserted entity should have been flushed and returned by the query" );
+		try {
+			if ( TestHelper.getCurrentDialectType().supportsQueries() ) {
+				assertQuery( session, query, 1, "Newly inserted entity should have been flushed and returned by the query" );
+			}
+			else {
+				assertQuery( session, query, 0, "Newly inserted entity should not have been returned by the query" );
+			}
 		}
-		else {
-			assertQuery( session, query, 0, "Newly inserted entity should not have been returned by the query" );
+		finally {
+			session.delete( hypothesis );
 		}
-
-		session.delete( hypothesis );
 	}
 
 	@Test
@@ -532,15 +528,18 @@ public class SimpleQueriesTest extends OgmTestCase {
 		assertQuery( session, query, 0, "No auto-flush should be performed prior to query execution" );
 
 		session.flush();
+		try {
+			if ( TestHelper.getCurrentDialectType().supportsQueries() ) {
+				assertQuery( session, query, 1, "Flushed result should be returned by query" );
+			}
+			else {
+				assertQuery( session, query, 0, "Flushed result not be returned by query executed via Hibernate Search" );
+			}
 
-		if ( TestHelper.getCurrentDialectType().supportsQueries() ) {
-			assertQuery( session, query, 1, "Flushed result should be returned by query" );
 		}
-		else {
-			assertQuery( session, query, 0, "Flushed result not be returned by query executed via Hibernate Search" );
+		finally {
+			session.delete( hypothesis );
 		}
-
-		session.delete( hypothesis );
 	}
 
 	@BeforeClass
@@ -739,6 +738,6 @@ public class SimpleQueriesTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] { Hypothesis.class, Helicopter.class, Author.class, Address.class };
+		return new Class<?>[]{ Hypothesis.class, Helicopter.class, Author.class, Address.class };
 	}
 }

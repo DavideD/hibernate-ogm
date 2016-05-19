@@ -6,12 +6,13 @@
  */
 package org.hibernate.datastore.ogm.orientdb.type.descriptor.java;
 
-import com.orientechnologies.orient.core.id.ORecordId;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 
+import com.orientechnologies.orient.core.id.ORecordId;
+
 /**
- * @author chernolyassv
+ * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
  */
 public class ORecordIdTypeDescriptor extends AbstractTypeDescriptor<ORecordId> {
 

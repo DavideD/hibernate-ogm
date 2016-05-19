@@ -1,0 +1,10 @@
+sudo: false
+language: java
+install: /bin/true
+script: mvn clean install -pl orientdb -am  
+branches:
+  only:
+  - all_last_changes5
+jdk:
+  - oraclejdk8
+ 

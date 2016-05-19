@@ -22,6 +22,10 @@ import org.junit.Test;
 /**
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
  */
+@SkipByGridDialect(
+		value = { GridDialectType.ORIENTDB },
+		comment = "Composite primary key is not supported yet"
+)
 public class ManyToManyTest extends OgmTestCase {
 
 	@Test
@@ -90,7 +94,7 @@ public class ManyToManyTest extends OgmTestCase {
 
 	@Test
 	@SkipByGridDialect(
-			value = { GridDialectType.CASSANDRA },
+			value = { GridDialectType.CASSANDRA, GridDialectType.ORIENTDB },
 			comment = "composite PKs in associations not yet supported"
 	)
 	public void testManyToManyCompositeId() throws Exception {

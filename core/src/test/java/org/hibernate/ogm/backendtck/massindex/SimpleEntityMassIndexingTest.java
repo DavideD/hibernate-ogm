@@ -9,6 +9,7 @@ package org.hibernate.ogm.backendtck.massindex;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.hibernate.ogm.utils.GridDialectType.MONGODB;
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J;
+import static org.hibernate.ogm.utils.GridDialectType.ORIENTDB;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,6 @@ import org.hibernate.ogm.backendtck.hsearch.Insurance;
 import org.hibernate.ogm.backendtck.id.NewsID;
 import org.hibernate.ogm.backendtck.massindex.model.IndexedLabel;
 import org.hibernate.ogm.backendtck.massindex.model.IndexedNews;
-import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
 import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.hibernate.search.FullTextSession;
@@ -31,10 +31,11 @@ import org.junit.Test;
 /**
  * @author Davide D'Alto &lt;davide@hibernate.org&gt;
  */
+@SkipByGridDialect(value = { ORIENTDB }, comment = "Embedded keys not supports")
 public class SimpleEntityMassIndexingTest extends OgmTestCase {
 
 	@Test
-	@SkipByGridDialect(value = GridDialectType.NEO4J, comment = "Neo4j is not compatible with HSEARCH 5")
+	@SkipByGridDialect(value = NEO4J, comment = "Neo4j is not compatible with HSEARCH 5")
 	public void testSimpleEntityMassIndexing() throws Exception {
 		{
 			Session session = openSession();
