@@ -15,6 +15,7 @@ import static org.hibernate.ogm.utils.GridDialectType.INFINISPAN;
 import static org.hibernate.ogm.utils.GridDialectType.REDIS_HASH;
 import static org.hibernate.ogm.utils.GridDialectType.REDIS_JSON;
 import static org.hibernate.ogm.utils.GridDialectType.MONGODB;
+import static org.hibernate.ogm.utils.GridDialectType.ORIENTDB;
 
 import java.util.Arrays;
 import java.util.Calendar;
@@ -33,7 +34,7 @@ import org.junit.Test;
  * @author Guillaume Smet
  */
 @SkipByGridDialect(
-		value = { CASSANDRA, COUCHDB, EHCACHE, HASHMAP, INFINISPAN, REDIS_JSON, REDIS_HASH },
+		value = { CASSANDRA, COUCHDB, EHCACHE, HASHMAP, INFINISPAN, REDIS_JSON, REDIS_HASH, ORIENTDB },
 		comment = "We need a QueryParserService to be able to perform these queries.")
 public class QueriesWithAssociationsTest extends JpaTestCase {
 
@@ -83,14 +84,12 @@ public class QueriesWithAssociationsTest extends JpaTestCase {
 		assertThat( hypothesis.size() ).isEqualTo( 2 );
 		assertThat( hypothesis ).onProperty( "author" ).containsOnly( alma, alfred );
 
-
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	@SkipByGridDialect(
-			value = { CASSANDRA, COUCHDB, EHCACHE, HASHMAP, INFINISPAN, REDIS_JSON, REDIS_HASH, MONGODB },
-			comment = "We need to be able to join on associations. Currently, only the Neo4j dialect supports it.")
+	@SkipByGridDialect(value = { CASSANDRA, COUCHDB, EHCACHE, HASHMAP, INFINISPAN, REDIS_JSON, REDIS_HASH, MONGODB,	ORIENTDB },
+	comment = "We need to be able to join on associations. Currently, only the Neo4j dialect supports it.")
 	public void testGetWithJoinOnAssociations() throws Exception {
 		Author alma = (Author) em.createQuery( "FROM Author WHERE name = :name" )
 				.setParameter( "name", "alma" )
@@ -211,7 +210,7 @@ public class QueriesWithAssociationsTest extends JpaTestCase {
 
 	@After
 	public void closeEmAndRemoveEntities() throws Exception {
-		//Do not hide the real cause with an NPE if there are initialization issues:
+		// Do not hide the real cause with an NPE if there are initialization issues:
 		if ( em != null ) {
 			em.getTransaction().commit();
 			removeEntities();
@@ -221,7 +220,7 @@ public class QueriesWithAssociationsTest extends JpaTestCase {
 
 	@Override
 	public Class<?>[] getEntities() {
-		return new Class<?>[] { Address.class, Author.class, Hypothesis.class };
+		return new Class<?>[]{ Address.class, Author.class, Hypothesis.class };
 	}
 
 	private void removeEntities() throws Exception {

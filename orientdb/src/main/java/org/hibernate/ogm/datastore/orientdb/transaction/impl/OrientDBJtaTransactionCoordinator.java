@@ -23,6 +23,8 @@ import com.orientechnologies.orient.core.tx.OTransaction;
 import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
 
 /**
+ * Coordinator for JTA transactions
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBJtaTransactionCoordinator extends ForwardingTransactionCoordinator {
@@ -31,6 +33,12 @@ public class OrientDBJtaTransactionCoordinator extends ForwardingTransactionCoor
 	private OrientDBDatastoreProvider datastoreProvider;
 	private OTransaction currentOrientDBTransaction;
 
+	/**
+	 * Constructor
+	 *
+	 * @param coordinator transaction coordinator
+	 * @param datastoreProvider provider of OrientDB datastore
+	 */
 	public OrientDBJtaTransactionCoordinator(TransactionCoordinator coordinator, OrientDBDatastoreProvider datastoreProvider) {
 		super( coordinator );
 		this.datastoreProvider = datastoreProvider;

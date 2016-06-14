@@ -16,22 +16,54 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Constants of the implementation
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
+@SuppressWarnings("rawtypes")
 public class OrientDBConstant {
 
+	/**
+	 * Set of system fields of linking documents
+	 */
 	public static final Set<String> LINK_FIELDS;
+	/**
+	 * Set of system fields of OrientDB document
+	 */
 	public static final Set<String> SYSTEM_FIELDS;
-
+	/**
+	 * Name of system property 'record id'
+	 */
 	public static final String SYSTEM_RID = "@rid";
+	/**
+	 * Name of system property 'record version'
+	 */
 	public static final String SYSTEM_VERSION = "@version";
+	/**
+	 * Name of system property 'record class'
+	 */
 	public static final String SYSTEM_CLASS = "@class";
+	/**
+	 * Mapping between entity field and system OrientDB field
+	 */
 	public static final Map<String, String> MAPPING_FIELDS;
+	/**
+	 * Set of types that saved as binary
+	 */
 	public static final Set<Class> BASE64_TYPES;
 	public static final String NULL_VALUE = "null";
+	/**
+	 * Set of system classes (tables)
+	 */
 	public static final Set<String> SYSTEM_CLASS_SET;
+	/**
+	 * Name of default sequence
+	 */
 	public static final String HIBERNATE_SEQUENCE = "hibernate_sequence";
+	/**
+	 * Name of table for using as table id generation
+	 */
 	public static final String HIBERNATE_SEQUENCE_TABLE = "sequences";
 
 	static {

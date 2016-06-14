@@ -15,13 +15,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
-import org.hibernate.mapping.Column;
-import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.mapping.Column;
 import org.hibernate.ogm.model.key.spi.EntityKey;
-
-import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
@@ -40,10 +37,7 @@ public class EntityKeyUtil {
 	}
 
 	public static void setFieldValue(StringBuilder queryBuffer, Object dbKeyValue) {
-		if ( dbKeyValue != null ) {
-			// @TODO not forget remove the code!
-			log.debugf( "dbKeyValue class: %s ; class: %s ", dbKeyValue, dbKeyValue.getClass() );
-		}
+
 		if ( dbKeyValue instanceof String || dbKeyValue instanceof UUID || dbKeyValue instanceof Character ) {
 			queryBuffer.append( "'" ).append( dbKeyValue ).append( "'" );
 		}
@@ -64,33 +58,6 @@ public class EntityKeyUtil {
 		}
 		queryBuffer.append( " " );
 
-	}
-
-	@Deprecated
-	public static Object findPrimaryKeyValue(EntityKey key) {
-		Object dbKeyValue = null;
-		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
-			String columnName = key.getColumnNames()[i];
-			Object columnValue = key.getColumnValues()[i];
-			log.debugf( "EntityKey: columnName: %s ;columnValue: %s (class:%s)", columnName, columnValue, columnValue.getClass().getName() );
-			if ( key.getMetadata().isKeyColumn( columnName ) ) {
-				log.debugf( "EntityKey: columnName: %s is primary key!", columnName );
-				dbKeyValue = columnValue;
-			}
-		}
-		return dbKeyValue;
-	}
-
-	@Deprecated
-	public static String findPrimaryKeyName(EntityKey key) {
-		for ( int i = 0; i < key.getColumnNames().length; i++ ) {
-			String columnName = key.getColumnNames()[i];
-			if ( key.getMetadata().isKeyColumn( columnName ) ) {
-				log.debugf( "EntityKey: columnName: %s is primary key!", columnName );
-				return columnName;
-			}
-		}
-		return null;
 	}
 
 	public static String generatePrimaryKeyPredicate(EntityKey key) {
@@ -130,25 +97,5 @@ public class EntityKeyUtil {
 
 		}
 		return exists;
-	}
-
-	public static ORecordId findRid(Connection connection, String className, String businessKeyName, Object businessKeyValue) {
-		StringBuilder buffer = new StringBuilder();
-		ORecordId rid = null;
-		try {
-			log.debug( "findRid:className:" + className + " ; businessKeyName:" + businessKeyName + "; businessKeyValue:" + businessKeyValue );
-			buffer.append( "select from " ).append( className ).append( " where " );
-			buffer.append( businessKeyName ).append( " = " );
-			EntityKeyUtil.setFieldValue( buffer, businessKeyValue );
-
-			ResultSet rs = connection.createStatement().executeQuery( buffer.toString() );
-			if ( rs.next() ) {
-				rid = (ORecordId) rs.getObject( OrientDBConstant.SYSTEM_RID );
-			}
-		}
-		catch (SQLException sqle) {
-			throw log.cannotExecuteQuery( buffer.toString(), sqle );
-		}
-		return rid;
 	}
 }

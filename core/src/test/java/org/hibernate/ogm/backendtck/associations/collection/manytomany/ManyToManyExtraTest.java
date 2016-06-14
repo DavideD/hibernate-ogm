@@ -72,12 +72,15 @@ public class ManyToManyExtraTest extends OgmTestCase {
 	}
 
 	private int expectedAssociationNumber() {
-		if ( TestHelper.getCurrentDialectType().equals( GridDialectType.NEO4J ) ) {
-			// In Neo4j relationships are bidirectional
-			return 1;
-		}
-		else {
-			return 2;
+		switch ( TestHelper.getCurrentDialectType() ) {
+			case NEO4J:
+				// In Neo4j relationships are bidirectional
+				return 1;
+			case ORIENTDB:
+				// In OrientDB ManyToMany relationships is like in RDBMS
+				return 3;
+			default:
+				return 2;
 		}
 	}
 

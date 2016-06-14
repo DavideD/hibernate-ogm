@@ -44,7 +44,8 @@ public class IdentityIdGeneratorTest extends JpaTestCase {
 	}
 
 	@Test
-	@SkipByGridDialect(value = GridDialectType.MONGODB, comment = "MongoDB supports IDENTITY columns, but not of type Long.")
+	@SkipByGridDialect(value = { GridDialectType.MONGODB,
+			GridDialectType.ORIENTDB }, comment = "MongoDB supports IDENTITY columns, but not of type Long. OrientDB not supports IDENTITY columns.")
 	public void testIdentityGenerator() throws Exception {
 		final EntityManager em = getFactory().createEntityManager();
 		em.getTransaction().begin();
@@ -80,7 +81,7 @@ public class IdentityIdGeneratorTest extends JpaTestCase {
 
 	@Override
 	public Class<?>[] getEntities() {
-		return new Class<?>[] {
+		return new Class<?>[]{
 				Animal.class
 		};
 	}

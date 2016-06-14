@@ -10,7 +10,9 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.junit.Test;
 
 /**
@@ -73,6 +75,7 @@ public class EmbeddableTest extends OgmTestCase {
 		session.close();
 	}
 
+	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "Embedded classed stores with parent entities only")
 	@Test
 	public void testNestedEmbeddable() {
 		final Session session = openSession();
@@ -120,7 +123,6 @@ public class EmbeddableTest extends OgmTestCase {
 		session.close();
 	}
 
-
 	@Test
 	public void testNestedEmbeddedWithNullProperties() {
 		final Session session = openSession();
@@ -136,7 +138,6 @@ public class EmbeddableTest extends OgmTestCase {
 
 		transaction.commit();
 		session.clear();
-
 
 		// set nested embedded to null
 		transaction = session.beginTransaction();
@@ -173,6 +174,6 @@ public class EmbeddableTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] { Account.class };
+		return new Class<?>[]{ Account.class };
 	}
 }

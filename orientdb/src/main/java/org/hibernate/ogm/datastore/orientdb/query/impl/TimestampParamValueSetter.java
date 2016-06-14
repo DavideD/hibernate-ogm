@@ -12,6 +12,8 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 /**
+ * Setter for 'timestamp' value
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class TimestampParamValueSetter implements ParamValueSetter<Date> {

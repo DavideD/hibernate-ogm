@@ -22,6 +22,7 @@ import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
 import org.hibernate.ogm.utils.SkipByGridDialect;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.hibernate.ogm.utils.TestHelper;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,7 +62,13 @@ public class OptimisticLockingExtraTest extends OgmTestCase {
 		transaction = session.beginTransaction();
 
 		entity = session.get( Galaxy.class, galaxy.getId() );
-		assertThat( entity.getVersion() ).isEqualTo( 1 );
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			assertThat( entity.getVersion() ).isEqualTo( 2 );
+		}
+		else {
+			assertThat( entity.getVersion() ).isEqualTo( 1 );
+		}
+
 		assertThat( entity.getStars() ).hasSize( 3 );
 
 		transaction.commit();

@@ -7,23 +7,27 @@
 package org.hibernate.ogm.datastore.orientdb.query.impl;
 
 import org.hibernate.engine.query.spi.ParameterParser;
-import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
-import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.dialect.query.spi.RecognizerBasedParameterMetadataBuilder;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.RecoveringParseRunner;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * {@link org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder} for native OrientDB queries. The implementation is based on a
+ *  <a href="http://parboiled.org">parboiled</a> grammar.
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBParameterMetadataBuilder extends RecognizerBasedParameterMetadataBuilder {
 
-	private static Log LOG = LoggerFactory.getLogger();
-
-	@Override
-	public void parseQueryParameters(String nativeQuery, ParameterParser.Recognizer journaler) {
-		OrientDBQueryParser parser = Parboiled.createParser( OrientDBQueryParser.class, journaler );
-		new RecoveringParseRunner<ParameterParser.Recognizer>( parser.Query() ).run( nativeQuery );
+	/**
+	 * Parses the given native NoSQL query string, collecting the contained named parameters in the course of doing so.
+	 *
+	 * @param noSqlQuery the query to parse
+	 * @param recognizer collects any named parameters contained in the given query
+	 */
+	public void parseQueryParameters(String noSqlQuery, ParameterParser.Recognizer recognizer) {
+		OrientDBQueryParser parser = Parboiled.createParser( OrientDBQueryParser.class, recognizer );
+		new RecoveringParseRunner<ParameterParser.Recognizer>( parser.Query() ).run( noSqlQuery );
 	}
 
 }

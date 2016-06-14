@@ -15,12 +15,17 @@ import org.parboiled.annotations.SuppressSubnodes;
 import org.parboiled.support.StringVar;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * The class is parser for OrientDB native queries
+ * <p>
+ * OrientDB supports query language like SQL. The parser extract named parameters.
+ * </p>
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBQueryParser extends BaseParser<ParameterParser.Recognizer> {
 
-	final ParameterParser.Recognizer journaler;
-	final RecognizerAdapter adapter;
+	private final ParameterParser.Recognizer journaler;
+	private final RecognizerAdapter adapter;
 
 	public OrientDBQueryParser(ParameterParser.Recognizer journaler) {
 		this.journaler = journaler;
@@ -28,7 +33,7 @@ public class OrientDBQueryParser extends BaseParser<ParameterParser.Recognizer> 
 	}
 
 	public Rule Query() {
-		return Sequence( QueryParts(), EOI, push( journaler ) );
+		return Sequence( QueryParts(), EOI, push( getJournaler() ) );
 	}
 
 	@SkipNode
@@ -47,12 +52,9 @@ public class OrientDBQueryParser extends BaseParser<ParameterParser.Recognizer> 
 
 		return Sequence(
 				ParameterBeginDelimiter(),
-				// ZeroOrMore(WhiteSpace()),
 				Sequence( OneOrMore( Letter() ), ZeroOrMore( Digit() ) ),
 				name.set( match() ),
-				// ZeroOrMore(WhiteSpace()),
-				// ParameterEndDelimiter(),
-				adapter.addNamedParameter( name.get(), currentIndex() ) );
+				getAdapter().addNamedParameter( name.get(), currentIndex() ) );
 	}
 
 	@SuppressSubnodes
@@ -102,9 +104,6 @@ public class OrientDBQueryParser extends BaseParser<ParameterParser.Recognizer> 
 		return Ch( ':' );
 	}
 
-	/*
-	 * public Rule ParameterEndDelimiter() { return Ch('}'); }
-	 */
 	public Rule Alphanumeric() {
 		return FirstOf( Letter(), Digit() );
 	}
@@ -119,6 +118,14 @@ public class OrientDBQueryParser extends BaseParser<ParameterParser.Recognizer> 
 
 	public Rule WhiteSpace() {
 		return OneOrMore( AnyOf( " \t\f" ) );
+	}
+
+	public Recognizer getJournaler() {
+		return journaler;
+	}
+
+	public RecognizerAdapter getAdapter() {
+		return adapter;
 	}
 
 	/**

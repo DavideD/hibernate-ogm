@@ -9,7 +9,8 @@ package org.hibernate.ogm.datastore.orientdb.logging.impl;
 import org.jboss.logging.Logger;
 
 /**
- * @author chernolyassv
+ * Factory of logger
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class LoggerFactory {
 

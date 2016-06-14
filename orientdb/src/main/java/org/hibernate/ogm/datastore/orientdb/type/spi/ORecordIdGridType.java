@@ -15,12 +15,17 @@ import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
 import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * The class is grid type for OrientDB's type '{@link ORecordId}'
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class ORecordIdGridType extends AbstractGenericBasicType<ORecordId> {
 
 	public static final ORecordIdGridType INSTANCE = new ORecordIdGridType();
 
+	/**
+	 * The default contructor
+	 */
 	public ORecordIdGridType() {
 		super( PassThroughGridTypeDescriptor.INSTANCE, ORecordIdTypeDescriptor.INSTANCE );
 	}

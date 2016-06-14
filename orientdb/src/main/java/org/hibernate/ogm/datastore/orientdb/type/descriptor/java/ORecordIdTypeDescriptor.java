@@ -12,12 +12,20 @@ import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 import com.orientechnologies.orient.core.id.ORecordId;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * Description of type {@link ORecordId}
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class ORecordIdTypeDescriptor extends AbstractTypeDescriptor<ORecordId> {
 
+	/**
+	 * instance of the class
+	 */
 	public static final ORecordIdTypeDescriptor INSTANCE = new ORecordIdTypeDescriptor();
 
+	/**
+	 * Default constructor
+	 */
 	public ORecordIdTypeDescriptor() {
 		super( ORecordId.class );
 	}

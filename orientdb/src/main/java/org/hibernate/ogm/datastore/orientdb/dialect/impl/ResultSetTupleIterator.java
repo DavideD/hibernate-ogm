@@ -7,19 +7,23 @@
 package org.hibernate.ogm.datastore.orientdb.dialect.impl;
 
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.hibernate.ogm.datastore.map.impl.MapTupleSnapshot;
 import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.HibernateException;
+import org.hibernate.ogm.datastore.map.impl.MapTupleSnapshot;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.model.spi.Tuple;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * Closable iterator through {@link ResultSet}
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 
@@ -52,13 +56,20 @@ public class ResultSetTupleIterator implements ClosableIterator<Tuple> {
 		}
 	}
 
-	protected Tuple convert() {
-		Map<String, Object> map = new HashMap<>();
+	/**
+	 * convert {@link ResultSet} to {@link Tuple}
+	 *
+	 * @return tuple from ResultSet
+	 * @throws HibernateException if any database error occurs
+	 */
+	private Tuple convert() {
+		Map<String, Object> map = new LinkedHashMap<>();
 		try {
-			for ( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ ) {
+			ResultSetMetaData resultSetMetadata = resultSet.getMetaData();
+			for ( int i = 0; i < resultSetMetadata.getColumnCount(); i++ ) {
 				int fieldNum = i + 1;
 				Object dbValue = resultSet.getObject( fieldNum );
-				map.put( resultSet.getMetaData().getColumnName( fieldNum ), dbValue );
+				map.put( resultSetMetadata.getColumnName( fieldNum ), dbValue );
 			}
 			for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) {
 				map.put( systemField, resultSet.getObject( systemField ) );

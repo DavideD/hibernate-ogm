@@ -9,7 +9,9 @@ package org.hibernate.ogm.datastore.orientdb;
 import org.hibernate.ogm.cfg.OgmProperties;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * Own properties of OrientDB Database Provider
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBProperties implements OgmProperties {
 
@@ -23,13 +25,20 @@ public class OrientDBProperties implements OgmProperties {
 	public static final String DATE_FORMAT = "hibernate.ogm.orientdb.format.date";
 
 	/**
-	 * Type of database. Possible values: memory,remote,plocal
+	 * Type of database.
+	 *
+	 * @see DatabaseTypeEnum
 	 */
 	public static final String DATEBASE_TYPE = "hibernate.ogm.orientdb.dbtype";
 
 	private OrientDBProperties() {
 	}
 
+	/**
+	 * Enumeration of database's types
+	 *
+	 * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
+	 */
 	public static enum DatabaseTypeEnum {
 		memory, plocal, remote
 	}

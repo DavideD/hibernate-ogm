@@ -6,49 +6,56 @@
  */
 package org.hibernate.ogm.datastore.orientdb.dto;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * The class is presentation of column of embedded entity.
+ * <p>
+ * Embedded column has name like 'class1.class2.field1'. The class separates names of class and name of property of leaf
+ * class
+ * </p>
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class EmbeddedColumnInfo {
 
-	private LinkedList<String> classNames;
-	private String propertyName;
-	private String classNamesAdd;
+	private final LinkedList<String> classNames;
+	private final String propertyName;
 
-	public EmbeddedColumnInfo(String fullPropertyName, String classNamesAdd) {
-		this( fullPropertyName );
-		if ( classNamesAdd != null && classNamesAdd.trim().length() > 0 ) {
-			classNames.addFirst( classNamesAdd );
-		}
-	}
-
-	public EmbeddedColumnInfo(String fullPropertyName) {
-		String[] parts = fullPropertyName.split( "\\." );
-		classNames = new LinkedList<>();
-		for ( String part : parts ) {
-			classNames.add( part );
-		}
+	/**
+	 * Contractor
+	 *
+	 * @param sourcePropertyName source field name (like 'class1.field2')
+	 */
+	public EmbeddedColumnInfo(String sourcePropertyName) {
+		String[] parts = sourcePropertyName.split( "\\." );
+		classNames = new LinkedList<>( Arrays.asList( parts ) );
 		propertyName = classNames.getLast();
 		classNames.removeLast();
 	}
 
+	/**
+	 * Get classes in source property name
+	 *
+	 * @return list of classes
+	 */
 	public List<String> getClassNames() {
 		return classNames;
 	}
 
+	/**
+	 * Get property name in leaf class
+	 *
+	 * @return property name
+	 */
 	public String getPropertyName() {
 		return propertyName;
 	}
 
-	public String getClassNamesAdd() {
-		return classNamesAdd;
-	}
-
 	@Override
 	public String toString() {
-		return "EmbeddedColumnInfo{" + "classNames=" + classNames + ", propertyName=" + propertyName + ", classNamesAdd=" + classNamesAdd + '}';
+		return "EmbeddedColumnInfo{" + "classNames=" + classNames + ", propertyName=" + propertyName + "}'";
 	}
 }

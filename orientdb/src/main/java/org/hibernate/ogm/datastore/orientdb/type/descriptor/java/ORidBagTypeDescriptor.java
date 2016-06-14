@@ -13,13 +13,21 @@ import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 
 /**
+ * Descriptor for class {@link ORidBag}
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 public class ORidBagTypeDescriptor extends AbstractTypeDescriptor<ORidBag> {
 
+	/**
+	 * instance of the class
+	 */
 	public static final ORidBagTypeDescriptor INSTANCE = new ORidBagTypeDescriptor();
 
+	/**
+	 * The default constructor
+	 */
 	public ORidBagTypeDescriptor() {
 		super( ORidBag.class );
 	}

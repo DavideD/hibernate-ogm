@@ -8,19 +8,26 @@
 package org.hibernate.ogm.datastore.orientdb.dialect.impl;
 
 import java.util.Map;
-import java.util.Set;
-
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
+
 import org.hibernate.ogm.model.key.spi.RowKey;
 import org.hibernate.ogm.model.spi.AssociationSnapshot;
 import org.hibernate.ogm.model.spi.Tuple;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * * Represents the association snapshot as loaded by the datastore.
+ * <p>
+ * Interface implemented by the datastore dialect to avoid data duplication in memory (if possible). Note that this
+ * snapshot will not be modified by the Hibernate OGM engine
+ * </p>
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
+
 public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 
+	private static Log log = LoggerFactory.getLogger();
 	private final Map<RowKey, Tuple> tuples;
 
 	public OrientDBAssociationSnapshot(Map<RowKey, Tuple> tuples) {
@@ -34,16 +41,18 @@ public class OrientDBAssociationSnapshot implements AssociationSnapshot {
 
 	@Override
 	public Tuple get(RowKey rowKey) {
+		log.debugf( "get: rowKey : %s", rowKey );
 		return tuples.get( rowKey );
-	}
-
-	@Override
-	public Set<RowKey> getRowKeys() {
-		return tuples.keySet();
 	}
 
 	@Override
 	public int size() {
 		return tuples.size();
 	}
+
+	@Override
+	public Iterable<RowKey> getRowKeys() {
+		return tuples.keySet();
+	}
+
 }

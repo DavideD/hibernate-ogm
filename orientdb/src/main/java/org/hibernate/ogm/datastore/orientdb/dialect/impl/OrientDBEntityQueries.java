@@ -12,7 +12,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +21,6 @@ import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.datastore.orientdb.utils.EntityKeyUtil;
-import org.hibernate.ogm.datastore.orientdb.utils.ODocumentUtil;
 import org.hibernate.ogm.dialect.spi.AssociationContext;
 import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.key.spi.EntityKey;
@@ -30,9 +28,13 @@ import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import java.util.Arrays;
+import org.hibernate.ogm.datastore.orientdb.utils.ODocumentUtil;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * Container for the queries related to one entity type in OrientDB.
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBEntityQueries extends QueriesBase {
 
@@ -40,6 +42,11 @@ public class OrientDBEntityQueries extends QueriesBase {
 
 	private final EntityKeyMetadata entityKeyMetadata;
 
+	/**
+	 * Contractor
+	 *
+	 * @param entityKeyMetadata metadata of entity keys
+	 */
 	public OrientDBEntityQueries(EntityKeyMetadata entityKeyMetadata) {
 		this.entityKeyMetadata = entityKeyMetadata;
 		for ( int i = 0; i < entityKeyMetadata.getColumnNames().length; i++ ) {
@@ -49,10 +56,10 @@ public class OrientDBEntityQueries extends QueriesBase {
 	}
 
 	/**
-	 * Find the node corresponding to an entity.
+	 * Find the node corresponding to the entity key.
 	 *
 	 * @param connection the connection
-	 * @param entityKey
+	 * @param entityKey entity key
 	 * @return the corresponding node
 	 */
 
@@ -83,7 +90,8 @@ public class OrientDBEntityQueries extends QueriesBase {
 					int dbFieldNo = i + 1;
 					String dbColumnName = metadata.getColumnName( dbFieldNo );
 					Object dbValue = rs.getObject( dbColumnName );
-					log.debugf( "%d dbColumnName: %s dbValue class:", i, dbColumnName, ( dbValue != null ? dbValue.getClass() : null ) );
+					log.debugf( "%d dbColumnName: %s; dbValue class: %s; dbvalue: %s", i, dbColumnName, ( dbValue != null ? dbValue.getClass() : null ),
+							dbValue );
 					log.debugf( "%d dbColumnName: %s ; sql type: %s", i, dbColumnName, rs.getMetaData().getColumnTypeName( dbFieldNo ) );
 					dbValues.put( dbColumnName, dbValue );
 					if ( dbValue instanceof ODocument ) {
@@ -108,6 +116,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 
 	private void reCastValues(Map<String, Object> map) {
 		for ( Map.Entry<String, Object> entry : map.entrySet() ) {
+			String key = entry.getKey();
 			Object value = entry.getValue();
 			if ( value instanceof BigDecimal ) {
 				BigDecimal bd = (BigDecimal) value;
@@ -126,10 +135,21 @@ public class OrientDBEntityQueries extends QueriesBase {
 		return false;
 	}
 
+	/**
+	 * find association that corresponding to the association key.
+	 *
+	 * @param connection connection to OrientDB
+	 * @param associationKey association key
+	 * @param associationContext context
+	 * @return list of associations
+	 */
+
 	public List<Map<String, Object>> findAssociation(Connection connection, AssociationKey associationKey,
 			AssociationContext associationContext) {
 		List<Map<String, Object>> association = new LinkedList<>();
 		log.debugf( "findAssociation: associationKey: %s; associationContext: %s", associationKey, associationContext );
+		log.debugf( "findAssociation: associationKeyMetadata: %s", associationKey.getMetadata() );
+
 		StringBuilder query = new StringBuilder( 100 );
 		query.append( "SELECT FROM " ).append( associationKey.getTable() ).append( " WHERE " );
 		for ( int i = 0; i < associationKey.getColumnNames().length; i++ ) {
@@ -138,6 +158,16 @@ public class OrientDBEntityQueries extends QueriesBase {
 			query.append( name ).append( "=" );
 			EntityKeyUtil.setFieldValue( query, value );
 		}
+
+		String[] indexColumns = associationKey.getMetadata().getRowKeyIndexColumnNames();
+		if ( indexColumns != null && indexColumns.length > 0 ) {
+			query.append( " order by " );
+			for ( String indexColumn : indexColumns ) {
+				query.append( indexColumn ).append( " asc " ).append( "," );
+			}
+			query.setLength( query.length() - 1 );
+		}
+
 		log.debugf( "findAssociation: query: %s", query );
 		try {
 			Statement stmt = connection.createStatement();
@@ -156,15 +186,20 @@ public class OrientDBEntityQueries extends QueriesBase {
 					}
 					Object dbValue = rs.getObject( dbColumnName );
 					dbValues.put( dbColumnName, dbValue );
+					if ( dbValue instanceof ODocument ) {
+						dbValues.remove( dbColumnName );
+						dbValues.putAll( ODocumentUtil.extractNamesTree( dbColumnName, (ODocument) dbValue ) );
+					}
 				}
 				log.debugf( " entiry values from db: %s", dbValues );
 				association.add( dbValues );
 			}
-			log.debugf( "findAssociation: rows %s:" + association.size() );
-			return association;
+			log.debugf( "findAssociation: rows :  %d", association.size() );
 		}
 		catch (SQLException sqle) {
 			throw log.cannotExecuteQuery( query.toString(), sqle );
+
 		}
+		return association;
 	}
 }
