@@ -16,6 +16,8 @@ import org.hibernate.resource.transaction.TransactionCoordinatorBuilder;
 import org.hibernate.resource.transaction.spi.TransactionCoordinatorOwner;
 
 /**
+ * Builder for TransactionCoordinator instances
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDbTransactionCoordinatorBuilder implements TransactionCoordinatorBuilder {
@@ -25,6 +27,12 @@ public class OrientDbTransactionCoordinatorBuilder implements TransactionCoordin
 	private final TransactionCoordinatorBuilder delegate;
 	private final OrientDBDatastoreProvider datastoreProvider;
 
+	/**
+	 * Constructor
+	 *
+	 * @param delegate builder of transaction coordinator
+	 * @param datastoreProvider OrientDB datastore provider
+	 */
 	public OrientDbTransactionCoordinatorBuilder(TransactionCoordinatorBuilder delegate, OrientDBDatastoreProvider datastoreProvider) {
 		this.delegate = delegate;
 		this.datastoreProvider = datastoreProvider;

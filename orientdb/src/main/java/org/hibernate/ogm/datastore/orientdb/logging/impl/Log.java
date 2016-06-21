@@ -15,7 +15,8 @@ import com.orientechnologies.orient.core.id.ORecordId;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * Description of errors and messages, that can be throw by the module
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 @MessageLogger(projectCode = "OGM")
 public interface Log extends org.hibernate.ogm.util.impl.Log {
@@ -70,4 +71,7 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 
 	@Message(id = 1716, value = "Key: %s. Version %d not actual.")
 	HibernateException versionNotActual(EntityKey key, Integer version);
+
+	@Message(id = 1717, value = "Cannot alter database properties")
+	HibernateException cannotAlterDatabaseProperties(@Cause Exception cause);
 }

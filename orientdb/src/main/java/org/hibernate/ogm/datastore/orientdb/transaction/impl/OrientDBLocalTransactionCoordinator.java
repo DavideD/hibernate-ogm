@@ -12,7 +12,6 @@ import com.orientechnologies.orient.core.tx.OTransactionNoTx;
 import com.orientechnologies.orient.core.tx.OTransactionOptimistic;
 import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
 import java.sql.Connection;
-
 import org.hibernate.ogm.datastore.orientdb.impl.OrientDBDatastoreProvider;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
@@ -21,6 +20,8 @@ import org.hibernate.ogm.transaction.impl.ForwardingTransactionDriver;
 import org.hibernate.resource.transaction.TransactionCoordinator;
 
 /**
+ * Coordinator for local transactions
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCoordinator {
@@ -29,6 +30,12 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 	private OrientDBDatastoreProvider datastoreProvider;
 	private OTransaction currentOrientDBTransaction;
 
+	/**
+	 * Constructor
+	 *
+	 * @param coordinator transaction coordinator
+	 * @param datastoreProvider provider of OrientDB datastore
+	 */
 	public OrientDBLocalTransactionCoordinator(TransactionCoordinator coordinator, OrientDBDatastoreProvider datastoreProvider) {
 		super( coordinator );
 		this.datastoreProvider = datastoreProvider;
@@ -86,7 +93,7 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 		public void begin() {
 			Connection sqlConnection = datastoreProvider.getConnection();
 			OrientJdbcConnection orientDbConn = (OrientJdbcConnection) sqlConnection;
-			ODatabaseDocumentTx database = orientDbConn.getDatabase();
+			ODatabaseDocumentTx database = (ODatabaseDocumentTx) orientDbConn.getDatabase();
 			log.debugf( "begin transaction for database %s. Connection's hash code: %s",
 					database.getName(), orientDbConn.hashCode() );
 			super.begin();

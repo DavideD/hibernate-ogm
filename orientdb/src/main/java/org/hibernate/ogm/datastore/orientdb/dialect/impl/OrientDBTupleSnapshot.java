@@ -6,7 +6,6 @@
  */
 package org.hibernate.ogm.datastore.orientdb.dialect.impl;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,9 +15,21 @@ import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
+import com.orientechnologies.orient.core.record.impl.ODocument;
+import java.util.Collections;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * Represents a tuple snapshot as loaded by the datastore.
+ * <p>
+ * This interface is to be implemented by dialects to avoid data duplication in memory (if possible), typically wrapping
+ * a store-specific representation of the tuple data. This snapshot will never be modified by the Hibernate OGM engine.
+ * <p>
+ * Note that in the case of embeddables (e.g. composite ids), column names are given using dot notation, e.g.
+ * "id.countryCode" or "address.city.zipCode". The column names of the physical JPA model will be used, as e.g. given
+ * via {@code @Column} .
+ * <p>
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDBTupleSnapshot implements TupleSnapshot {
 
@@ -45,7 +56,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	public OrientDBTupleSnapshot(Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
 			Map<String, String> rolesByColumn,
 			EntityKeyMetadata entityKeyMetadata) {
-		this( new HashMap<String, Object>(), associatedEntityKeyMetadata, rolesByColumn, entityKeyMetadata );
+		this( Collections.<String, Object>emptyMap(), associatedEntityKeyMetadata, rolesByColumn, entityKeyMetadata );
 		log.debugf( "2.dbNameValueMap: %s", dbNameValueMap );
 		log.debugf( "2.associatedEntityKeyMetadata: %s", associatedEntityKeyMetadata );
 		log.debugf( "2.rolesByColumn: %s", rolesByColumn );
@@ -60,7 +71,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 				value = dbNameValueMap.get( OrientDBConstant.SYSTEM_VERSION );
 			}
 			else {
-				value = Integer.valueOf( 0 );
+				value = 0;
 			}
 			log.debugf( "targetColumnName: %s, value: %d", targetColumnName, value );
 		}
@@ -69,7 +80,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 				value = dbNameValueMap.get( OrientDBConstant.SYSTEM_VERSION );
 			}
 			else {
-				value = Integer.valueOf( 0 );
+				value = 0;
 			}
 		}
 		else if ( targetColumnName.startsWith( "_identifierMapper." ) ) {
@@ -96,9 +107,11 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	}
 
 	/**
-	 * Whether this snapshot has been newly created (meaning it doesn't have an actual {@link Node} yet) or not. A node
-	 * will be in the "new" state between the {@code createTuple()} call and the next {@code insertOrUpdateTuple()}
+	 * Whether this snapshot has been newly created (meaning it doesn't have an actual {@link ODocument} yet) or not. A
+	 * node will be in the "new" state between the {@code createTuple()} call and the next {@code insertOrUpdateTuple()}
 	 * call.
+	 *
+	 * @return true if the snapshot is new (not saved in database yet), otherwise false
 	 */
 	public boolean isNew() {
 		return ( dbNameValueMap == null || dbNameValueMap.isEmpty() );

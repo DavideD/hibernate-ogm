@@ -50,5 +50,7 @@ public class OrientDBParameterMetadataBuilderTest {
 		System.out.println( "3.parameters:" + parameters );
 		assertFalse( "Parameters in query must not be!", parameters.isEmpty() );
 		assertTrue( "Parameter 'name2' must be!", parameters.contains( "name2" ) );
+
 	}
+
 }

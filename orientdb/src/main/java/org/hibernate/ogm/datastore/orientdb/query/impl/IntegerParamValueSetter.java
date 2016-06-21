@@ -10,6 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
+ * Setter for 'integer' value
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class IntegerParamValueSetter implements ParamValueSetter<Integer> {

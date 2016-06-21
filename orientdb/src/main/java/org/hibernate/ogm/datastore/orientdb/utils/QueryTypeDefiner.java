@@ -7,15 +7,27 @@
 package org.hibernate.ogm.datastore.orientdb.utils;
 
 /**
- * @author Sergey Chernolyas (sergey.chernolyas@gmail.com)
+ * Utility class for define type of query (insert or update)
+ *
+ * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 public class QueryTypeDefiner {
 
+	/**
+	 * Enumeration with query types
+	 */
 	public static enum QueryType {
 		INSERT, UPDATE, ERROR;
 	}
 
+	/**
+	 * define type of query
+	 *
+	 * @param existsInDB is primary key found in database?
+	 * @param isNewSnapshot is new snapshot?
+	 * @return type
+	 */
 	public static QueryType define(boolean existsInDB, boolean isNewSnapshot) {
 		QueryType type = QueryType.ERROR;
 

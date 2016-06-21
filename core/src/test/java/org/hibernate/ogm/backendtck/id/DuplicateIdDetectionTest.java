@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.SkipByGridDialect;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.hibernate.ogm.utils.jpa.JpaTestCase;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -81,6 +82,7 @@ public class DuplicateIdDetectionTest extends JpaTestCase {
 		em.getTransaction().commit();
 	}
 
+	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "Composite keys is not supported!")
 	@Test
 	public void cannotInsertSameEntityUsingCompositeKeyTwice() throws Exception {
 		em.getTransaction().begin();
@@ -126,6 +128,9 @@ public class DuplicateIdDetectionTest extends JpaTestCase {
 
 	@Override
 	public Class<?>[] getEntities() {
-		return new Class<?>[] { MakeupArtist.class, MakeupArtistWithCompositeKey.class };
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			return new Class<?>[]{ MakeupArtist.class };
+		}
+		return new Class<?>[]{ MakeupArtist.class, MakeupArtistWithCompositeKey.class };
 	}
 }

@@ -10,6 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
+ * Setter for 'character' value
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class CharacterParamValueSetter implements ParamValueSetter<Character> {

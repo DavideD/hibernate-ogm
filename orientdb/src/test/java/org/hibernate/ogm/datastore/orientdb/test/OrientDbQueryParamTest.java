@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TimeZone;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
@@ -19,7 +20,6 @@ import javax.persistence.Query;
 import org.apache.log4j.Logger;
 import org.hibernate.ogm.datastore.orientdb.test.jpa.SimpleTypesEntity;
 import org.hibernate.ogm.datastore.orientdb.utils.MemoryDBUtil;
-import org.hibernate.ogm.type.impl.DateType;
 import org.hibernate.ogm.type.impl.EnumType;
 import org.hibernate.ogm.type.impl.NumericBooleanType;
 import org.hibernate.ogm.type.impl.TimestampType;
@@ -58,10 +58,11 @@ public class OrientDbQueryParamTest {
 	@Parameterized.Parameter(value = 3)
 	public Integer requiredCount;
 	@Parameterized.Parameter(value = 4)
-	public SimpleTypesEntity entity;
+	public SimpleTypesEntity preparedEntity;
 
 	@Parameterized.Parameters(name = "class:{0}")
 	public static Iterable<Object[]> prepareData() throws ParseException {
+		TimeZone.setDefault( TimeZone.getTimeZone( "UTC" ) );
 		List<Object[]> list = new LinkedList<>();
 
 		SimpleTypesEntity entity1 = new SimpleTypesEntity( 1L );
@@ -99,17 +100,17 @@ public class OrientDbQueryParamTest {
 		entity9.setE2( SimpleTypesEntity.EnumType.E2 );
 		list.add( new Object[]{ EnumType.class, "E2", "e2", 1, entity9 } );
 
-		SimpleDateFormat df1 = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
+		SimpleDateFormat df1 = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss z" );
 		Date now = df1.parse( df1.format( new Date() ) );
 		SimpleTypesEntity entity10 = new SimpleTypesEntity( 10L );
 		entity10.setCreatedTimestamp( now );
 		list.add( new Object[]{ TimestampType.class, now, "createdTimestamp", 1, entity10 } );
 
-		SimpleDateFormat df2 = new SimpleDateFormat( "yyyy-MM-dd" );
+		SimpleDateFormat df2 = new SimpleDateFormat( "yyyy-MM-dd z" );
 		Date today = df2.parse( df2.format( new Date() ) );
 		SimpleTypesEntity entity11 = new SimpleTypesEntity( 11L );
 		entity11.setCreatedDate( today );
-		list.add( new Object[]{ DateType.class, today, "createdDate", 1, entity11 } );
+		list.add( new Object[]{ TimestampType.class, today, "createdDate", 1, entity11 } );
 
 		return list;
 	}
@@ -118,11 +119,8 @@ public class OrientDbQueryParamTest {
 	public void testSearchBy() {
 
 		try {
-
 			em.getTransaction().begin();
-
-			em.persist( entity );
-
+			em.persist( preparedEntity );
 			em.getTransaction().commit();
 			em.clear();
 

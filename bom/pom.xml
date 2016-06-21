@@ -27,7 +27,7 @@
         <infinispanVersion>8.2.1.Final</infinispanVersion>
         <mongodbVersion>3.2.2</mongodbVersion>
         <fongodbVersion>2.0.6</fongodbVersion>
-        <orientdbVersion>2.2.0-rc1</orientdbVersion>
+        <orientdbVersion>2.2.3</orientdbVersion>
         <neo4jVersion>2.3.2</neo4jVersion>
         <!-- Update dependency versions accordingly when updating C*  -->
         <cassandraVersion>2.2.0-rc3</cassandraVersion>

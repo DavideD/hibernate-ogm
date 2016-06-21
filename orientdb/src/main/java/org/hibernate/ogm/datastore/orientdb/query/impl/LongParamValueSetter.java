@@ -10,6 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
+ * Setter for 'long' value
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class LongParamValueSetter implements ParamValueSetter<Long> {

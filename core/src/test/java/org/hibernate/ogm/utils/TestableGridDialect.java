@@ -16,8 +16,8 @@ import org.hibernate.ogm.dialect.spi.GridDialect;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 
 /**
- * For testing purposes we need to be able to extract more information than what is mandated from the GridDialect,
- * so each GridDialect implementor should also implement a TestGridDialect, and list it by classname into
+ * For testing purposes we need to be able to extract more information than what is mandated from the GridDialect, so
+ * each GridDialect implementor should also implement a TestGridDialect, and list it by classname into
  * {@code org.hibernate.ogm.test.utils.TestHelper#knownTestDialects }.
  *
  * @author Sanne Grinovero &lt;sanne@hibernate.org&gt; (C) 2011 Red Hat Inc.
@@ -57,33 +57,25 @@ public interface TestableGridDialect {
 	Map<String, Object> extractEntityTuple(SessionFactory sessionFactory, EntityKey key);
 
 	/**
-	 * Returning false will disable all tests which verify transaction isolation or rollback capabilities.
-	 * No "production" datastore should return false unless its limitation is properly documented.
+	 * Returning false will disable all tests which verify transaction isolation or rollback capabilities. No
+	 * "production" datastore should return false unless its limitation is properly documented.
 	 *
 	 * @return true if the datastore is expected to commit/rollback properly
 	 */
 	boolean backendSupportsTransactions();
 
 	/**
-	 * Initialize the database on start-up.
-	 *
-	 * @param sessionFactory
-	 */
-	void prepareDatabase(SessionFactory sessionFactory);
-
-	/**
-	 * Used to clean up all the stored data. The cleaning can be done by dropping
-	 * the database and/or the schema.
-	 * Each implementor can so define its own way to delete all data inserted by
-	 * the test and remove the schema if that applies.
+	 * Used to clean up all the stored data. The cleaning can be done by dropping the database and/or the schema. Each
+	 * implementor can so define its own way to delete all data inserted by the test and remove the schema if that
+	 * applies.
 	 *
 	 * @param sessionFactory
 	 */
 	void dropSchemaAndDatabase(SessionFactory sessionFactory);
 
 	/**
-	 * Properties that needs to be overridden in configuration for tests to run
-	 * This is typical of the host and port defined using an environment variable.
+	 * Properties that needs to be overridden in configuration for tests to run This is typical of the host and port
+	 * defined using an environment variable.
 	 */
 	Map<String, String> getEnvironmentProperties();
 
@@ -95,4 +87,11 @@ public interface TestableGridDialect {
 	Class<? extends DatastoreConfiguration<?>> getDatastoreConfigurationType();
 
 	GridDialect getGridDialect(DatastoreProvider datastoreProvider);
+
+	/**
+	 * Used to initial database. Each implementor can so define its own way to initialize database.
+	 *
+	 * @param sessionFactory
+	 */
+	void prepareDatabase(SessionFactory sessionFactory);
 }

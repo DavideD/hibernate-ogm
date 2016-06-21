@@ -11,6 +11,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
+ * Setter for 'BigDecimal' value
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class BigDecimalParamValueSetter implements ParamValueSetter<BigDecimal> {

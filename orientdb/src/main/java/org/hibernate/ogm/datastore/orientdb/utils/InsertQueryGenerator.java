@@ -6,11 +6,11 @@
  */
 package org.hibernate.ogm.datastore.orientdb.utils;
 
+import org.hibernate.ogm.datastore.orientdb.dto.GenerationResult;
 import java.math.BigInteger;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,29 +21,66 @@ import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.json.simple.JSONObject;
+import org.hibernate.ogm.model.spi.Association;
 
 /**
- * Util class for generate query for insert entity
+ * The class is generator of 'insert' queries.
+ * <p>
+ * OrientDB supports 'insert' query with JSON format like 'insert into classname content {"name":"value"}'. The format
+ * allow to insert embedded classes. But JDBC driver not supports parameters (like '?' or ':name') in query that the
+ * type. <b>All binary values must be saved by Base64 encoding.</b>
+ * </p>
  *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
+ * @see <a href="http://orientdb.com/docs/2.2/SQL-Insert.html">Insert query in OrientDB</a>
  */
-public class InsertQueryGenerator extends AbstractQueryGenerator {
+@SuppressWarnings("unchecked")
+public class InsertQueryGenerator {
 
 	private static final Log log = LoggerFactory.getLogger();
 
-	public GenerationResult generate(String tableName, Tuple tuple, boolean isStoreTuple, Set<String> keyColumnNames) {
-		return generate( tableName, TupleUtil.toMap( tuple ), isStoreTuple, keyColumnNames );
+	/**
+	 * generate 'insert' query
+	 *
+	 * @param className name of OrientDB class
+	 * @param tuple tuple
+	 * @param isStoreTuple true - the class is tuple, false - the class of association
+	 * @param keyColumnNames collection of column names
+	 * @return result
+	 * @see GenerationResult
+	 */
+	public GenerationResult generate(String className, Tuple tuple, boolean isStoreTuple, Set<String> keyColumnNames) {
+		return generate( className, TupleUtil.toMap( tuple ), isStoreTuple, keyColumnNames );
 	}
 
-	public GenerationResult generate(String tableName, Map<String, Object> valuesMap, boolean isStoreTuple, Set<String> keyColumnNames) {
-		QueryResult queryResult = createJSON( isStoreTuple, keyColumnNames, valuesMap );
+	/**
+	 * generate 'insert' query
+	 *
+	 * @param className name of OrientDB class
+	 * @param valuesMap map with column names and their values
+	 * @param isStoreTuple true - the class is tuple, false - the class of association
+	 * @param keyColumnNames collection of column names
+	 * @return result
+	 * @see GenerationResult
+	 */
+
+	public GenerationResult generate(String className, Map<String, Object> valuesMap, boolean isStoreTuple, Set<String> keyColumnNames) {
+		JSONObject queryJsonContent = createJSON( isStoreTuple, keyColumnNames, valuesMap );
 		StringBuilder insertQuery = new StringBuilder( 100 );
-		insertQuery.append( "insert into " ).append( tableName ).append( " content " ).append( queryResult.getJson().toJSONString() );
-		return new GenerationResult( queryResult.getPreparedStatementParams(), insertQuery.toString() );
+		insertQuery.append( "insert into " ).append( className ).append( " content " ).append( queryJsonContent.toJSONString() );
+		return new GenerationResult( Collections.emptyList(), insertQuery.toString() );
 	}
 
-	public QueryResult createJSON(boolean isStoreTuple, Set<String> keyColumnNames, Map<String, Object> valuesMap) {
-		QueryResult result = new QueryResult();
+	/**
+	 * Create JSON object for 'CONTENT' part of the query
+	 *
+	 * @param isStoreTuple 'true' for storing {@link Tuple} and 'false' for storing {@link Association}
+	 * @param keyColumnNames set of columns for inserting
+	 * @param valuesMap map of values for inserting
+	 * @return JSON
+	 */
+	protected JSONObject createJSON(boolean isStoreTuple, Set<String> keyColumnNames, Map<String, Object> valuesMap) {
+		JSONObject result = new JSONObject();
 		for ( Map.Entry<String, Object> entry : valuesMap.entrySet() ) {
 			String columnName = entry.getKey();
 			Object columnValue = entry.getValue();
@@ -57,24 +94,23 @@ public class InsertQueryGenerator extends AbstractQueryGenerator {
 				if ( isStoreTuple && keyColumnNames.contains( columnName ) ) {
 					// it is primary key column
 					columnName = columnName.substring( columnName.indexOf( "." ) + 1 );
-					// @TODO check type!!!!
-					result.getJson().put( columnName, columnValue );
+					result.put( columnName, columnValue );
 				}
 				else {
 					EmbeddedColumnInfo ec = new EmbeddedColumnInfo( columnName );
-					if ( !result.getJson().containsKey( ec.getClassNames().get( 0 ) ) ) {
-						JSONObject embeddedFieldValue = createDefaultEmbeddedRow( ec.getClassNames().get( 0 ) );
-						result.getJson().put( ec.getClassNames().get( 0 ), embeddedFieldValue );
+					if ( !result.containsKey( ec.getClassNames().get( 0 ) ) ) {
+						JSONObject embeddedFieldValue = createEmbeddedRowTemplate( ec.getClassNames().get( 0 ) );
+						result.put( ec.getClassNames().get( 0 ), embeddedFieldValue );
 					}
 					setJsonValue( result, ec, columnValue );
 				}
 			}
 			else if ( columnValue != null && OrientDBConstant.BASE64_TYPES.contains( columnValue.getClass() ) ) {
 				if ( columnValue instanceof BigInteger ) {
-					result.getJson().put( columnName, new String( Base64.encodeBase64( ( (BigInteger) columnValue ).toByteArray() ) ) );
+					result.put( columnName, new String( Base64.encodeBase64( ( (BigInteger) columnValue ).toByteArray() ) ) );
 				}
 				else if ( columnValue instanceof byte[] ) {
-					result.getJson().put( columnName, new String( Base64.encodeBase64( (byte[]) columnValue ) ) );
+					result.put( columnName, new String( Base64.encodeBase64( (byte[]) columnValue ) ) );
 				}
 			}
 			else if ( columnValue instanceof Date || columnValue instanceof Calendar ) {
@@ -87,59 +123,35 @@ public class InsertQueryGenerator extends AbstractQueryGenerator {
 					calendar = (Calendar) columnValue;
 				}
 				String formattedStr = FormatterUtil.getDateTimeFormater().get().format( calendar.getTime() );
-				result.getJson().put( columnName, formattedStr );
+				result.put( columnName, formattedStr );
 			}
 			else if ( columnValue instanceof Character ) {
-				result.getJson().put( columnName, ( (Character) columnValue ).toString() );
+				result.put( columnName, ( (Character) columnValue ).toString() );
 			}
 			else {
-				result.getJson().put( columnName, columnValue );
+				result.put( columnName, columnValue );
 			}
 		}
 		return result;
 	}
 
-	private void setJsonValue(QueryResult result, EmbeddedColumnInfo ec, Object value) {
+	private void setJsonValue(JSONObject result, EmbeddedColumnInfo ec, Object value) {
 		log.debugf( "setJsonValue. EmbeddedColumnInfo: %s", ec );
-		JSONObject json = (JSONObject) result.getJson().get( ec.getClassNames().get( 0 ) );
+		JSONObject json = (JSONObject) result.get( ec.getClassNames().get( 0 ) );
 		for ( int i = 1; i < ec.getClassNames().size(); i++ ) {
 			log.debugf( "setJsonValue. index: %d; className: %s", i, ec.getClassNames().get( i ) );
 			if ( !json.containsKey( ec.getClassNames().get( i ) ) ) {
-				json.put( ec.getClassNames().get( i ), createDefaultEmbeddedRow( ec.getClassNames().get( i ) ) );
+				json.put( ec.getClassNames().get( i ), createEmbeddedRowTemplate( ec.getClassNames().get( i ) ) );
 			}
 			json = (JSONObject) json.get( ec.getClassNames().get( i ) );
 		}
 		json.put( ec.getPropertyName(), value );
 	}
 
-	private JSONObject createDefaultEmbeddedRow(String className) {
+	private JSONObject createEmbeddedRowTemplate(String className) {
 		JSONObject embeddedFieldValue = new JSONObject();
 		embeddedFieldValue.put( "@type", "d" );
 		embeddedFieldValue.put( "@class", className );
 		return embeddedFieldValue;
 	}
-
-	public class QueryResult {
-
-		private List<Object> preparedStatementParams = new LinkedList<>();
-		private JSONObject json = new JSONObject();
-
-		public List<Object> getPreparedStatementParams() {
-			return preparedStatementParams;
-		}
-
-		public void setPreparedStatementParams(List<Object> preparedStatementParams) {
-			this.preparedStatementParams = preparedStatementParams;
-		}
-
-		public JSONObject getJson() {
-			return json;
-		}
-
-		public void setJson(JSONObject json) {
-			this.json = json;
-		}
-
-	}
-
 }

@@ -7,95 +7,73 @@
 
 package org.hibernate.ogm.datastore.orientdb.impl;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.CharBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.boot.model.relational.Namespace;
-import org.hibernate.boot.model.relational.Sequence;
+import org.hibernate.ogm.datastore.orientdb.dto.EmbeddedColumnInfo;
+import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
+import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
+import org.hibernate.ogm.datastore.orientdb.utils.EntityKeyUtil;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.PrimaryKey;
 import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.Value;
-import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
-import org.hibernate.ogm.datastore.orientdb.constant.OrientDBMapping;
-import org.hibernate.ogm.datastore.orientdb.dto.EmbeddedColumnInfo;
-import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
-import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
-import org.hibernate.ogm.datastore.orientdb.utils.EntityKeyUtil;
 import org.hibernate.ogm.datastore.spi.BaseSchemaDefiner;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
-import org.hibernate.type.ComponentType;
 import org.hibernate.type.CustomType;
 import org.hibernate.type.EntityType;
 import org.hibernate.type.EnumType;
 import org.hibernate.type.IntegerType;
-import org.hibernate.type.LongType;
-import org.hibernate.type.ManyToOneType;
-import org.hibernate.type.OneToOneType;
 import org.hibernate.type.StringType;
-import org.hibernate.type.descriptor.converter.AttributeConverterTypeAdapter;
 import org.hibernate.usertype.UserType;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.exception.OSequenceException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.CharBuffer;
+import org.hibernate.boot.model.relational.Sequence;
+import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
+import org.hibernate.ogm.datastore.orientdb.constant.OrientDBMapping;
+import org.hibernate.type.ComponentType;
+import org.hibernate.type.descriptor.converter.AttributeConverterTypeAdapter;
 
 /**
+ * Schema definer for OrientDB
+ * <p>
+ * Implementation details:
+ * </p>
+ * <ol>
+ * <li>Annotation "EmbeddedId" is not supported</li>
+ * <li>Annotation "CompositeId" is supported partly</li>
+ * <li>Primary key created as unique index</li>
+ * <li>Associations between entities is like relational DBMS (by link owner field)</li>
+ * </ol>
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 
 public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 
-	private static final String EXECUTE_QUERY_SQL = "executeQuery.sql";
-	private static final String GET_TABLE_SEQ_VALUE = "getTableSeqValue";
-
 	private static final String CREATE_PROPERTY_TEMPLATE = "create property {0}.{1} {2}";
 	private static final String CREATE_EMBEDDED_PROPERTY_TEMPLATE = "create property {0}.{1} embedded {2}";
 	private static final Log log = LoggerFactory.getLogger();
-	private static final Set<Class> RELATIONS_TYPES;
-	private static final Map<Class, Class> RETURNED_CLASS_TYPE_MAPPING;
-
-	private static final Set<Class> SEQ_TYPES;
 
 	private OrientDBDatastoreProvider provider;
-
-	static {
-
-		Map<Class, Class> map1 = new HashMap<>();
-		map1.put( Long.class, LongType.class );
-		map1.put( Integer.class, IntegerType.class );
-		map1.put( String.class, StringType.class );
-		RETURNED_CLASS_TYPE_MAPPING = Collections.unmodifiableMap( map1 );
-
-		Set<Class> set1 = new HashSet<>();
-		set1.add( IntegerType.class );
-		set1.add( LongType.class );
-		SEQ_TYPES = Collections.unmodifiableSet( set1 );
-
-		Set<Class> set2 = new HashSet<>();
-		set2.add( ManyToOneType.class );
-		set2.add( OneToOneType.class );
-		RELATIONS_TYPES = Collections.unmodifiableSet( set2 );
-
-	}
 
 	private String createClassQuery(String tableName) {
 		return String.format( "create class %s extends V", tableName );
@@ -129,6 +107,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 				catch (SQLException sqle1) {
 					throw log.cannotGenerateSequence( name, sqle1 );
 				}
+
 			}
 			else {
 				throw log.cannotGenerateSequence( name, sqle );
@@ -153,7 +132,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 			OrientJdbcConnection orientDBConnection = (OrientJdbcConnection) connection;
 			Set<String> functions = orientDBConnection.getDatabase().getMetadata().getFunctionLibrary().getFunctionNames();
 			log.debugf( " functions : %s", functions );
-			if ( functions.contains( GET_TABLE_SEQ_VALUE.toUpperCase() ) ) {
+			if ( functions.contains( "getTableSeqValue".toUpperCase() ) ) {
 				log.debug( " function 'getTableSeqValue' exists!" );
 				return;
 			}
@@ -168,7 +147,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 			connection.createStatement().execute( new String( buffer.array() ).trim() );
 		}
 		catch (SQLException | IOException e) {
-			throw log.cannotCreateStoredProcedure( GET_TABLE_SEQ_VALUE, e );
+			throw log.cannotCreateStoredProcedure( "getTableSeqValue", e );
 		}
 	}
 
@@ -184,7 +163,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 			for ( OClass oc : orientDBConnection.getDatabase().getMetadata().getSchema().getClasses() ) {
 				log.debugf( " class: %s", oc.getName() );
 			}
-			InputStream is = OrientDBSchemaDefiner.class.getResourceAsStream( EXECUTE_QUERY_SQL );
+			InputStream is = OrientDBSchemaDefiner.class.getResourceAsStream( "executeQuery.sql" );
 			Reader reader = new InputStreamReader( is, "utf-8" );
 			char[] chars = new char[2000];
 			CharBuffer buffer = CharBuffer.wrap( chars );
@@ -192,7 +171,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 			connection.createStatement().execute( new String( buffer.array() ).trim() );
 		}
 		catch (SQLException | IOException e) {
-			throw log.cannotCreateStoredProcedure( GET_TABLE_SEQ_VALUE, e );
+			throw log.cannotCreateStoredProcedure( "getTableSeqValue", e );
 		}
 	}
 
@@ -295,7 +274,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						ComponentType type = (ComponentType) column.getValue().getType();
 						throw new UnsupportedOperationException( "Component type not supported yet " );
 					}
-					else if ( RELATIONS_TYPES.contains( column.getValue().getType().getClass() ) ) {
+					else if ( OrientDBMapping.RELATIONS_TYPES.contains( column.getValue().getType().getClass() ) ) {
 						// @TODO refactor it
 						Value value = column.getValue();
 						log.debugf( "column name: %s ; column.getCanonicalName(): %s", column.getName(), column.getCanonicalName() );
@@ -306,7 +285,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 						}
 						else {
 							Class mappedByClass = searchMappedByReturnedClass( context, namespace.getTables(), (EntityType) value.getType(), column );
-							String propertyQuery = createValueProperyQuery( table, column, RETURNED_CLASS_TYPE_MAPPING.get( mappedByClass ) );
+							String propertyQuery = createValueProperyQuery( table, column, OrientDBMapping.FOREIGN_KEY_TYPE_MAPPING.get( mappedByClass ) );
 							log.debugf( "create foreign key property query: %s", propertyQuery );
 							try {
 								provider.getConnection().createStatement().execute( propertyQuery );
@@ -315,8 +294,6 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 								throw log.cannotGenerateProperty( column.getName(), table.getName(), e );
 							}
 						}
-						// @TODO use Links as foreign keys. see http://orientdb.com/docs/last/SQL-Create-Link.html
-
 					}
 					else if ( EntityKeyUtil.isEmbeddedColumn( column ) ) {
 						EmbeddedColumnInfo ec = new EmbeddedColumnInfo( column.getName() );
@@ -392,10 +369,10 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 	private void createPrimaryKey(Connection connection, PrimaryKey primaryKey) {
 		StringBuilder uniqueIndexQuery = new StringBuilder( 100 );
 		uniqueIndexQuery.append( "CREATE INDEX " )
-				.append( primaryKey.getName() != null
-						? primaryKey.getName()
-						: PrimaryKey.generateName( primaryKey.generatedConstraintNamePrefix(), primaryKey.getTable(), primaryKey.getColumns() ) )
-				.append( " ON " ).append( primaryKey.getTable().getName() ).append( " (" );
+		.append( primaryKey.getName() != null
+		? primaryKey.getName()
+				: PrimaryKey.generateName( primaryKey.generatedConstraintNamePrefix(), primaryKey.getTable(), primaryKey.getColumns() ) )
+		.append( " ON " ).append( primaryKey.getTable().getName() ).append( " (" );
 		for ( Iterator<Column> it = primaryKey.getColumns().iterator(); it.hasNext(); ) {
 			Column column = it.next();
 			String columnName = column.getName();
@@ -418,7 +395,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 			throw log.cannotExecuteQuery( uniqueIndexQuery.toString(), e );
 		}
 		StringBuilder seq = new StringBuilder( 100 );
-		if ( primaryKey.getColumns().size() == 1 && SEQ_TYPES.contains( primaryKey.getColumns().get( 0 ).getValue().getType().getClass() ) ) {
+		if ( primaryKey.getColumns().size() == 1 && OrientDBMapping.SEQ_TYPES.contains( primaryKey.getColumns().get( 0 ).getValue().getType().getClass() ) ) {
 			seq.append( "CREATE SEQUENCE " );
 			seq.append( generateSeqName( primaryKey.getTable().getName(), primaryKey.getColumns().get( 0 ).getName() ) );
 			seq.append( " TYPE ORDERED START 0" );
@@ -594,7 +571,7 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		ServiceRegistryImplementor registry = sessionFactoryImplementor.getServiceRegistry();
 		provider = (OrientDBDatastoreProvider) registry.getService( DatastoreProvider.class );
 		Connection connection = provider.getConnection();
-		createSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE, 0, 1 );
+		//createSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE, 0, 1 );
 		createTableSequence( connection, OrientDBConstant.HIBERNATE_SEQUENCE_TABLE, "key", "seed" );
 		createGetTableSeqValueFunc( connection );
 		createExecuteQueryFunc( connection );
@@ -607,9 +584,16 @@ public class OrientDBSchemaDefiner extends BaseSchemaDefiner {
 		super.validateMapping( context );
 	}
 
-	public static String generateSeqName(String tableName, String primaryKeyName) {
-		StringBuilder buffer = new StringBuilder();
-		buffer.append( "seq_" ).append( tableName.toLowerCase() ).append( "_" ).append( primaryKeyName.toLowerCase() );
+	/**
+	 * generate name for sequence
+	 *
+	 * @param className name of OrientDB class
+	 * @param primaryKeyName name of primary key
+	 * @return name of sequence
+	 */
+	public static String generateSeqName(String className, String primaryKeyName) {
+		StringBuilder buffer = new StringBuilder( 50 );
+		buffer.append( "seq_" ).append( className.toLowerCase() ).append( "_" ).append( primaryKeyName.toLowerCase() );
 		return buffer.toString();
 	}
 

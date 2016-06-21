@@ -20,7 +20,9 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.type.spi.GridType;
 import org.hibernate.ogm.type.spi.TypeTranslator;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.hibernate.ogm.utils.TestHelper;
 import org.hibernate.type.StandardBasicTypes;
 import org.junit.Test;
@@ -71,6 +73,7 @@ public class JpaAttributeConverterTest extends OgmTestCase {
 	/**
 	 * MyString -> String
 	 */
+	@SkipByGridDialect(GridDialectType.ORIENTDB)
 	@Test
 	public void jpaConverterIsAppliedToCustomType() throws Exception {
 		Session session = openSession();

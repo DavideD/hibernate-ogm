@@ -16,6 +16,7 @@ import org.hibernate.Transaction;
 import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
 import org.hibernate.ogm.utils.SkipByGridDialect;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.hibernate.ogm.utils.TestHelper;
 import org.junit.Test;
 
@@ -90,7 +91,7 @@ public class ManyToManyTest extends OgmTestCase {
 
 	@Test
 	@SkipByGridDialect(
-			value = { GridDialectType.CASSANDRA },
+			value = { GridDialectType.CASSANDRA,GridDialectType.ORIENTDB },
 			comment = "composite PKs in associations not yet supported"
 	)
 	public void testManyToManyCompositeId() throws Exception {
@@ -135,8 +136,9 @@ public class ManyToManyTest extends OgmTestCase {
 	}
 
 	private int expectedAssociationNumber() {
-		if ( TestHelper.getCurrentDialectType().equals( GridDialectType.NEO4J ) ) {
-			// In Neo4j relationships are bidirectional
+		if ( TestHelper.getCurrentDialectType().equals( GridDialectType.NEO4J ) ||
+				TestHelper.getCurrentDialectType().equals( GridDialectType.ORIENTDB ) ) {
+			// In Neo4j and OrientDB relationships are bidirectional
 			return 1;
 		}
 		else {
@@ -146,7 +148,14 @@ public class ManyToManyTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] {
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			return new Class<?>[]{
+					AccountOwner.class,
+					BankAccount.class
+			};
+
+		}
+		return new Class<?>[]{
 				AccountOwner.class,
 				BankAccount.class,
 				Car.class,
