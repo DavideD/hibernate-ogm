@@ -35,7 +35,6 @@ import org.junit.Test;
  * @author Hardy Ferentschik
  */
 public class BuiltInTypeTest extends OgmTestCase {
-	private static final Random RANDOM = new Random();
 	private static TimeZone originalTimeZone = null;
 
 	private Calendar calendar;
@@ -79,7 +78,23 @@ public class BuiltInTypeTest extends OgmTestCase {
 
 	@Test
 	public void testIntegerSupport() throws Exception {
-		bookmark.setStockCount( RANDOM.nextInt() );
+		bookmark.setStockCount( 7 );
+
+		Bookmark loadedBookmark = saveAndGet( bookmark );
+		assertEquals( "Integer value does not match", bookmark.getStockCount(), loadedBookmark.getStockCount() );
+	}
+
+	@Test
+	public void testBiggestIntegerSupport() throws Exception {
+		bookmark.setStockCount( Integer.MAX_VALUE );
+
+		Bookmark loadedBookmark = saveAndGet( bookmark );
+		assertEquals( "Integer value does not match", bookmark.getStockCount(), loadedBookmark.getStockCount() );
+	}
+
+	@Test
+	public void testSmallestIntegerSupport() throws Exception {
+		bookmark.setStockCount( Integer.MIN_VALUE );
 
 		Bookmark loadedBookmark = saveAndGet( bookmark );
 		assertEquals( "Integer value does not match", bookmark.getStockCount(), loadedBookmark.getStockCount() );
@@ -94,8 +109,40 @@ public class BuiltInTypeTest extends OgmTestCase {
 	}
 
 	@Test
+	public void testBiggestShortSupport() throws Exception {
+		bookmark.setUrlPort( Short.MAX_VALUE );
+
+		Bookmark loadedBookmark = saveAndGet( bookmark );
+		assertEquals( "Short value does not match", bookmark.getUrlPort(), loadedBookmark.getUrlPort() );
+	}
+
+	@Test
+	public void testSmallestShortSupport() throws Exception {
+		bookmark.setUrlPort( Short.MIN_VALUE );
+
+		Bookmark loadedBookmark = saveAndGet( bookmark );
+		assertEquals( "Short value does not match", bookmark.getUrlPort(), loadedBookmark.getUrlPort() );
+	}
+
+	@Test
 	public void testLongSupport() throws Exception {
-		bookmark.setUserId( RANDOM.nextLong() );
+		bookmark.setUserId( 5L );
+
+		Bookmark loadedBookmark = saveAndGet( bookmark );
+		assertEquals( "Long value does not match", bookmark.getUserId(), loadedBookmark.getUserId() );
+	}
+
+	@Test
+	public void testBiggestLongSupport() throws Exception {
+		bookmark.setUserId( Long.MAX_VALUE );
+
+		Bookmark loadedBookmark = saveAndGet( bookmark );
+		assertEquals( "Long value does not match", bookmark.getUserId(), loadedBookmark.getUserId() );
+	}
+
+	@Test
+	public void testSmallestLongSupport() throws Exception {
+		bookmark.setUserId( Long.MIN_VALUE );
 
 		Bookmark loadedBookmark = saveAndGet( bookmark );
 		assertEquals( "Long value does not match", bookmark.getUserId(), loadedBookmark.getUserId() );
