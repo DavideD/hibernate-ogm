@@ -59,13 +59,13 @@ public class MultiGetSingleColumnIdTest extends OgmTestCase {
 				EntityKey[] keys = new EntityKey[] { key( SPLENDOR ), key( DOMINION ), key( KING_OF_TOKYO ) };
 				List<Tuple> tuples = dialect.getTuples( keys, tupleContext( session ) );
 
-				assertThat( tuples.get( 0 ).get( "id" ) ).isEqualTo( SPLENDOR.getId() );
+				assertThat( asInteger( tuples.get( 0 ).get( "id" ) ) ).isEqualTo( SPLENDOR.getId() );
 				assertThat( tuples.get( 0 ).get( "name" ) ).isEqualTo( SPLENDOR.getName() );
 
-				assertThat( tuples.get( 1 ).get( "id" ) ).isEqualTo( DOMINION.getId() );
+				assertThat( asInteger( tuples.get( 1 ).get( "id" ) ) ).isEqualTo( DOMINION.getId() );
 				assertThat( tuples.get( 1 ).get( "name" ) ).isEqualTo( DOMINION.getName() );
 
-				assertThat( tuples.get( 2 ).get( "id" ) ).isEqualTo( KING_OF_TOKYO.getId() );
+				assertThat( asInteger( tuples.get( 2 ).get( "id" ) ) ).isEqualTo( KING_OF_TOKYO.getId() );
 				assertThat( tuples.get( 2 ).get( "name" ) ).isEqualTo( KING_OF_TOKYO.getName() );
 
 				tx.commit();
@@ -75,6 +75,10 @@ public class MultiGetSingleColumnIdTest extends OgmTestCase {
 				throw e;
 			}
 		}
+	}
+
+	private Integer asInteger(Object object) {
+		return ( (Number) object ).intValue();
 	}
 
 	@Test
@@ -89,7 +93,7 @@ public class MultiGetSingleColumnIdTest extends OgmTestCase {
 
 				assertThat( tuples.get( 0 ) ).isNull();
 
-				assertThat( tuples.get( 1 ).get( "id" ) ).isEqualTo( KING_OF_TOKYO.getId() );
+				assertThat( asInteger( tuples.get( 1 ).get( "id" ) ) ).isEqualTo( KING_OF_TOKYO.getId() );
 				assertThat( tuples.get( 1 ).get( "name" ) ).isEqualTo( KING_OF_TOKYO.getName() );
 
 				assertThat( tuples.get( 2 ) ).isNull();
