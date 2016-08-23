@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Graph.Node;
+import org.neo4j.driver.v1.types.Node;
 
 /**
  * An entity node and all the embedded values associated to it.

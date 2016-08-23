@@ -6,7 +6,7 @@
  */
 package org.hibernate.ogm.datastore.neo4j.remote.dialect.impl;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -17,17 +17,18 @@ import org.hibernate.ogm.datastore.neo4j.dialect.impl.BaseNeo4jSequenceGenerator
 import org.hibernate.ogm.datastore.neo4j.dialect.impl.NodeLabel;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.Log;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory;
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jClient;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Statement;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.StatementResult;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Statements;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.StatementsResponse;
 import org.hibernate.ogm.dialect.spi.NextValueRequest;
 import org.hibernate.ogm.id.impl.OgmSequenceGenerator;
 import org.hibernate.ogm.id.impl.OgmTableGenerator;
 import org.hibernate.ogm.model.key.spi.IdSourceKey;
 import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata;
 import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata.IdSourceType;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Statement;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.util.Resource;
 import org.neo4j.graphdb.DynamicLabel;
 import org.neo4j.graphdb.Label;
 
@@ -83,13 +84,13 @@ public class RemoteNeo4jSequenceGenerator extends BaseNeo4jSequenceGenerator {
 
 	private static final Log logger = LoggerFactory.getLogger();
 
-	private final BoundedConcurrentHashMap<String, Statements> queryCache;
+	private final BoundedConcurrentHashMap<String, List<Statement>> queryCache;
 
-	private final RemoteNeo4jClient neo4jDb;
+	private final Driver driver;
 
-	public RemoteNeo4jSequenceGenerator(RemoteNeo4jClient neo4jDb, int sequenceCacheMaxSize) {
-		this.neo4jDb = neo4jDb;
-		this.queryCache = new BoundedConcurrentHashMap<String, Statements>( sequenceCacheMaxSize, 20, BoundedConcurrentHashMap.Eviction.LIRS );
+	public RemoteNeo4jSequenceGenerator(Driver driver, int sequenceCacheMaxSize) {
+		this.driver = driver;
+		this.queryCache = new BoundedConcurrentHashMap<String, List<Statement>>( sequenceCacheMaxSize, 20, BoundedConcurrentHashMap.Eviction.LIRS );
 	}
 
 	/**
@@ -97,25 +98,25 @@ public class RemoteNeo4jSequenceGenerator extends BaseNeo4jSequenceGenerator {
 	 * <p>
 	 * All nodes are created inside the same transaction.
 	 */
-	public void createSequencesConstraints(Statements statements, Iterable<Sequence> sequences) {
+	public void createSequencesConstraints(List<Statement> statements, Iterable<Sequence> sequences) {
 		addUniqueConstraintForSequences( statements );
 	}
 
-	public void createSequences(Statements statements, Iterable<Sequence> sequences) {
+	public void createSequences(List<Statement> statements, Iterable<Sequence> sequences) {
 		addSequences( statements, sequences );
 	}
 
-	private void addUniqueConstraintForSequences(Statements statements) {
+	private void addUniqueConstraintForSequences(List<Statement> statements) {
 		Statement statement = createUniqueConstraintStatement( SEQUENCE_NAME_PROPERTY, NodeLabel.SEQUENCE.name() );
-		statements.addStatement( statement );
+		statements.add( statement );
 	}
 
 	/**
 	 * Adds a unique constraint to make sure that each node of the same "sequence table" is unique.
 	 */
-	private void addUniqueConstraintForTableBasedSequence(Statements statements, IdSourceKeyMetadata generatorKeyMetadata) {
+	private void addUniqueConstraintForTableBasedSequence(List<Statement> statements, IdSourceKeyMetadata generatorKeyMetadata) {
 		Statement statement = createUniqueConstraintStatement( generatorKeyMetadata.getKeyColumnName(), generatorKeyMetadata.getName() );
-		statements.addStatement( statement );
+		statements.add( statement );
 	}
 
 	private Statement createUniqueConstraintStatement(String propertyName, String label) {
@@ -130,15 +131,15 @@ public class RemoteNeo4jSequenceGenerator extends BaseNeo4jSequenceGenerator {
 	 *
 	 * @param sequences the generators to process
 	 */
-	private void addSequences(Statements statements, Iterable<Sequence> sequences) {
+	private void addSequences(List<Statement> statements, Iterable<Sequence> sequences) {
 		for ( Sequence sequence : sequences ) {
 			addSequence( statements, sequence );
 		}
 	}
 
-	private void addSequence(Statements statements, Sequence sequence) {
+	private void addSequence(List<Statement> statements, Sequence sequence) {
 		Statement statement = new Statement( SEQUENCE_CREATION_QUERY, Collections.<String, Object>singletonMap( SEQUENCE_NAME_QUERY_PARAM, sequence.getName().render() ) );
-		statements.addStatement( statement );
+		statements.add( statement );
 	}
 
 	protected String acquireLockQuery(NextValueRequest request) {
@@ -162,20 +163,18 @@ public class RemoteNeo4jSequenceGenerator extends BaseNeo4jSequenceGenerator {
 		return query;
 	}
 
-	private void getUpdateTableSequenceQuery(Statements statements, NextValueRequest request) {
+	private void getUpdateTableSequenceQuery(List<Statement> statements, NextValueRequest request) {
 		Map<String, Object> params = params( request );
 
 		// Acquire lock
 		String acquireLockQuery = acquireLockQuery( request );
 		Statement acquireLockStatement = new Statement( acquireLockQuery, params );
-		acquireLockStatement.setResultDataContents( Arrays.asList( Statement.AS_ROW ) );
-		statements.addStatement( acquireLockStatement );
+		statements.add( acquireLockStatement );
 
 		// Update value
 		String updateQuery = increaseQuery( request );
 		Statement updateStatement = new Statement( updateQuery, params );
-		updateStatement.setResultDataContents( Arrays.asList( Statement.AS_ROW ) );
-		statements.addStatement( updateStatement );
+		statements.add( updateStatement );
 	}
 
 	protected String increaseQuery(NextValueRequest request) {
@@ -210,54 +209,74 @@ public class RemoteNeo4jSequenceGenerator extends BaseNeo4jSequenceGenerator {
 	public Long nextValue(NextValueRequest request) {
 		String sequenceName = sequenceName( request.getKey() );
 		// This method return 2 statements: the first one to acquire a lock and the second one to update the sequence node
-		Statements statements = updateNextValueQuery( request );
-		StatementsResponse statementsResponse = neo4jDb.executeQueriesInNewTransaction( statements );
-		List<StatementResult> results = statementsResponse.getResults();
-		// We use 1, because we are interested to the result of the second statement (the one that updates the node and returns the value)
-		Number nextValue = (Number) results.get( 1 ).getData().get( 0 ).getRow().get( 0 );
-		// sequence nodes are expected to have been created up-front
+		List<Statement> statements = updateNextValueQuery( request );
+		StatementResult result = null;
+		Session session = null;
+		try {
+			session = driver.session();
+			Transaction tx = null;
+			try {
+				tx = session.beginTransaction();
+				result = RemoteStatements.runAllReturnLast( tx, statements );
+				tx.success();
+			}
+			finally {
+				close( tx );
+			}
+		}
+		finally {
+			close( session );
+		}
+
 		if ( request.getKey().getMetadata().getType() == IdSourceType.SEQUENCE ) {
-			if ( nextValue == null ) {
+			if ( !result.hasNext() ) {
 				throw logger.sequenceNotFound( sequenceName );
 			}
 		}
+
 		// The only way I found to make it work in a multi-threaded environment is to first increment the value and then read it.
 		// Our API allows for an initial value and to make sure that I'm actually reading the correct one,
 		// the first time I need to decrement the value I obtain from the db.
+		Number nextValue = result.single().get( 0 ).asNumber();
 		return nextValue.longValue() - request.getIncrement();
+	}
+
+	private void close(Resource closable) {
+		if ( closable != null ) {
+			closable.close();
+		}
 	}
 
 	/*
 	 * This will always return 2 statements: the first one to acquire a lock and the second one to update the sequence value
 	 */
-	private Statements updateNextValueQuery(NextValueRequest request) {
+	private List<Statement> updateNextValueQuery(NextValueRequest request) {
 		return request.getKey().getMetadata().getType() == IdSourceType.TABLE
 				? getTableQuery( request )
 				: getSequenceIncrementQuery( request );
 	}
 
-	private Statements getSequenceIncrementQuery(NextValueRequest request) {
+	private List<Statement> getSequenceIncrementQuery(NextValueRequest request) {
 		// Acquire a lock on the node
 		String sequenceName = sequenceName( request.getKey() );
 		Statement lockStatement = new Statement( SEQUENCE_LOCK_QUERY, Collections.<String, Object>singletonMap( SEQUENCE_NAME_QUERY_PARAM, sequenceName ) );
-		Statements statements = new Statements();
-		statements.addStatement( lockStatement );
+		List<Statement> statements = new ArrayList<>(2);
+		statements.add( lockStatement );
 
 		// Increment the value on the node
 		String query = SEQUENCE_VALUE_QUERY.replace( "{increment}", String.valueOf( request.getIncrement() ) ).replace( "{initialValue}", String.valueOf( request.getInitialValue() ) );
 		Statement statement = new Statement( query, params( request ) );
-		statement.setResultDataContents( Arrays.asList( Statement.AS_ROW ) );
-		statements.addStatement( statement );
+		statements.add( statement );
 		return statements;
 	}
 
-	private Statements getTableQuery(NextValueRequest request) {
+	private List<Statement> getTableQuery(NextValueRequest request) {
 		String key = key( request );
-		Statements statements = queryCache.get( key );
+		List<Statement> statements = queryCache.get( key );
 		if ( statements == null ) {
-			statements = new Statements();
+			statements = new ArrayList<Statement>();
 			getUpdateTableSequenceQuery( statements, request );
-			Statements cached = queryCache.putIfAbsent( key, statements );
+			List<Statement> cached = queryCache.putIfAbsent( key, statements );
 			if ( cached != null ) {
 				statements = cached;
 			}
@@ -265,7 +284,7 @@ public class RemoteNeo4jSequenceGenerator extends BaseNeo4jSequenceGenerator {
 		return statements;
 	}
 
-	public void createUniqueConstraintsForTableSequences(Statements statements, Iterable<IdSourceKeyMetadata> tableIdGenerators) {
+	public void createUniqueConstraintsForTableSequences(List<Statement> statements, Iterable<IdSourceKeyMetadata> tableIdGenerators) {
 		for ( IdSourceKeyMetadata idSourceKeyMetadata : tableIdGenerators ) {
 			if ( idSourceKeyMetadata.getType() == IdSourceType.TABLE ) {
 				addUniqueConstraintForTableBasedSequence( statements, idSourceKeyMetadata );

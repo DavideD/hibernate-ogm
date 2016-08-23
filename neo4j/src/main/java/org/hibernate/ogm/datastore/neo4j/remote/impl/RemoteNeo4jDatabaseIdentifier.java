@@ -7,19 +7,16 @@
 package org.hibernate.ogm.datastore.neo4j.remote.impl;
 
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 /**
- * Provides all information required to connect to a Neo4j database.
+ * Provides all information required to connect to a Neo4j database using the Bolt protocol.
  *
- * @author Andrea Boriero &lt;dreborier@gmail.com&gt;
- * @author Gunnar Morling
+ * @author Davide D'Alto;
  */
 public class RemoteNeo4jDatabaseIdentifier {
 
-	private static final String PROTOCOL = "http";
+	private static final String PROTOCOL = "bolt://";
 	private static final String SLASH = "/";
 
 	private final String host;
@@ -28,8 +25,8 @@ public class RemoteNeo4jDatabaseIdentifier {
 	private final String userName;
 	private final String password;
 
-	private final URI serverUri;
-	private final URI databaseUri;
+	private final String serverUri;
+	private final String databaseUri;
 
 	public RemoteNeo4jDatabaseIdentifier(String host, int port, String databaseName, String userName, String password) throws MalformedURLException, URISyntaxException {
 		this.host = host;
@@ -38,8 +35,8 @@ public class RemoteNeo4jDatabaseIdentifier {
 		this.userName = userName;
 		this.password = password;
 
-		this.serverUri = new URL( PROTOCOL, host, port, "" ).toURI();
-		this.databaseUri = new URL( PROTOCOL, host, port, SLASH + databaseName ).toURI();
+		this.serverUri = PROTOCOL + host + ":" + port;
+		this.databaseUri = serverUri + SLASH + databaseName;
 	}
 
 	public String getHost() {
@@ -60,20 +57,20 @@ public class RemoteNeo4jDatabaseIdentifier {
 	}
 
 	/**
-	 * Returns the URI of the Neo4j server, e.g. "http:://localhost:5984".
+	 * Returns the URI of the Neo4j server, e.g. "http://localhost:5984".
 	 *
 	 * @return the URI of the Neo4j server
 	 */
-	public URI getServerUri() {
+	public String getServerUri() {
 		return serverUri;
 	}
 
 	/**
-	 * Returns the URI of the database, e.g. "http:://localhost:5984/mydb".
+	 * Returns the URI of the database, e.g. "http://localhost:5984/mydb".
 	 *
 	 * @return the URI of the database
 	 */
-	public URI getDatabaseUri() {
+	public String getDatabaseUri() {
 		return databaseUri;
 	}
 

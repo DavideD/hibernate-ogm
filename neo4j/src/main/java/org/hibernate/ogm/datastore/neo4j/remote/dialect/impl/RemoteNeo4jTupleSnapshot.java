@@ -8,64 +8,52 @@ package org.hibernate.ogm.datastore.neo4j.remote.dialect.impl;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.hibernate.ogm.datastore.neo4j.EmbeddedNeo4jDialect;
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jClient;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Graph.Node;
+import org.hibernate.ogm.datastore.neo4j.BaseNeo4jDialect;
+import org.hibernate.ogm.dialect.spi.TupleContext;
 import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
+import org.neo4j.driver.v1.types.Node;
 
 /**
  * Represents the Tuple snapshot as loaded by the Neo4j datastore.
  * <p>
  * The columns of the tuple are mapped as properties of the node.
  *
- * @author Davide D'Alto &lt;davide@hibernate.org&gt;
+ * @author Davide D'Alto
  */
 public final class RemoteNeo4jTupleSnapshot implements TupleSnapshot {
 
 	private final Node node;
 	private final Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata;
-	private final Map<String, String> rolesByColumn;
 	private final EntityKeyMetadata entityKeyMetadata;
-	private final RemoteNeo4jClient neo4jClient;
 
 	private final Map<String, Node> toOneEntities;
-	private final RemoteNeo4jEntityQueries queries;
-	private final Long txId;
 	private final Map<String, Collection<Node>> embeddedNodes;
+	private final Map<String, String> rolesByColumn;
 
-	public RemoteNeo4jTupleSnapshot(RemoteNeo4jClient neo4jClient, Long txId, RemoteNeo4jEntityQueries queries, NodeWithEmbeddedNodes node, EntityKeyMetadata entityKeyMetadata) {
-		this( neo4jClient, txId, queries, node, Collections.<String, AssociatedEntityKeyMetadata>emptyMap(), Collections.<String, String>emptyMap(),
-				entityKeyMetadata );
+	public RemoteNeo4jTupleSnapshot(
+			NodeWithEmbeddedNodes node,
+			EntityKeyMetadata entityKeyMetadata) {
+		this( node, entityKeyMetadata, Collections.<String, Node>emptyMap(), null );
 	}
 
-	public RemoteNeo4jTupleSnapshot(RemoteNeo4jClient neo4jClient,
-			Long txId,
-			RemoteNeo4jEntityQueries queries,
+	public RemoteNeo4jTupleSnapshot(
 			NodeWithEmbeddedNodes node,
-			Map<String, AssociatedEntityKeyMetadata> associatedEntityKeyMetadata,
-			Map<String, String> rolesByColumn,
-			EntityKeyMetadata entityKeyMetadata) {
-		this.neo4jClient = neo4jClient;
-		this.txId = txId;
-		this.queries = queries;
+			EntityKeyMetadata metadata,
+			Map<String, Node> toOneEntities,
+			TupleContext tupleContext
+			) {
 		this.node = node.getOwner();
 		this.embeddedNodes = node.getEmbeddedNodes();
-		this.associatedEntityKeyMetadata = associatedEntityKeyMetadata;
-		this.rolesByColumn = rolesByColumn;
-		this.entityKeyMetadata = entityKeyMetadata;
-		if ( associatedEntityKeyMetadata.size() == 0 ) {
-			this.toOneEntities = Collections.emptyMap();
-		}
-		else {
-			this.toOneEntities = new HashMap<>( associatedEntityKeyMetadata.size() );
-		}
+		this.entityKeyMetadata = metadata;
+		this.toOneEntities = toOneEntities;
+		this.associatedEntityKeyMetadata = tupleContext.getAllAssociatedEntityKeyMetadata();
+		this.rolesByColumn = tupleContext.getAllRoles();
 	}
 
 	@Override
@@ -73,7 +61,7 @@ public final class RemoteNeo4jTupleSnapshot implements TupleSnapshot {
 		if ( associatedEntityKeyMetadata.containsKey( column ) ) {
 			return readPropertyOnOtherNode( column );
 		}
-		else if ( EmbeddedNeo4jDialect.isPartOfRegularEmbedded( entityKeyMetadata.getColumnNames(), column ) ) {
+		else if ( BaseNeo4jDialect.isPartOfRegularEmbedded( entityKeyMetadata.getColumnNames(), column ) ) {
 			return readEmbeddedProperty( column );
 		}
 		else {
@@ -85,25 +73,10 @@ public final class RemoteNeo4jTupleSnapshot implements TupleSnapshot {
 		String associationrole = rolesByColumn.get( column );
 		Node associatedEntity = toOneEntities.get( associationrole );
 		if ( associatedEntity == null ) {
-			// Not cached, let's look for it
-			associatedEntity = queries.findAssociatedEntity( neo4jClient, txId, keyValues(), associationrole );
-			if ( associatedEntity == null ) {
-				return null;
-			}
-			else {
-				toOneEntities.put( associationrole, associatedEntity );
-			}
+			return null;
 		}
 
 		return readProperty( associatedEntity, associatedEntityKeyMetadata.get( column ).getCorrespondingEntityKeyColumn( column ) );
-	}
-
-	private Object[] keyValues() {
-		Object[] values = new Object[entityKeyMetadata.getColumnNames().length];
-		for ( int i = 0; i < values.length; i++ ) {
-			values[i] = node.getProperties().get( entityKeyMetadata.getColumnNames()[i] );
-		}
-		return values;
 	}
 
 	private Object readEmbeddedProperty(String column) {
@@ -117,21 +90,21 @@ public final class RemoteNeo4jTupleSnapshot implements TupleSnapshot {
 	}
 
 	private Object readProperty(Node node, String targetColumnName) {
-		if ( node.getProperties().containsKey( targetColumnName ) ) {
-			return node.getProperties().get( targetColumnName );
+		if ( node.containsKey( targetColumnName ) ) {
+			return node.get( targetColumnName ).asObject();
 		}
 		return null;
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return node.getProperties().isEmpty();
+		return node.asMap().isEmpty();
 	}
 
 	@Override
 	public Set<String> getColumnNames() {
 		Set<String> names = new HashSet<String>();
-		for ( String string : node.getProperties().keySet() ) {
+		for ( String string : node.keys() ) {
 			names.add( string );
 		}
 		return names;

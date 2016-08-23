@@ -14,13 +14,12 @@ import java.util.List;
 import java.util.Set;
 
 import org.fest.assertions.Fail;
-import org.hibernate.HibernateException;
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jClient;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.ErrorResponse;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Graph;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Graph.Node;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Statements;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.StatementsResponse;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.Record;
+import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Statement;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.types.Node;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.ResourceIterator;
@@ -37,19 +36,19 @@ public class GraphAssertions {
 		return new NodeForGraphAssertions( alias, labels);
 	}
 
-	public static void assertThatExists(RemoteNeo4jClient engine, NodeForGraphAssertions node) throws Exception {
+	public static void assertThatExists(Driver driver, NodeForGraphAssertions node) throws Exception {
+		List<Record> records = null;
 		String nodeAsCypher = node.toCypher();
-		String query = "MATCH " + nodeAsCypher + " RETURN " + node.getAlias();
-		Statements statements = new Statements();
-		statements.addStatement( query, node.getParams() );
+		try ( Session session = driver.session() ) {
+			String query = "MATCH " + nodeAsCypher + " RETURN " + node.getAlias();
+			Statement statement = new Statement( query, node.getParams() );
+			StatementResult result = session.run( statement );
+			records = result.list();
+		}
+		assertThat( records ).isNotEmpty().as( "Node ["  + node.getAlias() + "] not found, Looked for " + nodeAsCypher + " with parameters: " + node.getParams() );
 
-		StatementsResponse response = engine.executeQueriesInNewTransaction( statements );
-		validate( response );
-		assertThat( response.getResults().get( 0 ).getData() ).isNotEmpty().as( "Node ["  + node.getAlias() + "] not found, Looked for " + nodeAsCypher + " with parameters: " + node.getParams() );
-		List<Node> nodes = response.getResults().get( 0 ).getData().get( 0 ).getGraph().getNodes();
-
-		Graph.Node nodeFound = nodes.get( 0 );
-		Iterable<String> propertyKeys = nodeFound.getProperties().keySet();
+		Node nodeFound = records.get( 0 ).get( node.getAlias() ).asNode();
+		Iterable<String> propertyKeys = nodeFound.keys();
 		List<String> unexpectedProperties = new ArrayList<String>();
 		Set<String> expectedProperties =  node.getProperties().keySet();
 		for ( Iterator<String> iterator = propertyKeys.iterator(); iterator.hasNext(); ) {
@@ -62,7 +61,7 @@ public class GraphAssertions {
 		List<String> missingProperties = new ArrayList<String>();
 		if ( expectedProperties != null ) {
 			for ( String expected : expectedProperties ) {
-				if ( !nodeFound.getProperties().containsKey( expected ) ) {
+				if ( !nodeFound.containsKey( expected ) ) {
 					missingProperties.add( expected );
 				}
 			}
@@ -70,14 +69,7 @@ public class GraphAssertions {
 		assertThat( unexpectedProperties ).as( "Unexpected properties for node [" + node.getAlias() + "]" ).isEmpty();
 		assertThat( missingProperties ).as( "Missing properties for node [" + node.getAlias() + "]" ).isEmpty();
 
-		assertThat( nodes ).hasSize( 1 );
-	}
-
-	private static void validate(StatementsResponse response) {
-		if ( !response.getErrors().isEmpty() ) {
-			ErrorResponse errorResponse = response.getErrors().get( 0 );
-			throw new HibernateException( String.valueOf( errorResponse ) );
-		}
+		assertThat( records ).hasSize( 1 );
 	}
 
 	public static void assertThatExists(GraphDatabaseService engine, NodeForGraphAssertions node) throws Exception {
@@ -119,16 +111,18 @@ public class GraphAssertions {
 		}
 	}
 
-	public static void assertThatExists(RemoteNeo4jClient engine, RelationshipsChainForGraphAssertions relationship) throws Exception {
+	public static void assertThatExists(Driver engine, RelationshipsChainForGraphAssertions relationship) throws Exception {
 		String relationshipAsCypher = relationship.toCypher();
 		NodeForGraphAssertions node = relationship.getStart();
 		String query = "MATCH " + relationshipAsCypher + " RETURN " + node.getAlias();
 
-		Statements statements = new Statements();
-		statements.addStatement( query, relationship.getParams() );
-		StatementsResponse response = engine.executeQueriesInNewTransaction( statements );
-		validate( response );
-		List<Node> nodes = response.getResults().get( 0 ).getData().get( 0 ).getGraph().getNodes();
+		List<Node> nodes = new ArrayList<>();
+		try ( Session session = engine.session() ) {
+			StatementResult result = session.run( query, relationship.getParams() );
+			while ( result.hasNext() ) {
+				nodes.add( result.next().get( node.getAlias() ).asNode() );
+			}
+		}
 
 		assertThat( nodes ).isNotEmpty().as( "Relationships not found, Looked for " + relationshipAsCypher + " with parameters: " + relationship.getParams() );
 		assertThat( nodes ).hasSize( 1 );

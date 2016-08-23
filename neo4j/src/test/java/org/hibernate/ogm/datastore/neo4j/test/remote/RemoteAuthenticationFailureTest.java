@@ -9,11 +9,12 @@ package org.hibernate.ogm.datastore.neo4j.test.remote;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
-import java.util.Properties;
+import java.util.Map;
 
 import org.hibernate.HibernateException;
 import org.hibernate.ogm.cfg.OgmProperties;
 import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jDatastoreProvider;
+import org.hibernate.ogm.datastore.neo4j.utils.Neo4jTestHelper;
 import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.hibernate.ogm.utils.SkippableTestRunner;
@@ -31,14 +32,12 @@ public class RemoteAuthenticationFailureTest {
 
 	@Test
 	public void testAuthenticationFailureAtStartUp() throws Exception {
-		Properties properties = new Properties();
-		// Set by Neo4jTestHelper
-		properties.setProperty( OgmProperties.HOST, System.getProperties().getProperty( OgmProperties.HOST ) );
-		properties.setProperty( OgmProperties.PORT, System.getProperties().getProperty( OgmProperties.PORT ) );
-		properties.setProperty( OgmProperties.USERNAME, "completely wrong" );
-		properties.setProperty( OgmProperties.PASSWORD, "completely wrong" );
+		Map<String, String> configuration = Neo4jTestHelper.getConfiguration();
+		configuration.put( OgmProperties.USERNAME, "completely wrong" );
+		configuration.put( OgmProperties.PASSWORD, "completely wrong" );
+
 		RemoteNeo4jDatastoreProvider remoteDatastoreProvider = new RemoteNeo4jDatastoreProvider();
-		remoteDatastoreProvider.configure( properties );
+		remoteDatastoreProvider.configure( configuration );
 		try {
 			remoteDatastoreProvider.start();
 			fail( "Credentials should be invalid" );

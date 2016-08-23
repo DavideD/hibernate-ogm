@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jClient;
 import org.hibernate.ogm.model.key.spi.AssociatedEntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
@@ -24,11 +23,11 @@ public class RemoteNeo4jTupleAssociationSnapshot implements TupleSnapshot {
 
 	private final Map<String, Object> properties;
 
-	public RemoteNeo4jTupleAssociationSnapshot(RemoteNeo4jClient neo4jClient, RemoteNeo4jAssociationQueries queries, RemoteNeo4jAssociationPropertiesRow row, AssociationKey associationKey, AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
-		this.properties = collectProperties( neo4jClient, queries, row, associationKey, associatedEntityKeyMetadata );
+	public RemoteNeo4jTupleAssociationSnapshot(RemoteNeo4jAssociationPropertiesRow row, AssociationKey associationKey, AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+		this.properties = collectProperties( row, associationKey, associatedEntityKeyMetadata );
 	}
 
-	private static Map<String, Object> collectProperties(RemoteNeo4jClient client, RemoteNeo4jAssociationQueries queries, RemoteNeo4jAssociationPropertiesRow row, AssociationKey associationKey, AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
+	private static Map<String, Object> collectProperties(RemoteNeo4jAssociationPropertiesRow row, AssociationKey associationKey, AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
 
 		Map<String, Object> properties = new HashMap<String, Object>();
 		String[] rowKeyColumnNames = associationKey.getMetadata().getRowKeyColumnNames();

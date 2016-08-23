@@ -8,6 +8,7 @@ package org.hibernate.ogm.datastore.neo4j.remote.impl;
 
 import static org.hibernate.ogm.datastore.neo4j.query.parsing.cypherdsl.impl.CypherDSL.escapeIdentifier;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -18,13 +19,17 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.datastore.neo4j.impl.BaseNeo4jSchemaDefiner;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.Log;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.ErrorResponse;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Statements;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.StatementsResponse;
+import org.hibernate.ogm.datastore.neo4j.remote.dialect.impl.RemoteStatements;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
 import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.tool.hbm2ddl.UniqueConstraintSchemaUpdateStrategy;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Statement;
+import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.exceptions.ClientException;
+import org.neo4j.driver.v1.util.Resource;
 import org.neo4j.graphdb.Label;
 
 /**
@@ -46,7 +51,7 @@ import org.neo4j.graphdb.Label;
  * @author Davide D'Alto
  * @author Gunnar Morling
  */
-public class RemoteNeo4jSchemaDefiner extends BaseNeo4jSchemaDefiner<Statements> {
+public class RemoteNeo4jSchemaDefiner extends BaseNeo4jSchemaDefiner<List<Statement>> {
 
 	private static final Log log = LoggerFactory.getLogger();
 
@@ -57,28 +62,55 @@ public class RemoteNeo4jSchemaDefiner extends BaseNeo4jSchemaDefiner<Statements>
 
 		RemoteNeo4jDatastoreProvider provider = (RemoteNeo4jDatastoreProvider) registry.getService( DatastoreProvider.class );
 		createSequences( context.getDatabase(), context.getAllIdSourceKeyMetadata(), provider );
-		createEntityConstraints( provider.getDatabase(), context.getDatabase(), sessionFactoryImplementor.getProperties() );
+		createEntityConstraints( provider.getDriver(), context.getDatabase(), sessionFactoryImplementor.getProperties() );
 	}
 
 	private void createSequences(Database database, Iterable<IdSourceKeyMetadata> idSourceKeyMetadata, RemoteNeo4jDatastoreProvider provider) {
 		List<Sequence> sequences = sequences( database );
 
-		Statements constraintStatements = new Statements();
+		List<Statement> constraintStatements = new ArrayList<Statement>();
 		provider.getSequenceGenerator().createSequencesConstraints( constraintStatements, sequences );
 		provider.getSequenceGenerator().createUniqueConstraintsForTableSequences( constraintStatements, idSourceKeyMetadata );
 
-		StatementsResponse response = provider.getDatabase().executeQueriesInNewTransaction( constraintStatements );
-		validateSequencesCreation( response );
+		Driver driver = provider.getDriver();
+		Session session = null;
+		try {
+			session = driver.session();
+			Transaction tx = null;
+			try {
+				tx = session.beginTransaction();
+				RemoteStatements.runAll( tx, constraintStatements );
+				tx.success();
+			}
+			finally {
+				close( tx );
+			}
 
-		// We create the sequences in a separate transaction because
-		// Neo4j does not allow the creation of constraints and graph elements in the same transaction
-		Statements sequenceStatements = new Statements();
-		provider.getSequenceGenerator().createSequences( sequenceStatements, sequences );
-		response = provider.getDatabase().executeQueriesInNewTransaction( sequenceStatements );
-		validateConstraintsCreation( response );
+			// We create the sequences in a separate transaction because
+			// Neo4j does not allow the creation of constraints and graph elements in the same transaction
+			List<Statement> sequenceStatements = new ArrayList<>();
+			provider.getSequenceGenerator().createSequences( sequenceStatements, sequences );
+			try {
+				tx = session.beginTransaction();
+				RemoteStatements.runAll( tx, sequenceStatements );
+				tx.success();
+			}
+			finally {
+				close( tx );
+			}
+		}
+		finally {
+			close( session );
+		}
 	}
 
-	private void createEntityConstraints(RemoteNeo4jClient remoteNeo4j, Database database, Properties properties) {
+	private void close(Resource closable) {
+		if ( closable != null ) {
+			closable.close();
+		}
+	}
+
+	private void createEntityConstraints(Driver remoteNeo4j, Database database, Properties properties) {
 		UniqueConstraintSchemaUpdateStrategy constraintMethod = UniqueConstraintSchemaUpdateStrategy.interpret( properties.get(
 				Environment.UNIQUE_CONSTRAINT_SCHEMA_UPDATE_STRATEGY )
 		);
@@ -88,36 +120,39 @@ public class RemoteNeo4jSchemaDefiner extends BaseNeo4jSchemaDefiner<Statements>
 			log.tracef( "Skipping generation of unique constraints" );
 		}
 		else {
-			Statements statements = new Statements();
+			List<Statement> statements = new ArrayList<Statement>();
 			addUniqueConstraints( statements, database );
 			log.debug( "Creating missing constraints" );
-			StatementsResponse response = remoteNeo4j.executeQueriesInNewTransaction( statements );
-			validateConstraintsCreation( response );
-		}
-	}
-
-	private void validateSequencesCreation(StatementsResponse response) {
-		if ( !response.getErrors().isEmpty() ) {
-			ErrorResponse errorResponse = response.getErrors().get( 0 );
-			throw log.sequencesCreationException( errorResponse.getCode(), errorResponse.getMessage() );
-		}
-	}
-
-	private void validateConstraintsCreation(StatementsResponse response) {
-		if ( !response.getErrors().isEmpty() ) {
-			ErrorResponse errorResponse = response.getErrors().get( 0 );
-			throw log.constraintsCreationException( errorResponse.getCode(), errorResponse.getMessage() );
+			Session session = null;
+			try {
+				session = remoteNeo4j.session();
+				Transaction tx = null;
+				try {
+					tx = session.beginTransaction();
+					RemoteStatements.runAll( tx, statements );
+					tx.success();
+				}
+				catch (ClientException e) {
+					throw log.constraintsCreationException( e.neo4jErrorCode(), e.getMessage() );
+				}
+				finally {
+					close( tx );
+				}
+			}
+			finally {
+				close( session );
+			}
 		}
 	}
 
 	@Override
-	protected void createUniqueConstraintIfMissing(Statements statements, Label label, String property) {
+	protected void createUniqueConstraintIfMissing(List<Statement> statements, Label label, String property) {
 		log.tracef( "Creating unique constraint for nodes labeled as %1$s on property %2$s", label, property );
 		StringBuilder queryBuilder = new StringBuilder( "CREATE CONSTRAINT ON (n:" );
 		escapeIdentifier( queryBuilder, label.name() );
 		queryBuilder.append( ") ASSERT n." );
 		escapeIdentifier( queryBuilder, property );
 		queryBuilder.append( " IS UNIQUE" );
-		statements.addStatement( queryBuilder.toString() );
+		statements.add( new Statement( queryBuilder.toString() ) );
 	}
 }

@@ -9,18 +9,20 @@ package org.hibernate.ogm.datastore.neo4j.remote.transaction.impl;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
 
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jClient;
 import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jDatastoreProvider;
 import org.hibernate.ogm.dialect.impl.IdentifiableDriver;
 import org.hibernate.ogm.transaction.impl.ForwardingTransactionCoordinator;
 import org.hibernate.ogm.transaction.impl.ForwardingTransactionDriver;
 import org.hibernate.resource.transaction.TransactionCoordinator;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Transaction;
 
 /**
  * A {@link TransactionCoordinator} for a remote Neo4j.
  *
- * Note that during a JTA transaction Neo4j {@link RemoteNeo4jTransaction} are
+ * Note that during a JTA transaction, Neo4j {@link Transaction} are
  * synchronized using the {@link Synchronization} interface. A commit to the Neo4j transaction will happen before the
  * end of the JTA transaction, meaning that it won't be possible to roll-back if an error happen after successful commit
  * to the db.
@@ -29,12 +31,13 @@ import org.hibernate.resource.transaction.spi.TransactionStatus;
  */
 public class RemoteNeo4jJtaTransactionCoordinator extends ForwardingTransactionCoordinator {
 
-	private final RemoteNeo4jClient remoteNeo4j;
-	private RemoteNeo4jTransaction tx;
+	private final Driver driver;
+	private Transaction tx;
+	private Session session;
 
 	public RemoteNeo4jJtaTransactionCoordinator(TransactionCoordinator delegate, RemoteNeo4jDatastoreProvider provider) {
 		super( delegate );
-		this.remoteNeo4j = provider.getDatabase();
+		this.driver = provider.getDriver();
 	}
 
 	@Override
@@ -57,22 +60,44 @@ public class RemoteNeo4jJtaTransactionCoordinator extends ForwardingTransactionC
 
 	private void join() {
 		if ( tx == null && delegate.isActive() && delegate.getTransactionCoordinatorBuilder().isJta() ) {
-			tx = remoteNeo4j.beginTx();
+			session = driver.session();
+			tx = session.beginTransaction();
 			delegate.getLocalSynchronizations().registerSynchronization( new Neo4jSynchronization() );
 		}
 	}
 
 	private void success() {
 		if ( tx != null ) {
-			tx.commit();
-			tx = null;
+			try {
+				tx.success();
+				tx.close();
+			}
+			finally {
+				tx = null;
+				closeSession();
+			}
 		}
 	}
 
 	private void failure() {
 		if ( tx != null ) {
-			tx.rollback();
-			tx = null;
+			try {
+				tx.failure();
+				tx.close();
+			}
+			finally {
+				tx = null;
+				closeSession();
+			}
+		}
+	}
+
+	private void closeSession() {
+		try {
+			session.close();
+		}
+		finally {
+			session = null;
 		}
 	}
 
@@ -109,44 +134,54 @@ public class RemoteNeo4jJtaTransactionCoordinator extends ForwardingTransactionC
 		}
 
 		@Override
-		public Long getTransactionId() {
-			if ( tx == null ) {
-				return null;
-			}
-			return tx.getId();
+		public Transaction getTransactionId() {
+			return tx;
 		}
 
 		@Override
 		public void begin() {
 			super.begin();
+			if ( session == null ) {
+				session = driver.session();
+			}
 			if ( tx == null ) {
-				tx = remoteNeo4j.beginTx();
+				tx = session.beginTransaction();
 			}
 		}
 
 		@Override
 		public void commit() {
 			try {
-				super.commit();
-				success();
-			}
-			catch (Exception e) {
 				try {
-					failure();
+					super.commit();
+					success();
 				}
-				catch ( Exception re ) {
+				catch (Exception e) {
+					try {
+						failure();
+					}
+					catch (Exception re) {
+					}
+					throw e;
 				}
-				throw e;
+			}
+			finally {
+				closeSession();
 			}
 		}
 
 		@Override
 		public void rollback() {
 			try {
-				super.rollback();
+				try {
+					super.rollback();
+				}
+				finally {
+					failure();
+				}
 			}
 			finally {
-				failure();
+				closeSession();
 			}
 		}
 	}

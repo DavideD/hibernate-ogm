@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.hibernate.ogm.datastore.neo4j.dialect.impl.BaseNeo4jTypeConverter;
 import org.hibernate.ogm.type.impl.ByteMappedType;
+import org.hibernate.ogm.type.impl.IntegerMappedType;
 import org.hibernate.ogm.type.impl.LongMappedType;
 import org.hibernate.ogm.type.impl.PrimitiveByteArrayStringType;
 import org.hibernate.ogm.type.impl.SerializableAsStringType;
@@ -35,6 +36,7 @@ public class RemoteNeo4jTypeConverter extends BaseNeo4jTypeConverter {
 
 	private static Map<Type, GridType> createRemoteGridTypeConversionMap() {
 		Map<Type, GridType> conversion = BaseNeo4jTypeConverter.createGridTypeConversionMap();
+		conversion.put( StandardBasicTypes.INTEGER, IntegerMappedType.INSTANCE );
 		conversion.put( StandardBasicTypes.LONG, LongMappedType.INSTANCE );
 		conversion.put( StandardBasicTypes.BYTE, ByteMappedType.INSTANCE );
 		conversion.put( StandardBasicTypes.BINARY, PrimitiveByteArrayStringType.INSTANCE );

@@ -8,12 +8,10 @@ package org.hibernate.ogm.datastore.neo4j.remote.impl;
 
 import java.util.Map;
 
-import javax.ws.rs.core.Response;
-
 import org.hibernate.HibernateException;
 import org.hibernate.ogm.cfg.spi.Hosts;
-import org.hibernate.ogm.datastore.neo4j.Neo4jProperties;
 import org.hibernate.ogm.datastore.neo4j.RemoteNeo4jDialect;
+import org.hibernate.ogm.datastore.neo4j.Neo4jProperties;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.Log;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory;
 import org.hibernate.ogm.datastore.neo4j.query.parsing.impl.Neo4jBasedQueryParserService;
@@ -30,25 +28,28 @@ import org.hibernate.service.spi.ServiceRegistryAwareService;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Startable;
 import org.hibernate.service.spi.Stoppable;
+import org.neo4j.driver.v1.AuthToken;
+import org.neo4j.driver.v1.AuthTokens;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.GraphDatabase;
+import org.neo4j.driver.v1.exceptions.ClientException;
 
 /**
  * @author Davide D'Alto
  */
 public class RemoteNeo4jDatastoreProvider extends BaseDatastoreProvider implements Startable, Stoppable, Configurable, ServiceRegistryAwareService {
 
-	private static final int OK = 200;
+	private static final Log log = LoggerFactory.getLogger();
 
 	private static final int DEFAULT_SEQUENCE_QUERY_CACHE_MAX_SIZE = 128;
 
-	private static final Log logger = LoggerFactory.getLogger();
-
-	private Integer sequenceCacheMaxSize;
+	private Driver neo4jDriver;
 
 	private RemoteNeo4jConfiguration configuration;
 
-	private RemoteNeo4jClient remoteNeo4j;
-
 	private RemoteNeo4jSequenceGenerator sequenceGenerator;
+
+	private Integer sequenceCacheMaxSize;
 
 	@Override
 	public Class<? extends GridDialect> getDefaultDialect() {
@@ -56,12 +57,22 @@ public class RemoteNeo4jDatastoreProvider extends BaseDatastoreProvider implemen
 	}
 
 	@Override
-	public void injectServices(ServiceRegistryImplementor serviceRegistry) {
+	public TransactionCoordinatorBuilder getTransactionCoordinatorBuilder(TransactionCoordinatorBuilder coordinatorBuilder) {
+		return new RemoteNeo4jTransactionCoordinatorBuilder( coordinatorBuilder, this );
+	}
+
+	@Override
+	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
+		return RemoteNeo4jSchemaDefiner.class;
 	}
 
 	@Override
 	public Class<? extends QueryParserService> getDefaultQueryParserServiceType() {
 		return Neo4jBasedQueryParserService.class;
+	}
+
+	@Override
+	public void injectServices(ServiceRegistryImplementor serviceRegistry) {
 	}
 
 	@Override
@@ -74,61 +85,52 @@ public class RemoteNeo4jDatastoreProvider extends BaseDatastoreProvider implemen
 	}
 
 	@Override
-	public void stop() {
-		if ( remoteNeo4j != null ) {
-			remoteNeo4j.close();
-			remoteNeo4j = null;
-		}
-	}
-
-	@Override
 	public void start() {
-		if ( remoteNeo4j == null ) {
+		if ( neo4jDriver == null ) {
 			try {
-				remoteNeo4j = createNeo4jClient( getDatabaseIdentifier(), configuration );
-				validateCredentials( remoteNeo4j, configuration );
-				sequenceGenerator = new RemoteNeo4jSequenceGenerator( remoteNeo4j, sequenceCacheMaxSize );
+				this.neo4jDriver = createNeo4jDriver( configuration );
+				validateConnection( neo4jDriver );
+				this.sequenceGenerator = new RemoteNeo4jSequenceGenerator( neo4jDriver, sequenceCacheMaxSize );
 			}
 			catch (HibernateException e) {
 				// Wrap HibernateException in a ServiceException to make the stack trace more friendly
 				// Otherwise a generic unable to request service is thrown
-				throw logger.unableToStartDatastoreProvider( e );
+				throw log.unableToStartDatastoreProvider( e );
 			}
 		}
 	}
 
-	private void validateCredentials(RemoteNeo4jClient client, RemoteNeo4jConfiguration configuration) {
-		Response response = client.authenticate( configuration.getUsername() );
-		if ( response.getStatus() != OK ) {
-			throw logger.authenticationFailed( String.valueOf( configuration.getHosts() ), response.getStatus(), response.getStatusInfo().getReasonPhrase() );
+	private Driver createNeo4jDriver(RemoteNeo4jConfiguration configuration) {
+		String uri = getDatabaseIdentifier().getDatabaseUri();
+		if ( configuration.isAuthenticationRequired() ) {
+			AuthToken authToken = AuthTokens.basic( configuration.getUsername(), configuration.getPassword() );
+			return GraphDatabase.driver( uri, authToken );
+		}
+		else {
+			return GraphDatabase.driver( uri );
 		}
 	}
 
-	/**
-	 * Creates the {@link RemoteNeo4jClient} that it is going to be used to connect to a remote Neo4j server.
-	 *
-	 * @param database the connection properties to identify a database
-	 * @param configuration all the configuration properties
-	 * @return a client that can access a Neo4j server
-	 */
-	public RemoteNeo4jClient createNeo4jClient(RemoteNeo4jDatabaseIdentifier database, RemoteNeo4jConfiguration configuration) {
-		return new RemoteNeo4jClient( getDatabaseIdentifier(), configuration );
+	private void validateConnection(Driver neo4jDriver) {
+		try {
+			neo4jDriver.session().close();
+		}
+		catch (ClientException e) {
+			throw log.connectionFailed( getDatabaseIdentifier().getDatabaseUri(), e.neo4jErrorCode(), e.getMessage() );
+		}
 	}
 
 	@Override
-	public boolean allowsTransactionEmulation() {
-		// This value does not really matter since we are using a custom TransactionCoordinatorBuilder
-		return true;
-	}
-
-	// Note that it's called getDatabase() for consistency with the other Neo4j provider
-	public RemoteNeo4jClient getDatabase() {
-		return remoteNeo4j;
+	public void stop() {
+		if ( neo4jDriver != null ) {
+			neo4jDriver.close();
+			neo4jDriver = null;
+		}
 	}
 
 	private RemoteNeo4jDatabaseIdentifier getDatabaseIdentifier() {
 		if ( !configuration.getHosts().isSingleHost() ) {
-			logger.doesNotSupportMultipleHosts( configuration.getHosts().toString() );
+			log.doesNotSupportMultipleHosts( configuration.getHosts().toString() );
 		}
 		Hosts.HostAndPort hostAndPort = configuration.getHosts().getFirst();
 		try {
@@ -136,21 +138,15 @@ public class RemoteNeo4jDatastoreProvider extends BaseDatastoreProvider implemen
 					configuration.getPassword() );
 		}
 		catch (Exception e) {
-			throw logger.malformedDataBaseUrl( e, hostAndPort.getHost(), hostAndPort.getPort(), configuration.getDatabaseName() );
+			throw log.malformedDataBaseUrl( e, hostAndPort.getHost(), hostAndPort.getPort(), configuration.getDatabaseName() );
 		}
 	}
 
-	@Override
-	public Class<? extends SchemaDefiner> getSchemaDefinerType() {
-		return RemoteNeo4jSchemaDefiner.class;
+	public Driver getDriver() {
+		return neo4jDriver;
 	}
 
 	public RemoteNeo4jSequenceGenerator getSequenceGenerator() {
 		return sequenceGenerator;
-	}
-
-	@Override
-	public TransactionCoordinatorBuilder getTransactionCoordinatorBuilder(TransactionCoordinatorBuilder coordinatorBuilder) {
-		return new RemoteNeo4jTransactionCoordinatorBuilder( coordinatorBuilder, this );
 	}
 }
