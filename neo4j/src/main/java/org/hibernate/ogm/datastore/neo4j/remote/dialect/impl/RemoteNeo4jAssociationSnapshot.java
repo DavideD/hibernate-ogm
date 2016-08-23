@@ -7,8 +7,10 @@
 package org.hibernate.ogm.datastore.neo4j.remote.dialect.impl;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import org.hibernate.ogm.datastore.neo4j.remote.util.impl.RemoteNeo4jHelper;
 import org.hibernate.ogm.model.key.spi.RowKey;
 import org.hibernate.ogm.model.spi.AssociationSnapshot;
 import org.hibernate.ogm.model.spi.Tuple;
@@ -28,8 +30,12 @@ public final class RemoteNeo4jAssociationSnapshot implements AssociationSnapshot
 
 	@Override
 	public Tuple get(RowKey rowKey) {
-		Tuple tuple = tuples.get( rowKey );
-		return tuple;
+		for ( Entry<RowKey, Tuple> entry : tuples.entrySet() ) {
+			if ( RemoteNeo4jHelper.matches( entry.getKey(), rowKey ) ) {
+				return entry.getValue();
+			}
+		}
+		return null;
 	}
 
 	@Override

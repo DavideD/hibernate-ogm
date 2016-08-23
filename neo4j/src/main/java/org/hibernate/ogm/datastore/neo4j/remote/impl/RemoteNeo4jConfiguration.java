@@ -20,7 +20,7 @@ import org.hibernate.ogm.util.configurationreader.spi.ConfigurationPropertyReade
  */
 public class RemoteNeo4jConfiguration {
 
-	public static final int DEFAULT_PORT = 7474;
+	public static final int DEFAULT_PORT = 7687;
 
 	/**
 	 * The default host to connect to in case the {@link OgmProperties#HOST} property is not set
@@ -38,6 +38,7 @@ public class RemoteNeo4jConfiguration {
 	private final Long establishConnectionTimeout;
 	private final Long connectionCheckoutTimeout;
 	private final Long connectionTTL;
+	private final boolean authenticationRequired;
 
 	public RemoteNeo4jConfiguration(ConfigurationPropertyReader propertyReader) {
 		String host = propertyReader.property( OgmProperties.HOST, String.class )
@@ -49,7 +50,7 @@ public class RemoteNeo4jConfiguration {
 				.withDefault( null )
 				.getValue();
 
-		hosts = HostParser.parse( host, port, DEFAULT_PORT );
+		this.hosts = HostParser.parse( host, port, DEFAULT_PORT );
 
 		this.databaseName = propertyReader.property( OgmProperties.DATABASE, String.class )
 				.withDefault( DEFAULT_DB )
@@ -65,6 +66,8 @@ public class RemoteNeo4jConfiguration {
 		this.createDatabase = propertyReader.property( OgmProperties.CREATE_DATABASE, boolean.class )
 				.withDefault( false )
 				.getValue();
+
+		this.authenticationRequired = this.username != null;
 	}
 
 	/**
@@ -138,5 +141,9 @@ public class RemoteNeo4jConfiguration {
 	 */
 	public Long getEstablishConnectionTimeout() {
 		return establishConnectionTimeout;
+	}
+
+	public boolean isAuthenticationRequired() {
+		return authenticationRequired;
 	}
 }

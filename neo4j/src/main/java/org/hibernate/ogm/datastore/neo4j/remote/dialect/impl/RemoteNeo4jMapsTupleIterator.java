@@ -6,17 +6,16 @@
  */
 package org.hibernate.ogm.datastore.neo4j.remote.dialect.impl;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.hibernate.ogm.datastore.map.impl.MapTupleSnapshot;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Row;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.StatementResult;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.StatementsResponse;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.model.spi.Tuple;
+import org.neo4j.driver.v1.Record;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Value;
 
 /**
  * Iterates over the results of a native query when each result is not mapped by an entity
@@ -25,42 +24,45 @@ import org.hibernate.ogm.model.spi.Tuple;
  */
 public class RemoteNeo4jMapsTupleIterator implements ClosableIterator<Tuple> {
 
-	private final Iterator<Row> iterator;
+	private final StatementResult statementResult;
 	private final List<String> columns;
 
-	public RemoteNeo4jMapsTupleIterator(StatementsResponse response) {
-		StatementResult result = response.getResults().get( 0 );
-		List<Row> rows = result.getData();
-		this.columns = result.getColumns();
-		this.iterator = rows.iterator();
+	public RemoteNeo4jMapsTupleIterator(StatementResult statementResult) {
+		this.statementResult = statementResult;
+		this.columns = statementResult.keys();
 	}
 
 	@Override
 	public boolean hasNext() {
-		return iterator.hasNext();
-	}
-
-	@Override
-	public Tuple next() {
-		Row row = iterator.next();
-		return convert( row );
-	}
-
-	protected Tuple convert(Row next) {
-		// Requires a LinkedHashMap as the order of the entries is important
-		Map<String, Object> properties = new LinkedHashMap<>();
-		for ( int i = 0; i < columns.size(); i++ ) {
-			properties.put( columns.get( i ), next.getRow().get( i ) );
-		}
-		return new Tuple( new MapTupleSnapshot( properties ) );
+		return statementResult.hasNext();
 	}
 
 	@Override
 	public void remove() {
-		iterator.remove();
+		statementResult.remove();
+	}
+
+	@Override
+	public Tuple next() {
+		return convert( statementResult.next() );
 	}
 
 	@Override
 	public void close() {
+	}
+
+	protected Tuple convert(Record record) {
+		// Requires a LinkedHashMap as the order of the entries is important
+		Map<String, Object> properties = new LinkedHashMap<>();
+		for ( String column : columns ) {
+			Value value = record.get( column );
+			if ( value != null && !value.isNull() ) {
+				properties.put( column, value.asObject() );
+			}
+			else {
+				properties.put( column, null );
+			}
+		}
+		return new Tuple( new MapTupleSnapshot( properties ) );
 	}
 }

@@ -26,6 +26,7 @@
             See the version.wildfly property in the hibernate-ogm-parent pom
             See http://search.maven.org/#search|gav|1|g%3A"org.wildfly"%20AND%20a%3A"wildfly-parent"
         -->
+        <neo4jJavaDriverVersion>1.0.4</neo4jJavaDriverVersion>
         <hibernateVersion>5.0.9.Final</hibernateVersion>
         <hibernateSearchVersion>5.5.4.Final</hibernateSearchVersion>
         <hibernateCommonsAnnotationsVersion>5.0.1.Final</hibernateCommonsAnnotationsVersion>
@@ -530,6 +531,12 @@
                         <groupId>net.sf.opencsv</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver</artifactId>
+                <version>${neo4jJavaDriverVersion}</version>
             </dependency>
 
             <dependency>

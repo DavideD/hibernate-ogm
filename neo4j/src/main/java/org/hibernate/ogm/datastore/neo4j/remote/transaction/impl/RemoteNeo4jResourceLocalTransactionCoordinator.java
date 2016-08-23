@@ -20,7 +20,6 @@ import org.hibernate.jdbc.WorkExecutor;
 import org.hibernate.jdbc.WorkExecutorVisitable;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.Log;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory;
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jClient;
 import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jDatastoreProvider;
 import org.hibernate.ogm.dialect.impl.IdentifiableDriver;
 import org.hibernate.resource.transaction.SynchronizationRegistry;
@@ -29,6 +28,10 @@ import org.hibernate.resource.transaction.TransactionCoordinatorBuilder;
 import org.hibernate.resource.transaction.internal.SynchronizationRegistryStandardImpl;
 import org.hibernate.resource.transaction.spi.TransactionCoordinatorOwner;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.util.Resource;
 
 /**
  * An implementation of TransactionCoordinator based on managing a transaction through a Neo4j Connection.
@@ -41,15 +44,17 @@ public class RemoteNeo4jResourceLocalTransactionCoordinator implements Transacti
 
 	private static final Log log = LoggerFactory.getLogger();
 
+	public Session session;
+
 	private final TransactionCoordinatorBuilder transactionCoordinatorBuilder;
 	private final TransactionCoordinatorOwner owner;
 	private final SynchronizationRegistryStandardImpl synchronizationRegistry = new SynchronizationRegistryStandardImpl();
 
+	private final transient List<TransactionObserver> observers;
+
 	private Neo4jTransactionDriver physicalTransactionDelegate;
 
 	private int timeOut = -1;
-
-	private final transient List<TransactionObserver> observers;
 
 	private RemoteNeo4jDatastoreProvider provider;
 
@@ -121,40 +126,48 @@ public class RemoteNeo4jResourceLocalTransactionCoordinator implements Transacti
 
 		@Override
 		public <T> T delegateWork(WorkExecutorVisitable<T> work, boolean transacted) throws HibernateException {
-			RemoteNeo4jTransaction tx = null;
-			try {
-				if ( !transacted ) {
-					log.cannotExecuteWorkOutsideIsolatedTransaction();
-				}
-				RemoteNeo4jClient dataBase = provider.getDatabase();
-				tx = dataBase.beginTx();
-				// Neo4j does not have a connection object, I'm not sure what it is best to do in this case.
-				// In this scenario I expect the visitable object to already have a way to connect to the db.
-				Connection connection = null;
-				T result = work.accept( new WorkExecutor<T>(), connection );
-				tx.commit();
-				return result;
+			if ( !transacted ) {
+				log.cannotExecuteWorkOutsideIsolatedTransaction();
 			}
-			catch (Exception e) {
+			Driver dataBase = provider.getDriver();
+			Session session = null;
+			try {
+				session = dataBase.session();
+				Transaction tx = session.beginTransaction();
 				try {
-					tx.rollback();
+					// Neo4j does not have a connection object, I'm not sure what it is best to do in this case.
+					// In this scenario I expect the visitable object to already have a way to connect to the db.
+					Connection connection = null;
+					T result = work.accept( new WorkExecutor<T>(), connection );
+					tx.success();
+					tx.close();
+					return result;
 				}
-				catch (Exception re) {
-					log.unableToRollbackTransaction( re );
-				}
-				if ( e instanceof HibernateException ) {
-					throw (HibernateException) e;
-				}
-				else {
-					throw log.unableToPerformIsolatedWork( e );
+				catch (Exception e) {
+					try {
+						tx.failure();
+						tx.close();
+					}
+					catch (Exception re) {
+						log.unableToRollbackTransaction( re );
+					}
+					if ( e instanceof HibernateException ) {
+						throw (HibernateException) e;
+					}
+					else {
+						throw log.unableToPerformIsolatedWork( e );
+					}
 				}
 			}
 			finally {
-				if ( tx != null ) {
-					tx.close();
-					tx = null;
-				}
+				close( session );
 			}
+		}
+	}
+
+	private void close(Resource closable) {
+		if ( closable != null ) {
+			closable.close();
 		}
 	}
 
@@ -241,15 +254,15 @@ public class RemoteNeo4jResourceLocalTransactionCoordinator implements Transacti
 	 */
 	public class Neo4jTransactionDriver implements IdentifiableDriver {
 
-		private final RemoteNeo4jClient client;
+		private final Driver driver;
 		private TransactionStatus status;
-		private RemoteNeo4jTransaction tx;
+		private Transaction tx;
 
 		private boolean invalid;
 		private boolean rollbackOnly = false;
 
 		public Neo4jTransactionDriver(RemoteNeo4jDatastoreProvider provider) {
-			this.client = provider.getDatabase();
+			this.driver = provider.getDriver();
 		}
 
 		protected void invalidate() {
@@ -259,7 +272,10 @@ public class RemoteNeo4jResourceLocalTransactionCoordinator implements Transacti
 		@Override
 		public void begin() {
 			errorIfInvalid();
-			tx = client.beginTx();
+			if ( session == null ) {
+				session = driver.session();
+			}
+			tx = session.beginTransaction();
 			status = TransactionStatus.ACTIVE;
 			RemoteNeo4jResourceLocalTransactionCoordinator.this.afterBeginCallback();
 		}
@@ -278,8 +294,7 @@ public class RemoteNeo4jResourceLocalTransactionCoordinator implements Transacti
 				}
 
 				RemoteNeo4jResourceLocalTransactionCoordinator.this.beforeCompletionCallback();
-				tx.commit();
-				close();
+				commit( tx );
 				status = TransactionStatus.NOT_ACTIVE;
 				RemoteNeo4jResourceLocalTransactionCoordinator.this.afterCompletionCallback( true );
 			}
@@ -294,12 +309,14 @@ public class RemoteNeo4jResourceLocalTransactionCoordinator implements Transacti
 			}
 		}
 
-		private void close() {
+		private void commit(Transaction tx) {
 			try {
+				tx.success();
 				tx.close();
 			}
 			finally {
 				tx = null;
+				closeSession();
 			}
 		}
 
@@ -307,13 +324,32 @@ public class RemoteNeo4jResourceLocalTransactionCoordinator implements Transacti
 		public void rollback() {
 			if ( rollbackOnly || getStatus() == TransactionStatus.ACTIVE ) {
 				rollbackOnly = false;
-				tx.rollback();
 				status = TransactionStatus.NOT_ACTIVE;
-				close();
+				rollback( tx );
 				RemoteNeo4jResourceLocalTransactionCoordinator.this.afterCompletionCallback( false );
 			}
 
 			// no-op otherwise.
+		}
+
+		private void rollback(Transaction tx) {
+			try {
+				tx.failure();
+				tx.close();
+			}
+			finally {
+				tx = null;
+				closeSession();
+			}
+		}
+
+		private void closeSession() {
+			try {
+				session.close();
+			}
+			finally {
+				session = null;
+			}
 		}
 
 		@Override
@@ -334,7 +370,7 @@ public class RemoteNeo4jResourceLocalTransactionCoordinator implements Transacti
 
 		@Override
 		public Object getTransactionId() {
-			return tx.getId();
+			return tx;
 		}
 	}
 }

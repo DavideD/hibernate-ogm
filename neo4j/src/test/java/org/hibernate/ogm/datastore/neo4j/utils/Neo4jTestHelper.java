@@ -9,10 +9,8 @@ package org.hibernate.ogm.datastore.neo4j.utils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -23,18 +21,13 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.ogm.cfg.OgmProperties;
 import org.hibernate.ogm.datastore.document.options.AssociationStorageType;
-import org.hibernate.ogm.datastore.neo4j.Neo4j;
 import org.hibernate.ogm.datastore.neo4j.EmbeddedNeo4jDialect;
+import org.hibernate.ogm.datastore.neo4j.Neo4j;
 import org.hibernate.ogm.datastore.neo4j.Neo4jProperties;
 import org.hibernate.ogm.datastore.neo4j.RemoteNeo4jDialect;
 import org.hibernate.ogm.datastore.neo4j.dialect.impl.NodeLabel;
 import org.hibernate.ogm.datastore.neo4j.embedded.impl.EmbeddedNeo4jDatastoreProvider;
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jClient;
 import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jDatastoreProvider;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.ErrorResponse;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Statement;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.Statements;
-import org.hibernate.ogm.datastore.neo4j.remote.json.impl.StatementsResponse;
 import org.hibernate.ogm.datastore.spi.BaseDatastoreProvider;
 import org.hibernate.ogm.datastore.spi.DatastoreConfiguration;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
@@ -47,10 +40,11 @@ import org.hibernate.ogm.utils.GridDialectOperationContexts;
 import org.hibernate.ogm.utils.GridDialectTestHelper;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 import org.hibernate.service.spi.Stoppable;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Transaction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.ResourceIterator;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * @author Davide D'Alto &lt;davide@hibernate.org&gt;
@@ -93,6 +87,10 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 		}
 	}
 
+	public static String getProperty(String property) {
+		return System.getProperties().getProperty( property );
+	}
+
 	private static boolean isNotNull(String neo4jHostName) {
 		return neo4jHostName != null && neo4jHostName.length() > 0 && !"null".equals( neo4jHostName );
 	}
@@ -111,10 +109,8 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 
 	private long getNumberOfEntities(Session session, DatastoreProvider provider) {
 		if ( isRemote( provider ) ) {
-			RemoteNeo4jClient remoteNeo4j = ( (RemoteNeo4jDatastoreProvider) provider ).getDatabase();
-			Statement statement = new Statement( ENTITY_COUNT_QUERY );
-			statement.setResultDataContents( Arrays.asList( Statement.AS_ROW ) );
-			return readCountFromResponse( session, remoteNeo4j, statement );
+			Driver driver = ( (RemoteNeo4jDatastoreProvider) provider ).getDriver();
+			return readCountFromResponse( session, driver, ENTITY_COUNT_QUERY );
 		}
 		else {
 			GraphDatabaseService graphDb = ( (EmbeddedNeo4jDatastoreProvider) provider ).getDatabase();
@@ -139,10 +135,8 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 
 	private long getNumberOfAssociations(Session session, BaseDatastoreProvider provider) {
 		if ( isRemote( provider ) ) {
-			RemoteNeo4jClient remoteNeo4j = ( (RemoteNeo4jDatastoreProvider) provider ).getDatabase();
-			Statement statement = new Statement( ASSOCIATION_COUNT_QUERY );
-			statement.setResultDataContents( Arrays.asList( Statement.AS_ROW ) );
-			return readCountFromResponse( session, remoteNeo4j, statement );
+			Driver driver = ( (RemoteNeo4jDatastoreProvider) provider ).getDriver();
+			return readCountFromResponse( session, driver, ASSOCIATION_COUNT_QUERY );
 		}
 		else {
 			GraphDatabaseService graphDb = ( (EmbeddedNeo4jDatastoreProvider) provider ).getDatabase();
@@ -153,33 +147,34 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 		}
 	}
 
-	private long readCountFromResponse(Session session, RemoteNeo4jClient remoteNeo4j, Statement statement) {
-		Statements statements = new Statements();
-		statements.addStatement( statement );
-		StatementsResponse response = null;
+	private long readCountFromResponse(Session session, Driver driver, String query) {
+		StatementResult response = null;
 		if ( session != null ) {
-			Long transactionId = transactionId( session );
+			Transaction transactionId = transactionId( session );
 			if ( transactionId != null ) {
-				response = remoteNeo4j.executeQueriesInOpenTransaction( transactionId, statements );
+				response = transactionId.run( query );
 			}
 			else {
 				// Transaction rollbacked or committed
-				response = remoteNeo4j.executeQueriesInNewTransaction( statements );
+				try ( org.neo4j.driver.v1.Session neo4jSession = driver.session() ) {
+					response = neo4jSession.run( query );
+				}
 			}
 		}
 		else {
-			response = remoteNeo4j.executeQueriesInNewTransaction( statements );
+			try ( org.neo4j.driver.v1.Session neo4jSession = driver.session() ) {
+				response = neo4jSession.run( query );
+			}
 		}
-		return ( (Integer) response.getResults().get( 0 ).getData().get( 0 ).getRow().get( 0 ) ).longValue();
+		return response.single().get( 0 ).asInt();
 	}
 
-	private Long transactionId(Session session) {
+	private <T> T transactionId(Session session) {
 		IdentifiableDriver driver = (IdentifiableDriver) ( ( (SessionImplementor) session ).getTransactionCoordinator().getTransactionDriverControl() );
 		if ( session.getTransaction().getStatus() != TransactionStatus.ACTIVE ) {
 			return null;
 		}
-		Long transactionId = (Long) driver.getTransactionId();
-		return transactionId;
+		return (T) driver.getTransactionId();
 	}
 
 	@Override
@@ -207,10 +202,10 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 	public void dropSchemaAndDatabase(SessionFactory sessionFactory) {
 		DatastoreProvider provider = getProvider( sessionFactory );
 		if ( provider instanceof RemoteNeo4jDatastoreProvider ) {
-			RemoteNeo4jDatastoreProvider remoteProvider = (RemoteNeo4jDatastoreProvider) provider;
-			Statements statements = new Statements();
-			statements.addStatement( DELETE_ALL );
-			remoteProvider.getDatabase().executeQueriesInNewTransaction( statements );
+			RemoteNeo4jDatastoreProvider boltProvider = (RemoteNeo4jDatastoreProvider) provider;
+			try ( org.neo4j.driver.v1.Session session = boltProvider.getDriver().session() ) {
+				session.run( DELETE_ALL );
+			}
 		}
 		else {
 			( (Stoppable) getProvider( sessionFactory ) ).stop();
@@ -220,12 +215,11 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 
 	public static void deleteAllElements(DatastoreProvider provider) {
 		if ( isRemote( provider ) ) {
-			RemoteNeo4jClient remoteNeo4j = ( (RemoteNeo4jDatastoreProvider) provider ).getDatabase();
-			Statement statement = new Statement( DELETE_ALL );
-			statement.setResultDataContents( Arrays.asList( Statement.AS_ROW ) );
-			Statements statements = new Statements();
-			statements.addStatement( statement );
-			remoteNeo4j.executeQueriesInNewTransaction( statements );
+			org.neo4j.driver.v1.Statement statement = new org.neo4j.driver.v1.Statement( DELETE_ALL );
+			Driver driver = ( (RemoteNeo4jDatastoreProvider) provider ).getDriver();
+			try ( org.neo4j.driver.v1.Session session = driver.session() ) {
+				session.run( statement );
+			}
 		}
 		else {
 			GraphDatabaseService graphDb = ( (EmbeddedNeo4jDatastoreProvider) provider ).getDatabase();
@@ -235,8 +229,14 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 
 	@Override
 	public Map<String, String> getEnvironmentProperties() {
-		Map<String, String> envProps = new HashMap<String, String>( 2 );
+		Map<String, String> envProps = getConfiguration();
+		return envProps;
+	}
+
+	public static Map<String, String> getConfiguration() {
+		Map<String, String> envProps = new HashMap<String, String>( 4 );
 		copyFromSystemPropertiesToLocalEnvironment( OgmProperties.HOST, envProps );
+		copyFromSystemPropertiesToLocalEnvironment( OgmProperties.PORT, envProps );
 		copyFromSystemPropertiesToLocalEnvironment( OgmProperties.USERNAME, envProps );
 		copyFromSystemPropertiesToLocalEnvironment( OgmProperties.PASSWORD, envProps );
 
@@ -246,7 +246,7 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 		return envProps;
 	}
 
-	private void copyFromSystemPropertiesToLocalEnvironment(String environmentVariableName, Map<String, String> envProps) {
+	private static void copyFromSystemPropertiesToLocalEnvironment(String environmentVariableName, Map<String, String> envProps) {
 		String value = System.getProperties().getProperty( environmentVariableName );
 		if ( value != null && value.length() > 0 ) {
 			envProps.put( environmentVariableName, value );
@@ -316,67 +316,5 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 
 	private static boolean isRemote(DatastoreProvider provider) {
 		return provider instanceof RemoteNeo4jDatastoreProvider;
-	}
-
-	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class RowStatementsResponse {
-
-		private List<RowStatementsResult> results;
-
-		private List<ErrorResponse> errors;
-
-		public List<RowStatementsResult> getResults() {
-			return results;
-		}
-
-		public void setResults(List<RowStatementsResult> results) {
-			this.results = results;
-		}
-
-		public List<ErrorResponse> getErrors() {
-			return errors;
-		}
-
-		public void setErrors(List<ErrorResponse> errors) {
-			this.errors = errors;
-		}
-	}
-
-	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class RowStatementsResult {
-
-		private List<String> columns;
-
-		private List<RowArray> data;
-
-		public List<String> getColumns() {
-			return columns;
-		}
-
-		public void setColumns(List<String> columns) {
-			this.columns = columns;
-		}
-
-		public List<RowArray> getData() {
-			return data;
-		}
-
-		public void setData(List<RowArray> data) {
-			this.data = data;
-		}
-	}
-
-	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class RowArray {
-
-		private List<Object> row;
-
-		public List<Object> getRow() {
-			return row;
-		}
-
-		public void setRow(List<Object> row) {
-			this.row = row;
-		}
 	}
 }
