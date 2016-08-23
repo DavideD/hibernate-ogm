@@ -23,54 +23,54 @@ public class EmbeddableTest extends OgmTestCase {
 
 	@Test
 	public void testEmbeddable() throws Exception {
-		final Session session = openSession();
+		try ( final Session session = openSession() ) {
 
-		Transaction transaction = session.beginTransaction();
-		Account account = new Account();
-		account.setLogin( "emmanuel" );
-		account.setPassword( "like I would tell ya" );
-		account.setHomeAddress( new Address() );
-		final Address address = account.getHomeAddress();
-		address.setCity( "Paris" );
-		address.setCountry( "France" );
-		address.setStreet1( "1 avenue des Champs Elysees" );
-		address.setZipCode( "75007" );
-		session.persist( account );
-		transaction.commit();
+			Transaction transaction = session.beginTransaction();
+			Account account = new Account();
+			account.setLogin( "emmanuel" );
+			account.setPassword( "like I would tell ya" );
+			account.setHomeAddress( new Address() );
+			final Address address = account.getHomeAddress();
+			address.setCity( "Paris" );
+			address.setCountry( "France" );
+			address.setStreet1( "1 avenue des Champs Elysees" );
+			address.setZipCode( "75007" );
+			session.persist( account );
+			transaction.commit();
 
-		session.clear();
+			session.clear();
 
-		transaction = session.beginTransaction();
-		final Account loadedAccount = (Account) session.get( Account.class, account.getLogin() );
-		assertThat( loadedAccount ).as( "Cannot load persisted object" ).isNotNull();
-		final Address loadedAddress = loadedAccount.getHomeAddress();
-		assertThat( loadedAddress ).as( "Embeddable should not be null" ).isNotNull();
-		assertThat( loadedAddress.getCity() ).as( "persist and load fails for embeddable" ).isEqualTo( address.getCity() );
-		assertThat( loadedAddress.getZipCode() ).as( "@Column support for embeddable does not work" ).isEqualTo( address.getZipCode() );
-		transaction.commit();
+			transaction = session.beginTransaction();
+			final Account loadedAccount = (Account) session.get( Account.class, account.getLogin() );
+			assertThat( loadedAccount ).as( "Cannot load persisted object" ).isNotNull();
+			final Address loadedAddress = loadedAccount.getHomeAddress();
+			assertThat( loadedAddress ).as( "Embeddable should not be null" ).isNotNull();
+			assertThat( loadedAddress.getCity() ).as( "persist and load fails for embeddable" ).isEqualTo( address.getCity() );
+			assertThat( loadedAddress.getZipCode() ).as( "@Column support for embeddable does not work" ).isEqualTo( address.getZipCode() );
+			transaction.commit();
 
-		session.clear();
+			session.clear();
 
-		transaction = session.beginTransaction();
-		loadedAddress.setCountry( "USA" );
-		session.merge( loadedAccount );
-		transaction.commit();
+			transaction = session.beginTransaction();
+			loadedAddress.setCountry( "USA" );
+			session.merge( loadedAccount );
+			transaction.commit();
 
-		session.clear();
+			session.clear();
 
-		transaction = session.beginTransaction();
-		Account secondLoadedAccount = (Account) session.get( Account.class, account.getLogin() );
-		assertThat( loadedAccount.getHomeAddress().getCity() ).as( "Merge fails for embeddable" ).isEqualTo( secondLoadedAccount.getHomeAddress().getCity() );
-		session.delete( secondLoadedAccount );
-		transaction.commit();
+			transaction = session.beginTransaction();
+			Account secondLoadedAccount = (Account) session.get( Account.class, account.getLogin() );
+			assertThat( loadedAccount.getHomeAddress().getCity() ).as( "Merge fails for embeddable" )
+					.isEqualTo( secondLoadedAccount.getHomeAddress().getCity() );
+			session.delete( secondLoadedAccount );
+			transaction.commit();
 
-		session.clear();
+			session.clear();
 
-		transaction = session.beginTransaction();
-		assertThat( session.get( Account.class, account.getLogin() ) ).isNull();
-		transaction.commit();
-
-		session.close();
+			transaction = session.beginTransaction();
+			assertThat( session.get( Account.class, account.getLogin() ) ).isNull();
+			transaction.commit();
+		}
 	}
 
 	@Test
