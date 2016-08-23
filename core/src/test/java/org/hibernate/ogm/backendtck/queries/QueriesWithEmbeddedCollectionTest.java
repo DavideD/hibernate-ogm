@@ -231,7 +231,7 @@ public class QueriesWithEmbeddedCollectionTest extends OgmTestCase {
 
 		assertThat( additionalEndings )
 			.onProperty( "score" )
-		.	containsOnly( 5 );
+			.containsOnly( 5 );
 
 		assertThat( list )
 			.onProperty( "evilBranch" )
