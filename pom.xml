@@ -531,6 +531,7 @@
                         <descriptors>
                             <descriptor>${basedir}/src/main/assembly/dist.xml</descriptor>
                         </descriptors>
+                        <archiveBaseDirectory>${project.basedir}</archiveBaseDirectory>
                         <finalName>${assembly.name}</finalName>
                     </configuration>
                     <executions>
