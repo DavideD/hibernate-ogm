@@ -40,7 +40,7 @@ public class Neo4j implements DatastoreConfiguration<GlobalContext<?, ?>> {
 	 *
 	 * @see OgmProperties#DATASTORE_PROVIDER
 	 */
-	public static final String REMOTE_DATASTORE_PROVIDER_NAME = "NEO4J_REMOTE";
+	public static final String BOLT_DATASTORE_PROVIDER_NAME = "NEO4J_BOLT";
 
 	@Override
 	public GlobalContext<?, ?> getConfigurationBuilder(ConfigurationContext context) {

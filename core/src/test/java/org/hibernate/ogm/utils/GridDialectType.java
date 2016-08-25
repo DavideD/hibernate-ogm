@@ -27,7 +27,7 @@ public enum GridDialectType {
 
 	NEO4J_EMBEDDED( "org.hibernate.ogm.datastore.neo4j.EmbeddedNeo4jDialect", false, true),
 
-	NEO4J_REMOTE( "org.hibernate.ogm.datastore.neo4j.RemoteNeo4jDialect", false, true),
+	NEO4J_BOLT( "org.hibernate.ogm.datastore.neo4j.BoltNeo4jDialect", false, true),
 
 	COUCHDB( "org.hibernate.ogm.datastore.couchdb.CouchDBDialect", true, false ),
 

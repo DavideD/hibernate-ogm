@@ -8,7 +8,7 @@ package org.hibernate.ogm.backendtck.associations.manytoone;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J_EMBEDDED;
-import static org.hibernate.ogm.utils.GridDialectType.NEO4J_REMOTE;
+import static org.hibernate.ogm.utils.GridDialectType.NEO4J_BOLT;
 import static org.hibernate.ogm.utils.TestHelper.get;
 import static org.hibernate.ogm.utils.TestHelper.getNumberOfAssociations;
 import static org.hibernate.ogm.utils.TestHelper.getNumberOfEntities;
@@ -120,7 +120,7 @@ public class ManyToOneTest extends OgmTestCase {
 	}
 
 	private Long expectedAssociations() {
-		if ( EnumSet.of( NEO4J_EMBEDDED, NEO4J_REMOTE ).contains( TestHelper.getCurrentDialectType() ) ) {
+		if ( EnumSet.of( NEO4J_EMBEDDED, NEO4J_BOLT ).contains( TestHelper.getCurrentDialectType() ) ) {
 			// A relationship is created in Neo4j that will result in the count
 			return 1L;
 		}

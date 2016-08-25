@@ -13,10 +13,10 @@ import java.util.Map;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.datastore.neo4j.Neo4jProperties;
+import org.hibernate.ogm.datastore.neo4j.bolt.impl.BoltNeo4jDatastoreProvider;
 import org.hibernate.ogm.datastore.neo4j.embedded.impl.EmbeddedNeo4jDatastoreProvider;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.Log;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory;
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jDatastoreProvider;
 import org.hibernate.ogm.datastore.neo4j.test.dsl.NodeForGraphAssertions;
 import org.hibernate.ogm.datastore.neo4j.test.dsl.RelationshipsChainForGraphAssertions;
 import org.hibernate.ogm.datastore.neo4j.utils.Neo4jTestHelper;
@@ -65,7 +65,7 @@ public abstract class Neo4jJpaTestCase extends OgmJpaTestCase {
 
 	protected Long numberOfNodes() throws Exception {
 		DatastoreProvider datastoreProvider = datastoreProvider();
-		if ( datastoreProvider instanceof RemoteNeo4jDatastoreProvider ) {
+		if ( datastoreProvider instanceof BoltNeo4jDatastoreProvider ) {
 			return executeRemoteCountWithBolt( "MATCH (n) RETURN COUNT(*) as count" );
 		}
 		else {
@@ -75,7 +75,7 @@ public abstract class Neo4jJpaTestCase extends OgmJpaTestCase {
 
 	protected Long numberOfRelationships() throws Exception {
 		DatastoreProvider datastoreProvider = datastoreProvider();
-		if ( datastoreProvider instanceof RemoteNeo4jDatastoreProvider ) {
+		if ( datastoreProvider instanceof BoltNeo4jDatastoreProvider ) {
 			return executeRemoteCountWithBolt( "MATCH (n) - [r] -> () RETURN COUNT(r) as count" );
 		}
 		else {
@@ -95,8 +95,8 @@ public abstract class Neo4jJpaTestCase extends OgmJpaTestCase {
 				throw log.nativeQueryException( qe.getStatusCode(), qe.getMessage(), qe );
 			}
 		}
-		else if ( datastoreProvider instanceof RemoteNeo4jDatastoreProvider ) {
-			RemoteNeo4jDatastoreProvider provider = (RemoteNeo4jDatastoreProvider) datastoreProvider;
+		else if ( datastoreProvider instanceof BoltNeo4jDatastoreProvider ) {
+			BoltNeo4jDatastoreProvider provider = (BoltNeo4jDatastoreProvider) datastoreProvider;
 			try ( Session session = provider.getDriver().session() ) {
 				try {
 					StatementResult run = session.run( query, parameters );
@@ -119,7 +119,7 @@ public abstract class Neo4jJpaTestCase extends OgmJpaTestCase {
 
 	protected Driver createDriver() {
 		DatastoreProvider datastoreProvider = datastoreProvider();
-		RemoteNeo4jDatastoreProvider provider = (RemoteNeo4jDatastoreProvider) datastoreProvider;
+		BoltNeo4jDatastoreProvider provider = (BoltNeo4jDatastoreProvider) datastoreProvider;
 		return provider.getDriver();
 	}
 
@@ -153,7 +153,7 @@ public abstract class Neo4jJpaTestCase extends OgmJpaTestCase {
 	}
 
 	private Long executeRemoteCountWithBolt(String queryString) throws Exception {
-		RemoteNeo4jDatastoreProvider datastoreProvider = (RemoteNeo4jDatastoreProvider) datastoreProvider();
+		BoltNeo4jDatastoreProvider datastoreProvider = (BoltNeo4jDatastoreProvider) datastoreProvider();
 		org.neo4j.driver.v1.Statement statement = new org.neo4j.driver.v1.Statement( queryString );
 
 		try ( Session session = datastoreProvider.getDriver().session() ) {
@@ -164,7 +164,7 @@ public abstract class Neo4jJpaTestCase extends OgmJpaTestCase {
 
 	protected void assertThatOnlyTheseNodesExist(NodeForGraphAssertions... nodes) throws Exception {
 		DatastoreProvider datastoreProvider = datastoreProvider();
-		if ( datastoreProvider instanceof RemoteNeo4jDatastoreProvider ) {
+		if ( datastoreProvider instanceof BoltNeo4jDatastoreProvider ) {
 			for ( NodeForGraphAssertions node : nodes ) {
 				assertThatExists( createDriver(), node );
 			}
@@ -179,7 +179,7 @@ public abstract class Neo4jJpaTestCase extends OgmJpaTestCase {
 
 	protected void assertThatOnlyTheseRelationshipsExist(RelationshipsChainForGraphAssertions... relationships) throws Exception {
 		DatastoreProvider datastoreProvider = datastoreProvider();
-		if ( datastoreProvider instanceof RemoteNeo4jDatastoreProvider ) {
+		if ( datastoreProvider instanceof BoltNeo4jDatastoreProvider ) {
 			int expectedNumberOfRelationships = 0;
 			for ( RelationshipsChainForGraphAssertions relationship : relationships ) {
 				assertThatExists( createDriver(), relationship );

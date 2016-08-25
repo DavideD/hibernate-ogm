@@ -21,13 +21,13 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.ogm.cfg.OgmProperties;
 import org.hibernate.ogm.datastore.document.options.AssociationStorageType;
+import org.hibernate.ogm.datastore.neo4j.BoltNeo4jDialect;
 import org.hibernate.ogm.datastore.neo4j.EmbeddedNeo4jDialect;
 import org.hibernate.ogm.datastore.neo4j.Neo4j;
 import org.hibernate.ogm.datastore.neo4j.Neo4jProperties;
-import org.hibernate.ogm.datastore.neo4j.RemoteNeo4jDialect;
+import org.hibernate.ogm.datastore.neo4j.bolt.impl.BoltNeo4jDatastoreProvider;
 import org.hibernate.ogm.datastore.neo4j.dialect.impl.NodeLabel;
 import org.hibernate.ogm.datastore.neo4j.embedded.impl.EmbeddedNeo4jDatastoreProvider;
-import org.hibernate.ogm.datastore.neo4j.remote.impl.RemoteNeo4jDatastoreProvider;
 import org.hibernate.ogm.datastore.spi.BaseDatastoreProvider;
 import org.hibernate.ogm.datastore.spi.DatastoreConfiguration;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
@@ -53,7 +53,7 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 
 	private static final Map<String, String> hibernateProperties = readProperties();
 
-	private static final String ROOT_FOLDER = hibernateProperties.get( Neo4jProperties.DATABASE_PATH ) + File.separator + "NEO4J_REMOTE";
+	private static final String ROOT_FOLDER = hibernateProperties.get( Neo4jProperties.DATABASE_PATH ) + File.separator + "NEO4J";
 
 	/**
 	 * Query for counting all entities. This takes embedded entities and temporary nodes (which never should show up
@@ -108,8 +108,8 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 	}
 
 	private long getNumberOfEntities(Session session, DatastoreProvider provider) {
-		if ( isRemote( provider ) ) {
-			Driver driver = ( (RemoteNeo4jDatastoreProvider) provider ).getDriver();
+		if ( isBolt( provider ) ) {
+			Driver driver = ( (BoltNeo4jDatastoreProvider) provider ).getDriver();
 			return readCountFromResponse( session, driver, ENTITY_COUNT_QUERY );
 		}
 		else {
@@ -134,8 +134,8 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 	}
 
 	private long getNumberOfAssociations(Session session, BaseDatastoreProvider provider) {
-		if ( isRemote( provider ) ) {
-			Driver driver = ( (RemoteNeo4jDatastoreProvider) provider ).getDriver();
+		if ( isBolt( provider ) ) {
+			Driver driver = ( (BoltNeo4jDatastoreProvider) provider ).getDriver();
 			return readCountFromResponse( session, driver, ASSOCIATION_COUNT_QUERY );
 		}
 		else {
@@ -201,8 +201,8 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 	@Override
 	public void dropSchemaAndDatabase(SessionFactory sessionFactory) {
 		DatastoreProvider provider = getProvider( sessionFactory );
-		if ( provider instanceof RemoteNeo4jDatastoreProvider ) {
-			RemoteNeo4jDatastoreProvider boltProvider = (RemoteNeo4jDatastoreProvider) provider;
+		if ( provider instanceof BoltNeo4jDatastoreProvider ) {
+			BoltNeo4jDatastoreProvider boltProvider = (BoltNeo4jDatastoreProvider) provider;
 			try ( org.neo4j.driver.v1.Session session = boltProvider.getDriver().session() ) {
 				session.run( DELETE_ALL );
 			}
@@ -214,9 +214,9 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 	}
 
 	public static void deleteAllElements(DatastoreProvider provider) {
-		if ( isRemote( provider ) ) {
+		if ( isBolt( provider ) ) {
 			org.neo4j.driver.v1.Statement statement = new org.neo4j.driver.v1.Statement( DELETE_ALL );
-			Driver driver = ( (RemoteNeo4jDatastoreProvider) provider ).getDriver();
+			Driver driver = ( (BoltNeo4jDatastoreProvider) provider ).getDriver();
 			try ( org.neo4j.driver.v1.Session session = driver.session() ) {
 				session.run( statement );
 			}
@@ -282,8 +282,8 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 		if ( EmbeddedNeo4jDatastoreProvider.class.isInstance( provider ) ) {
 			return EmbeddedNeo4jDatastoreProvider.class.cast( provider );
 		}
-		if ( RemoteNeo4jDatastoreProvider.class.isInstance( provider ) ) {
-			return RemoteNeo4jDatastoreProvider.class.cast( provider );
+		if ( BoltNeo4jDatastoreProvider.class.isInstance( provider ) ) {
+			return BoltNeo4jDatastoreProvider.class.cast( provider );
 		}
 		throw new RuntimeException( "Not testing with Neo4jDB, cannot extract underlying provider" );
 	}
@@ -308,13 +308,13 @@ public class Neo4jTestHelper implements GridDialectTestHelper {
 		if ( EmbeddedNeo4jDatastoreProvider.class.isInstance( datastoreProvider ) ) {
 			return new EmbeddedNeo4jDialect( (EmbeddedNeo4jDatastoreProvider) datastoreProvider );
 		}
-		if ( RemoteNeo4jDatastoreProvider.class.isInstance( datastoreProvider ) ) {
-			return new RemoteNeo4jDialect( (RemoteNeo4jDatastoreProvider) datastoreProvider );
+		if ( BoltNeo4jDatastoreProvider.class.isInstance( datastoreProvider ) ) {
+			return new BoltNeo4jDialect( (BoltNeo4jDatastoreProvider) datastoreProvider );
 		}
 		throw new RuntimeException( "Not testing with Neo4jDB, cannot extract underlying dialect" );
 	}
 
-	private static boolean isRemote(DatastoreProvider provider) {
-		return provider instanceof RemoteNeo4jDatastoreProvider;
+	private static boolean isBolt(DatastoreProvider provider) {
+		return provider instanceof BoltNeo4jDatastoreProvider;
 	}
 }
