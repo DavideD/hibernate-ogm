@@ -8,6 +8,7 @@ package org.hibernate.ogm.backendtck.associations.collection.manytomany;
 
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J_EMBEDDED;
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J_REMOTE;
+import static org.hibernate.ogm.utils.GridDialectType.ORIENTDB;
 import java.util.EnumSet;
 
 import org.hibernate.Session;
@@ -79,6 +80,10 @@ public class ManyToManyExtraTest extends OgmTestCase {
 		if ( EnumSet.of( NEO4J_EMBEDDED, NEO4J_REMOTE ).contains( TestHelper.getCurrentDialectType() ) ) {
 			// In Neo4j relationships are bidirectional
 			return 1;
+		}
+		if ( ORIENTDB.equals( TestHelper.getCurrentDialectType() ) ) {
+			// In OrientDB ManyToMany relationships is like in RDBMS
+			return 3;
 		}
 		else {
 			return 2;

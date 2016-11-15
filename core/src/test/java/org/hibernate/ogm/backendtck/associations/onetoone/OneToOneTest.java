@@ -11,7 +11,10 @@ import static org.junit.Assert.assertNull;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.junit.Test;
 
 /**
@@ -122,12 +125,13 @@ public class OneToOneTest extends OgmTestCase {
 		session.close();
 	}
 
+	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "CompositeId not supported")
 	@Test
 	public void testBidirectionalOneToOneCompositeId() throws Exception {
 		final Session session = openSession();
 		Transaction transaction = session.beginTransaction();
 		PatchCable patchCable = new PatchCable( new MediaId( "Belkin", "cat7" ) );
-		NetworkSwitch networkSwitch = new NetworkSwitch( new MediaId( "Frisco", "AS500" ));
+		NetworkSwitch networkSwitch = new NetworkSwitch( new MediaId( "Frisco", "AS500" ) );
 		patchCable.setNetworkSwitch( networkSwitch );
 		networkSwitch.setPatchCable( patchCable );
 		session.persist( patchCable );
@@ -163,15 +167,26 @@ public class OneToOneTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] {
+
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			return new Class<?>[]{
 				Horse.class,
 				Cavalier.class,
 				Vehicule.class,
 				Wheel.class,
 				Husband.class,
-				Wife.class,
-				NetworkSwitch.class,
-				PatchCable.class
+				Wife.class
+			};
+		}
+		return new Class<?>[]{
+			Horse.class,
+			Cavalier.class,
+			Vehicule.class,
+			Wheel.class,
+			Husband.class,
+			Wife.class,
+			NetworkSwitch.class,
+			PatchCable.class
 		};
 	}
 }

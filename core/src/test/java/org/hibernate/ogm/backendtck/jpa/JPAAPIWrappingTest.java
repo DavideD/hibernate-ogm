@@ -15,7 +15,9 @@ import javax.persistence.PersistenceException;
 
 import org.hibernate.ogm.jpa.impl.OgmEntityManager;
 import org.hibernate.ogm.jpa.impl.OgmEntityManagerFactory;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.PackagingRule;
+import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.hibernate.ogm.utils.TestHelper;
 import org.hibernate.ogm.utils.jpa.OgmJpaTestCase;
 import org.junit.Rule;
@@ -25,6 +27,10 @@ import org.junit.rules.ExpectedException;
 /**
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
  */
+@SkipByGridDialect(
+		value = { GridDialectType.ORIENTDB },
+		comment = "OrientDB uses schema: 'one thread-one transaction'"
+)
 public class JPAAPIWrappingTest extends OgmJpaTestCase {
 
 	@Rule

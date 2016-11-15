@@ -27,22 +27,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-
 /**
  * Test for detecting concurrent updates by dialects which support atomic find/update semantics or have their own
  * optimistic locking scheme.
  *
  * @author Gunnar Morling
  */
-@SkipByGridDialect(
-		value = { GridDialectType.CASSANDRA },
-		comment = "list - bag semantics unsupported (no primary key)"
-)
+@SkipByGridDialect(value = { GridDialectType.CASSANDRA, GridDialectType.ORIENTDB }, comment = "list - bag semantics unsupported (no primary key); "
+		+ "OrientDB uses paradigm 'one thread-one connection-one transaction'")
 public class OptimisticLockingExtraTest extends OgmTestCase {
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
-
 
 	@Test
 	public void updateToEmbeddedCollectionCausesVersionToBeIncreased() throws Throwable {
@@ -89,7 +85,7 @@ public class OptimisticLockingExtraTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] { Galaxy.class };
+		return new Class<?>[]{ Galaxy.class };
 	}
 
 	@SuppressWarnings("serial")

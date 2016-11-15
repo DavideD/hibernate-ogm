@@ -10,6 +10,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.hibernate.ogm.utils.GridDialectType.MONGODB;
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J_EMBEDDED;
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J_REMOTE;
+import static org.hibernate.ogm.utils.GridDialectType.ORIENTDB;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ import org.junit.Test;
 /**
  * @author Davide D'Alto &lt;davide@hibernate.org&gt;
  */
+@SkipByGridDialect(value = { ORIENTDB }, comment = "Embedded keys not supports")
 public class SimpleEntityMassIndexingTest extends OgmTestCase {
 
 	@Test

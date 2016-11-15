@@ -22,7 +22,7 @@ import org.junit.Test;
  * @author Gunnar Morling
  */
 @SkipByGridDialect(
-		value = { GridDialectType.CASSANDRA },
+		value = { GridDialectType.CASSANDRA,GridDialectType.ORIENTDB },
 		comment = "Director.Tournament list - bag semantics unsupported (no primary key)"
 )
 public class ReferencedCompositeIdTest extends OgmTestCase {

@@ -36,7 +36,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	private final Map<String, Object> dbNameValueMap;
 
 	public OrientDBTupleSnapshot() {
-		this( Collections.<String, Object> emptyMap() );
+		this( Collections.<String, Object>emptyMap() );
 	}
 
 	public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap) {

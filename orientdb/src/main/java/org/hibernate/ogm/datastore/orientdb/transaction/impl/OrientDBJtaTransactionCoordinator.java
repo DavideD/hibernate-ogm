@@ -6,8 +6,6 @@
  */
 package org.hibernate.ogm.datastore.orientdb.transaction.impl;
 
-import java.sql.Connection;
-
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
 
@@ -20,7 +18,6 @@ import org.hibernate.resource.transaction.spi.TransactionStatus;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.tx.OTransaction;
-import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
 
 /**
  * Coordinator for JTA transactions
@@ -57,9 +54,8 @@ public class OrientDBJtaTransactionCoordinator extends ForwardingTransactionCoor
 	}
 
 	private void join() {
-		Connection sqlConnection = datastoreProvider.getConnection();
-		OrientJdbcConnection orientDbConn = (OrientJdbcConnection) sqlConnection;
-		ODatabaseDocumentTx database = (ODatabaseDocumentTx) orientDbConn.getDatabase();
+		ODatabaseDocumentTx database = datastoreProvider.getCurrentDatabase();
+
 		if ( currentOrientDBTransaction == null && delegate.isActive() ) {
 			log.debugf( "begin transaction for database %s", database.getName() );
 			database.begin();

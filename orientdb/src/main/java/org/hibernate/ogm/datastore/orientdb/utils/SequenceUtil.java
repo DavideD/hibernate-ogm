@@ -7,10 +7,10 @@
 package org.hibernate.ogm.datastore.orientdb.utils;
 
 import com.orientechnologies.common.exception.OException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import com.orientechnologies.orient.core.metadata.function.OFunction;
+import com.orientechnologies.orient.core.metadata.sequence.OSequence;
+import com.orientechnologies.orient.core.metadata.sequence.OSequenceLibrary;
 
 import org.hibernate.HibernateException;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
@@ -28,31 +28,24 @@ public class SequenceUtil {
 	/**
 	 * Get next value from sequence
 	 *
-	 * @param connection connection to OrientDB
+	 * @param db instance of OrientDB
 	 * @param seqName name of sequence
 	 * @return next value of the sequence
-	 * @throws HibernateException if {@link SQLException} or {@link OException} occurs
 	 */
-	public static long getNextSequenceValue(Connection connection, String seqName) {
-		long nextValue = -1;
-		String query = String.format( "select sequence('%s').next()", seqName );
-		try {
-			Statement stmt = connection.createStatement();
-			ResultSet rs = stmt.executeQuery( query );
-			if ( rs.next() ) {
-				nextValue = rs.getLong( "sequence" );
-			}
+	public static long getNextSequenceValue(ODatabaseDocumentTx db, String seqName) {
+		OSequenceLibrary library = db.getMetadata().getSequenceLibrary();
+		final String seqNameUpperCase = seqName.toUpperCase();
+		if ( !library.getSequenceNames().contains( seqNameUpperCase ) ) {
+			throw log.sequenceNotExists( seqName );
 		}
-		catch (SQLException | OException sqle) {
-			throw log.cannotExecuteQuery( query, sqle );
-		}
-		return nextValue;
+		OSequence sequence = library.getSequence( seqNameUpperCase );
+		return sequence.next();
 	}
 
 	/**
 	 * Get next value from table generator. Stored procedure 'getTableSeqValue' uses for generate value
 	 *
-	 * @param connection connection to OrientDB
+	 * @param db instance of OrientDB
 	 * @param seqTable name of table that uses for generate values
 	 * @param pkColumnName name of column that contains name of sequence
 	 * @param pkColumnValue value of name of sequence
@@ -62,21 +55,11 @@ public class SequenceUtil {
 	 * @return next value of the sequence
 	 * @throws HibernateException if {@link SQLException} or {@link OException} occurs
 	 */
-	public static long getNextTableValue(Connection connection, String seqTable, String pkColumnName, String pkColumnValue, String valueColumnName,
-			int initValue, int inc) {
-		long nextValue = -1;
-		String query = String.format( "select getTableSeqValue('%s','%s','%s','%s',%d,%d) as %s ",
-				seqTable, pkColumnName, pkColumnValue, valueColumnName, initValue, inc, valueColumnName );
-		try {
-			Statement stmt = connection.createStatement();
-			ResultSet rs = stmt.executeQuery( query );
-			if ( rs.next() ) {
-				nextValue = rs.getLong( valueColumnName );
-			}
-		}
-		catch (SQLException | OException sqle) {
-			throw log.cannotExecuteStoredProcedure( "getTableSeqValue", sqle );
-		}
-		return nextValue;
+
+	public static long getNextTableValue(ODatabaseDocumentTx db, String seqTable, String pkColumnName, String pkColumnValue, String valueColumnName,
+			Integer initValue, Integer inc) {
+		OFunction getTableSeqValue = db.getMetadata().getFunctionLibrary().getFunction( "getTableSeqValue" );
+		Number nextValue = ( (Number) getTableSeqValue.execute( seqTable, pkColumnName, pkColumnValue, valueColumnName, initValue, inc ) );
+		return nextValue.longValue();
 	}
 }

@@ -10,7 +10,10 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.junit.Test;
 
 /**
@@ -41,17 +44,17 @@ public class ListTest extends OgmTestCase {
 		tx = session.beginTransaction();
 		father = (Father) session.get( Father.class, father.getId() );
 		assertThat( father.getOrderedChildren() )
-				.as( "List should have 3 elements" )
-				.hasSize( 3 );
+		.as( "List should have 3 elements" )
+		.hasSize( 3 );
 		assertThat( father.getOrderedChildren().get( 0 ).getName() )
-				.as( "Luke should be first" )
-				.isEqualTo( luke.getName() );
+		.as( "Luke should be first" )
+		.isEqualTo( luke.getName() );
 		assertThat( father.getOrderedChildren().get( 1 ) )
-				.as( "Second born should be null" )
-				.isNull();
+		.as( "Second born should be null" )
+		.isNull();
 		assertThat( father.getOrderedChildren().get( 2 ).getName() )
-				.as( "Leia should be third" )
-				.isEqualTo( leia.getName() );
+		.as( "Leia should be third" )
+		.isEqualTo( leia.getName() );
 		session.delete( father );
 		session.delete( session.load( Child.class, luke.getId() ) );
 		session.delete( session.load( Child.class, leia.getId() ) );
@@ -138,6 +141,7 @@ public class ListTest extends OgmTestCase {
 		checkCleanCache();
 	}
 
+	@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "CompositeId not supported")
 	@Test
 	public void testOrderedListAndCompositeId() throws Exception {
 		Session session = openSession();
@@ -174,12 +178,19 @@ public class ListTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] {
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			return new Class<?>[]{
 				Father.class,
 				GrandMother.class,
-				Child.class,
-				Race.class,
-				Runner.class
+				Child.class
+			};
+		}
+		return new Class<?>[]{
+			Father.class,
+			GrandMother.class,
+			Child.class,
+			Race.class,
+			Runner.class
 		};
 	}
 }

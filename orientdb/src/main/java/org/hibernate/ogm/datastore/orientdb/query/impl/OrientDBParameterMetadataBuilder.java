@@ -12,8 +12,8 @@ import org.parboiled.Parboiled;
 import org.parboiled.parserunners.RecoveringParseRunner;
 
 /**
- * {@link org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder} for native OrientDB queries. The implementation is based on a
- *  <a href="http://parboiled.org">parboiled</a> grammar.
+ * {@link org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder} for native OrientDB queries. The implementation
+ * is based on a <a href="http://parboiled.org">parboiled</a> grammar.
  *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
@@ -25,6 +25,7 @@ public class OrientDBParameterMetadataBuilder extends RecognizerBasedParameterMe
 	 * @param noSqlQuery the query to parse
 	 * @param recognizer collects any named parameters contained in the given query
 	 */
+	@Override
 	public void parseQueryParameters(String noSqlQuery, ParameterParser.Recognizer recognizer) {
 		OrientDBQueryParser parser = Parboiled.createParser( OrientDBQueryParser.class, recognizer );
 		new RecoveringParseRunner<ParameterParser.Recognizer>( parser.Query() ).run( noSqlQuery );

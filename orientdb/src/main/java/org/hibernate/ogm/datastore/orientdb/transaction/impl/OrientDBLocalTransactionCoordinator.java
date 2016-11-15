@@ -10,8 +10,6 @@ import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.tx.OTransaction;
 import com.orientechnologies.orient.core.tx.OTransactionNoTx;
 import com.orientechnologies.orient.core.tx.OTransactionOptimistic;
-import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
-import java.sql.Connection;
 import org.hibernate.ogm.datastore.orientdb.impl.OrientDBDatastoreProvider;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
@@ -75,8 +73,7 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 
 	private void close() {
 		try {
-			// currentOrientDBTransaction.getDatabase().close();
-			datastoreProvider.closeConnection();
+			datastoreProvider.closeCurrentDatabase();
 		}
 		finally {
 			currentOrientDBTransaction = null;
@@ -91,17 +88,14 @@ public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCo
 
 		@Override
 		public void begin() {
-			Connection sqlConnection = datastoreProvider.getConnection();
-			OrientJdbcConnection orientDbConn = (OrientJdbcConnection) sqlConnection;
-			ODatabaseDocumentTx database = (ODatabaseDocumentTx) orientDbConn.getDatabase();
+			ODatabaseDocumentTx database = datastoreProvider.getCurrentDatabase();
 			log.debugf( "begin transaction for database %s. Connection's hash code: %s",
-					database.getName(), orientDbConn.hashCode() );
+					database.getName(), database.hashCode() );
 			super.begin();
-			if ( database.isClosed() ) {
-				log.debugf( "Database %s closed. Reopen for thread : %s",
-						database.getName(), Thread.currentThread().getName() );
-				database.open( "admin", "admin" );
-			}
+			/*
+			 * if ( database.isClosed() ) { log.debugf( "Database %s closed. Reopen for thread : %s",
+			 * database.getName(), Thread.currentThread().getName() ); database.open( "admin", "admin" ); }
+			 */
 			currentOrientDBTransaction = database.activateOnCurrentThread().begin().getTransaction();
 			if ( currentOrientDBTransaction instanceof OTransactionNoTx ) {
 				// no active transaction. create it!!

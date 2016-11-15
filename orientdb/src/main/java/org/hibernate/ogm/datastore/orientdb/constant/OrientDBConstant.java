@@ -66,6 +66,14 @@ public class OrientDBConstant {
 	 */
 	public static final String HIBERNATE_SEQUENCE_TABLE = "sequences";
 
+	public static final String PLOCAL_STORAGE_TYPE = "plocal";
+	public static final String MEMORY_STORAGE_TYPE = "memory";
+	public static final String GRAPTH_DATABASE_TYPE = "graph";
+	public static final String DOCUMENT_DATABASE_TYPE = "document";
+
+	public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
+	public static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS z";
+
 	static {
 		Set<String> set = new HashSet<>();
 		set.add( SYSTEM_RID );

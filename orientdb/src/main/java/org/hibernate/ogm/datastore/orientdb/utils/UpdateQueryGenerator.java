@@ -59,6 +59,7 @@ public class UpdateQueryGenerator {
 
 		StringBuilder updateQuery = generateMainPart( associationKey.getTable(),
 				TupleUtil.toMap( tuple ), whereColumnNames.toArray( new String[1] ) );
+		updateQuery.append( " return count" );
 		// generate 'where' part
 		updateQuery.append( " where " );
 
@@ -71,6 +72,7 @@ public class UpdateQueryGenerator {
 				updateQuery.append( " and " );
 			}
 		}
+
 
 		return new GenerationResult( Collections.emptyList(), updateQuery.toString() );
 	}

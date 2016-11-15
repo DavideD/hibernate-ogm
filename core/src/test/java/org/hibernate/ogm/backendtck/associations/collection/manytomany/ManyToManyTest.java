@@ -9,6 +9,7 @@ package org.hibernate.ogm.backendtck.associations.collection.manytomany;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J_EMBEDDED;
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J_REMOTE;
+import static org.hibernate.ogm.utils.GridDialectType.ORIENTDB;
 import static org.hibernate.ogm.utils.TestHelper.get;
 import static org.hibernate.ogm.utils.TestHelper.getNumberOfAssociations;
 import static org.hibernate.ogm.utils.TestHelper.getNumberOfEntities;
@@ -93,10 +94,7 @@ public class ManyToManyTest extends OgmTestCase {
 	}
 
 	@Test
-	@SkipByGridDialect(
-			value = { GridDialectType.CASSANDRA },
-			comment = "composite PKs in associations not yet supported"
-	)
+	@SkipByGridDialect(value = { GridDialectType.CASSANDRA, GridDialectType.ORIENTDB }, comment = "composite PKs in associations not yet supported")
 	public void testManyToManyCompositeId() throws Exception {
 		Session session = openSession();
 		Transaction transaction = session.beginTransaction();
@@ -139,8 +137,8 @@ public class ManyToManyTest extends OgmTestCase {
 	}
 
 	private int expectedAssociationNumber() {
-		if ( EnumSet.of( NEO4J_EMBEDDED, NEO4J_REMOTE ).contains( TestHelper.getCurrentDialectType() ) ) {
-			// In Neo4j relationships are bidirectional
+		if ( EnumSet.of( NEO4J_EMBEDDED, NEO4J_REMOTE, ORIENTDB ).contains( TestHelper.getCurrentDialectType() ) ) {
+			// In Neo4j and OrientDB relationships are bidirectional
 			return 1;
 		}
 		else {
@@ -150,7 +148,14 @@ public class ManyToManyTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] {
+		if ( TestHelper.getCurrentDialectType().equals( ORIENTDB ) ) {
+			return new Class<?>[]{
+					AccountOwner.class,
+					BankAccount.class
+			};
+
+		}
+		return new Class<?>[]{
 				AccountOwner.class,
 				BankAccount.class,
 				Car.class,

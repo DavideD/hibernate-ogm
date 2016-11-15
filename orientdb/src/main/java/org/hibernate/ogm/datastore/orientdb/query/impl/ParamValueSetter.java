@@ -6,7 +6,6 @@
  */
 package org.hibernate.ogm.datastore.orientdb.query.impl;
 
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
@@ -20,11 +19,10 @@ public interface ParamValueSetter<T> {
 	/**
 	 * set value of parameter
 	 *
-	 * @param preparedStatement PreparedStatememt for setting parameter's value
 	 * @param index index of parameter in query
 	 * @param value value of the parameter
 	 * @throws SQLException if any database error occurs
 	 */
-	void setValue(PreparedStatement preparedStatement, int index, T value) throws SQLException;
+	void setValue(int index, T value) throws SQLException;
 
 }

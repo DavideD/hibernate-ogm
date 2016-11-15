@@ -44,6 +44,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.hibernate.ogm.utils.GridDialectType;
 
 /**
  * Test for detecting concurrent updates by dialects which support atomic find/update semantics or have their own
@@ -51,6 +52,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  *
  * @author Gunnar Morling
  */
+@SkipByGridDialect(value = { GridDialectType.ORIENTDB }, comment = "Two transactions in one thread not supported")
 public class OptimisticLockingTest extends OgmTestCase {
 
 	private static enum LatchAction {

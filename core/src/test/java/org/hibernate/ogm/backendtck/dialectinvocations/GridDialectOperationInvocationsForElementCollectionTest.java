@@ -4,13 +4,6 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-
-/*
- * Hibernate OGM, Domain model persistence for NoSQL datastores
- *
- * License: GNU Lesser General Public License (LGPL), version 2.1 or later
- * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
- */
 package org.hibernate.ogm.backendtck.dialectinvocations;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -32,9 +25,10 @@ import org.junit.Test;
  * @author Emmanuel Bernard emmanuel@hibernate.org
  * @author Guillaume Smet
  */
-@SkipByGridDialect(value = { GridDialectType.NEO4J_REMOTE, GridDialectType.NEO4J_EMBEDDED, GridDialectType.REDIS_HASH },
-		comment = "For Neo4j, the getAssociation always return an association, thus we don't have the createAssociation call. " +
-				"Redis Hash is just weird.")
+@SkipByGridDialect(value = { GridDialectType.NEO4J_REMOTE, GridDialectType.NEO4J_EMBEDDED, GridDialectType.REDIS_HASH, GridDialectType.ORIENTDB },
+				comment = "For Neo4j, the getAssociation always return an association, thus we don't have the createAssociation call. " +
+						"OrientDB realised like Neo4J " +
+						"Redis Hash is just weird.")
 @TestForIssue(jiraKey = "OGM-1152")
 public class GridDialectOperationInvocationsForElementCollectionTest extends AbstractGridDialectOperationInvocationsTest {
 
@@ -61,8 +55,7 @@ public class GridDialectOperationInvocationsForElementCollectionTest extends Abs
 						"createTuple",
 						"getAssociation",
 						"createAssociation",
-						"executeBatch[group[insertOrUpdateTuple,insertOrUpdateAssociation]]"
-				);
+						"executeBatch[group[insertOrUpdateTuple,insertOrUpdateAssociation]]" );
 			}
 			else {
 				assertThat( getOperations() ).containsExactly(
@@ -70,16 +63,14 @@ public class GridDialectOperationInvocationsForElementCollectionTest extends Abs
 						"createTuple",
 						"getAssociation",
 						"createAssociation",
-						"executeBatch[group[insertOrUpdateTuple,insertOrUpdateAssociation]]"
-				);
+						"executeBatch[group[insertOrUpdateTuple,insertOrUpdateAssociation]]" );
 			}
 		}
 		else if ( GridDialects.hasFacet( gridDialect, BatchableGridDialect.class ) ) {
 			assertThat( getOperations() ).containsExactly(
 					"createTuple",
 					"getAssociation",
-					"executeBatch[group[insertOrUpdateTuple,insertOrUpdateAssociation]]"
-			);
+					"executeBatch[group[insertOrUpdateTuple,insertOrUpdateAssociation]]" );
 		}
 		else if ( isDuplicateInsertPreventionStrategyNative( gridDialect ) ) {
 			assertThat( getOperations() ).containsExactly(
@@ -87,8 +78,7 @@ public class GridDialectOperationInvocationsForElementCollectionTest extends Abs
 					"insertOrUpdateTuple",
 					"getAssociation",
 					"createAssociation",
-					"insertOrUpdateAssociation"
-			);
+					"insertOrUpdateAssociation" );
 		}
 		else {
 			assertThat( getOperations() ).containsExactly(
@@ -97,8 +87,7 @@ public class GridDialectOperationInvocationsForElementCollectionTest extends Abs
 					"insertOrUpdateTuple",
 					"getAssociation",
 					"createAssociation",
-					"insertOrUpdateAssociation"
-			);
+					"insertOrUpdateAssociation" );
 		}
 
 		session.clear();
@@ -116,26 +105,27 @@ public class GridDialectOperationInvocationsForElementCollectionTest extends Abs
 			assertThat( getOperations() ).containsExactly(
 					"getTuple", // load GrandMother
 					"getAssociation", // collection is loaded by gdMother.getGrandChildren()
-					"executeBatch[group[insertOrUpdateAssociation,insertOrUpdateAssociation,insertOrUpdateAssociation]]"
-			);
+					"executeBatch[group[insertOrUpdateAssociation,insertOrUpdateAssociation,insertOrUpdateAssociation]]" );
 		}
 		else if ( isDuplicateInsertPreventionStrategyNative( gridDialect ) ) {
 			assertThat( getOperations() ).containsExactly(
 					"getTuple", // load GrandMother
 					"getAssociation", // collection is loaded by gdMother.getGrandChildren()
-					"insertOrUpdateAssociation", //remove 1,leia row from association
+					"insertOrUpdateAssociation", // remove 1,leia row from association
 					"insertOrUpdateAssociation" // put 0,leia (essentially removing luke)
-												// the last insertOrUpdateAssociation is skipped as there is no line to insert
-			);
+					// the last insertOrUpdateAssociation is skipped as there is no line to
+					// insert
+					);
 		}
 		else {
 			assertThat( getOperations() ).containsExactly(
 					"getTuple", // load GrandMother
 					"getAssociation", // collection is loaded by gdMother.getGrandChildren()
-					"insertOrUpdateAssociation", //remove 1,leia row from association
+					"insertOrUpdateAssociation", // remove 1,leia row from association
 					"insertOrUpdateAssociation" // put 0,leia (essentially removing luke)
-												// the last insertOrUpdateAssociation is skipped as there is no line to insert
-			);
+					// the last insertOrUpdateAssociation is skipped as there is no line to
+					// insert
+					);
 		}
 
 		resetOperationsLog();
@@ -153,7 +143,7 @@ public class GridDialectOperationInvocationsForElementCollectionTest extends Abs
 					"getTuple", // load grand mother
 					"getAssociation", // load collection
 					"executeBatch[group[removeAssociation],removeTuple]" // batched removal
-			);
+					);
 		}
 		else if ( isDuplicateInsertPreventionStrategyNative( gridDialect ) ) {
 			assertThat( getOperations() ).containsExactly(
@@ -161,7 +151,7 @@ public class GridDialectOperationInvocationsForElementCollectionTest extends Abs
 					"getAssociation", // load collection
 					"removeAssociation", // actual collection removal
 					"removeTuple" // remove tuple
-			);
+					);
 		}
 		else {
 			assertThat( getOperations() ).containsExactly(
@@ -169,14 +159,14 @@ public class GridDialectOperationInvocationsForElementCollectionTest extends Abs
 					"getAssociation", // load collection
 					"removeAssociation", // actual collection removal
 					"removeTuple" // remove tuple
-			);
+					);
 		}
 		session.close();
 	}
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] { GrandMother.class, GrandChild.class };
+		return new Class<?>[]{ GrandMother.class, GrandChild.class };
 	}
 
 }

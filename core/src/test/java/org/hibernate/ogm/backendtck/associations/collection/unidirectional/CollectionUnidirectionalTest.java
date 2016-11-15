@@ -5,6 +5,7 @@
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.ogm.backendtck.associations.collection.unidirectional;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static org.hibernate.ogm.utils.TestHelper.getNumberOfAssociations;
 import static org.hibernate.ogm.utils.TestHelper.getNumberOfEntities;
@@ -14,7 +15,9 @@ import static org.junit.Assert.assertNotNull;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.junit.Test;
 
 /**
@@ -39,11 +42,21 @@ public class CollectionUnidirectionalTest extends OgmTestCase {
 		session.persist( cloud );
 		session.flush();
 		assertThat( getNumberOfEntities( session ) ).isEqualTo( 3 );
-		assertThat( getNumberOfAssociations( session ) ).isEqualTo( 1 );
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			assertThat( getNumberOfAssociations( session ) ).isEqualTo( 2 );
+		}
+		else {
+			assertThat( getNumberOfAssociations( session ) ).isEqualTo( 1 );
+		}
 		transaction.commit();
 
 		assertThat( getNumberOfEntities( sessionFactory ) ).isEqualTo( 3 );
-		assertThat( getNumberOfAssociations( sessionFactory ) ).isEqualTo( 1 );
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			assertThat( getNumberOfAssociations( sessionFactory ) ).isEqualTo( 2 );
+		}
+		else {
+			assertThat( getNumberOfAssociations( sessionFactory ) ).isEqualTo( 1 );
+		}
 
 		session.clear();
 
@@ -60,7 +73,12 @@ public class CollectionUnidirectionalTest extends OgmTestCase {
 		transaction.commit();
 
 		assertThat( getNumberOfEntities( sessionFactory ) ).isEqualTo( 4 );
-		assertThat( getNumberOfAssociations( sessionFactory ) ).isEqualTo( 1 );
+		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+			assertThat( getNumberOfAssociations( sessionFactory ) ).isEqualTo( 2 );
+		}
+		else {
+			assertThat( getNumberOfAssociations( sessionFactory ) ).isEqualTo( 1 );
+		}
 
 		session.clear();
 
@@ -104,7 +122,7 @@ public class CollectionUnidirectionalTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] {
+		return new Class<?>[]{
 				Cloud.class,
 				SnowFlake.class
 		};

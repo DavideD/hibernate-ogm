@@ -25,9 +25,10 @@ import org.junit.Test;
  * @author Emmanuel Bernard emmanuel@hibernate.org
  * @author Guillaume Smet
  */
-@SkipByGridDialect(value = { GridDialectType.CASSANDRA, GridDialectType.NEO4J_REMOTE, GridDialectType.NEO4J_EMBEDDED, GridDialectType.REDIS_HASH },
-		comment = "For Cassandra and Neo4j, the getAssociation always return an association, thus we don't have the createAssociation call. " +
-					"Redis Hash is just weird.")
+@SkipByGridDialect(value = { GridDialectType.CASSANDRA, GridDialectType.NEO4J_REMOTE, GridDialectType.NEO4J_EMBEDDED, GridDialectType.REDIS_HASH,GridDialectType.ORIENTDB },
+				comment = "For Cassandra and Neo4j, the getAssociation always return an association, thus we don't have the createAssociation call. " +
+						"OrientDB realised like Neo4J " +
+						"Redis Hash is just weird.")
 @TestForIssue(jiraKey = "OGM-1152")
 public class GridDialectOperationInvocationsForOneToOneTest extends AbstractGridDialectOperationInvocationsTest {
 
@@ -52,28 +53,29 @@ public class GridDialectOperationInvocationsForOneToOneTest extends AbstractGrid
 			if ( isDuplicateInsertPreventionStrategyNative( gridDialect ) ) {
 				assertThat( getOperations() ).containsExactly(
 						"getTuple", // when adding Husband, ORM looks at Wife and checks if it is transient
-									// since it is transient and id is manually set, this leads to a lookup
+						// since it is transient and id is manually set, this leads to a lookup
 						"createTuple", // creating Husband tuple
 						"createTuple", // creating Wife tuple
 						"getAssociation", // read the association info from Wife to Husband
-											// before that, executes the batch containing the 2 insertOrUpdateTuple operations
+						// before that, executes the batch containing the 2 insertOrUpdateTuple
+						// operations
 						"createAssociation", // could not find the association so create one
 						"executeBatch[group[insertOrUpdateTuple,insertOrUpdateTuple],group[insertOrUpdateTuple,insertOrUpdateAssociation]]"
 						// inserting Husband without FK
 						// update Husband with wife FK
 						// inserting Wife without association
 						// actually update the (inverse) association with a wife -> husband entry
-				);
+						);
 			}
 			else {
 				assertThat( getOperations() ).containsExactly(
 						"getTuple", // when adding Husband, ORM looks at Wife and checks if it is transient
-									// since it is transient and id is manually set, this leads to a lookup
+						// since it is transient and id is manually set, this leads to a lookup
 						"getTuple", // when inserting Husband, we do a lookup to check whether it is already present
-									// DuplicateInsertPreventionStrategy.LOOKUP
+						// DuplicateInsertPreventionStrategy.LOOKUP
 						"createTuple", // creating Husband tuple
 						"getTuple", // when inserting Wife, we do a lookup to check whether it is already present
-									// DuplicateInsertPreventionStrategy.LOOKUP
+						// DuplicateInsertPreventionStrategy.LOOKUP
 						"createTuple", // creating Wife tuple
 						"getAssociation", // read the association info from Wife to Husband
 						"createAssociation", // could not find the association so create one
@@ -82,25 +84,26 @@ public class GridDialectOperationInvocationsForOneToOneTest extends AbstractGrid
 						// update Husband with wife FK
 						// inserting Wife without association
 						// actually update the (inverse) association with a wife -> husband entry
-				);
+						);
 			}
 		}
 		else if ( GridDialects.hasFacet( gridDialect, BatchableGridDialect.class ) ) {
 			assertThat( getOperations() ).containsExactly(
 					"getTuple", // when adding Husband, ORM looks at Wife and checks if it is transient
-								// since it is transient and id is manually set, this leads to a lookup
+					// since it is transient and id is manually set, this leads to a lookup
 					"createTuple", // creating Husband tuple
 					"createTuple", // creating Wife tuple
 					"getAssociation", // read the association info from Wife to Husband
-										// before that, executes the batch containing the 2 insertOrUpdateTuple operations
+					// before that, executes the batch containing the 2 insertOrUpdateTuple
+					// operations
 					"createAssociation", // could not find the association so create one
 					"executeBatch[group[insertOrUpdateAssociation]]" // execute the batch of insert/update operations
-			);
+					);
 		}
 		else if ( isDuplicateInsertPreventionStrategyNative( gridDialect ) ) {
 			assertThat( getOperations() ).containsExactly(
 					"getTuple", // when adding Husband, ORM looks at Wife and checks if it is transient
-								// since it is transient and id is manually set, this leads to a lookup
+					// since it is transient and id is manually set, this leads to a lookup
 					"createTuple", // creating Husband tuple
 					"insertOrUpdateTuple", // inserting Husband without fk
 					"createTuple", // creating Wife tuple
@@ -109,27 +112,27 @@ public class GridDialectOperationInvocationsForOneToOneTest extends AbstractGrid
 					"getAssociation", // read the association info from Wife to Husband
 					"createAssociation", // could not find the association so create one
 					"insertOrUpdateAssociation" // actually update the (inverse) association with a wife -> husband
-												// entry
-			);
+					// entry
+					);
 		}
 		else {
 			assertThat( getOperations() ).containsExactly(
 					"getTuple", // when adding Husband, ORM looks at Wife and checks if it is transient
-								// since it is transient and id is manually set, this leads to a lookup
+					// since it is transient and id is manually set, this leads to a lookup
 					"getTuple", // when inserting Husband, we do a lookup to check whether it is already present
-								// DuplicateInsertPreventionStrategy.LOOKUP
+					// DuplicateInsertPreventionStrategy.LOOKUP
 					"createTuple", // creating Husband tuple
 					"insertOrUpdateTuple", // inserting Husband without fk
 					"getTuple", // when inserting Wife, we do a lookup to check whether it is already present
-								// DuplicateInsertPreventionStrategy.LOOKUP
+					// DuplicateInsertPreventionStrategy.LOOKUP
 					"createTuple", // creating Wife tuple
 					"insertOrUpdateTuple", // inserting Wife without association
 					"insertOrUpdateTuple", // update Husband with wife FK
 					"getAssociation", // read the association info from Wife to Husband
 					"createAssociation", // could not find the association so create one
 					"insertOrUpdateAssociation" // actually update the (inverse) association with a wife -> husband
-												// entry
-			);
+					// entry
+					);
 		}
 
 		transaction = session.beginTransaction();
@@ -143,7 +146,7 @@ public class GridDialectOperationInvocationsForOneToOneTest extends AbstractGrid
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] { Husband.class, Wife.class };
+		return new Class<?>[]{ Husband.class, Wife.class };
 	}
 
 }

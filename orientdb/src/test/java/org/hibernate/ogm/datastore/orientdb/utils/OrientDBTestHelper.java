@@ -7,23 +7,21 @@
 package org.hibernate.ogm.datastore.orientdb.utils;
 
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.metadata.ClassMetadata;
+import org.hibernate.ogm.cfg.OgmProperties;
 import org.hibernate.ogm.datastore.document.options.AssociationStorageType;
 import org.hibernate.ogm.datastore.orientdb.OrientDB;
 import org.hibernate.ogm.datastore.orientdb.OrientDBDialect;
 import org.hibernate.ogm.datastore.orientdb.OrientDBProperties;
+import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
 import org.hibernate.ogm.datastore.orientdb.impl.OrientDBDatastoreProvider;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
@@ -36,9 +34,13 @@ import org.hibernate.ogm.util.configurationreader.spi.ConfigurationPropertyReade
 import org.hibernate.ogm.utils.GridDialectOperationContexts;
 import org.hibernate.ogm.utils.GridDialectTestHelper;
 
-import com.orientechnologies.common.exception.OException;
+import com.orientechnologies.orient.client.remote.OServerAdmin;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.jdbc.OrientJdbcConnection;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import com.orientechnologies.orient.core.metadata.schema.OSchema;
+import com.orientechnologies.orient.core.record.impl.ODocument;
+import java.util.List;
 
 /**
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
@@ -60,75 +62,77 @@ public class OrientDBTestHelper implements GridDialectTestHelper {
 		}
 		return metadata;
 	}
-	@Override
-	public long getNumberOfEntities(Session session) {
-		return 0;
-	}
 
 	@Override
-	public long getNumberOfAssociations(Session session) {
-		return 0;
+	public long getNumberOfEntities(Session session) {
+		return getNumberOfEntities( session.getSessionFactory() );
+	}
+
+	private boolean isSystemClass(OClass schemaClass) {
+		boolean result = ( schemaClass.getName().charAt( 0 ) == 'O' && Character.isUpperCase( schemaClass.getName().charAt( 1 ) ) ) ||
+				( schemaClass.getName().equals( "E" ) ) ||
+				( schemaClass.getName().equals( "V" ) ) ||
+				( schemaClass.getName().equals( "sequences" ) );
+		return result;
+	}
+
+	private boolean isAssociationClass(OClass schemaClass) {
+		Map<String, OProperty> properties = schemaClass.propertiesMap();
+		log.debugf( "properties %s for class %s ", properties.keySet(), schemaClass.getName() );
+		int count = properties.size();
+		boolean result = false;
+		if ( count == 2 ) {
+			boolean allFieldsEndsWith_id = false;
+			for ( String fieldName : properties.keySet() ) {
+				if ( fieldName.endsWith( "_id" ) ) {
+					allFieldsEndsWith_id = true;
+				}
+				else {
+					allFieldsEndsWith_id = false;
+					break;
+				}
+			}
+			result = allFieldsEndsWith_id;
+		}
+		return result;
 	}
 
 	@Override
 	public long getNumberOfEntities(SessionFactory sessionFactory) {
 		OrientDBDatastoreProvider provider = getProvider( sessionFactory );
-		OrientJdbcConnection connection = (OrientJdbcConnection) provider.getConnection();
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
 		long result = 0;
-		Map<String, ClassMetadata> meta = sessionFactory.getAllClassMetadata();
-		ResultSet rs = null;
-		try {
-			rs = connection.createStatement().executeQuery( COUNT_QUERY );
-			while ( rs.next() ) {
-				String className = rs.getString( 1 );
-				ClassMetadata metadata = searchMetadata( meta, className );
-				if ( metadata != null ) {
-					result += rs.getLong( 2 );
-				}
+		OSchema schema = db.getMetadata().getSchema();
+		for ( OClass schemaClass : schema.getClasses() ) {
+			if ( !isSystemClass( schemaClass ) && !isAssociationClass( schemaClass ) ) {
+				List<ODocument> docs = NativeQueryUtil.executeIdempotentQuery( db, "select from " + schemaClass.getName() );
+				log.debugf( "found %d entities in class %s ", docs.size(), schemaClass.getName() );
+				result += docs.size();
 			}
-			return result;
 		}
-		catch (SQLException e) {
-			throw new HibernateException( e );
-		}
-		finally {
-			close( rs );
-		}
+		return result;
+	}
+
+	@Override
+	public long getNumberOfAssociations(Session session) {
+		SessionFactory sessionFactory = session.getSessionFactory();
+		return getNumberOfAssociations( sessionFactory );
 	}
 
 	@Override
 	public long getNumberOfAssociations(SessionFactory sessionFactory) {
 		OrientDBDatastoreProvider provider = getProvider( sessionFactory );
-		OrientJdbcConnection connection = (OrientJdbcConnection) provider.getConnection();
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
 		long result = 0;
-		Map<String, ClassMetadata> meta = sessionFactory.getAllClassMetadata();
-		ResultSet rs = null;
-		try {
-			rs = connection.createStatement().executeQuery( COUNT_QUERY );
-			String className = rs.getString( 1 );
-			ClassMetadata metadata = searchMetadata( meta, className );
-			if ( metadata == null ) {
-				result += rs.getLong( 2 );
-			}
-			return result;
-		}
-		catch (SQLException e) {
-			throw log.cannotExecuteQuery( COUNT_QUERY, e );
-		}
-		finally {
-			close( rs );
-		}
-	}
-
-	private void close(ResultSet rs) {
-		if ( rs != null ) {
-			try {
-				rs.close();
-			}
-			catch (SQLException e) {
-				log.error( "Cannot close result set", e );
+		OSchema schema = db.getMetadata().getSchema();
+		for ( OClass schemaClass : schema.getClasses() ) {
+			if ( !isSystemClass( schemaClass ) && isAssociationClass( schemaClass ) ) {
+				List<ODocument> docs = NativeQueryUtil.executeIdempotentQuery( db, "select from " + schemaClass.getName() );
+				log.debugf( "found %d associations in class %s ", docs.size(), schemaClass.getName() );
+				result += docs.size();
 			}
 		}
+		return result;
 	}
 
 	@Override
@@ -152,51 +156,60 @@ public class OrientDBTestHelper implements GridDialectTestHelper {
 		return true;
 	}
 
+	@Override
 	public void prepareDatabase(SessionFactory sessionFactory) {
+		log.info( "--- preparing database ----" );
 		OrientDBDatastoreProvider provider = getProvider( sessionFactory );
 		ConfigurationPropertyReader propertyReader = provider.getPropertyReader();
-		OrientJdbcConnection connection = (OrientJdbcConnection) provider.getConnection();
-		log.infof( "call prepareDatabase! db closed: %s ", connection.getDatabase().isClosed() );
-		try {
-			Statement stmt = connection.createStatement();
-			stmt.execute( "ALTER DATABASE TIMEZONE UTC" );
-			stmt.execute( "ALTER DATABASE DATEFORMAT '"
-					.concat( propertyReader.property( OrientDBProperties.DATE_FORMAT, String.class ).withDefault( "yyyy-MM-dd" ).getValue() ).concat( "'" ) );
-			stmt.execute( "ALTER DATABASE DATETIMEFORMAT '"
-					.concat( propertyReader.property( OrientDBProperties.DATETIME_FORMAT, String.class ).withDefault( "yyyy-MM-dd HH:mm:ss" ).getValue() )
-					.concat( "'" ) );
-		}
-		catch (SQLException | OException sqle) {
-			throw log.cannotAlterDatabaseProperties( sqle );
-		}
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
+		log.infof( "call prepareDatabase! db closed: %s ", db.isClosed() );
+		NativeQueryUtil.executeNonIdempotentQuery( db, "ALTER DATABASE TIMEZONE UTC" );
+		NativeQueryUtil.executeNonIdempotentQuery( db, "ALTER DATABASE DATEFORMAT '"
+				.concat( propertyReader.property( OrientDBProperties.DATE_FORMAT, String.class ).withDefault( OrientDBConstant.DEFAULT_DATE_FORMAT )
+						.getValue() )
+				.concat( "'" ) );
+		NativeQueryUtil.executeNonIdempotentQuery( db, "ALTER DATABASE DATETIMEFORMAT '"
+				.concat( propertyReader.property( OrientDBProperties.DATETIME_FORMAT, String.class ).withDefault( OrientDBConstant.DEFAULT_DATETIME_FORMAT )
+						.getValue() )
+				.concat( "'" ) );
+
 	}
 
-	@Override
 	public void dropSchemaAndDatabase(SessionFactory sessionFactory) {
 		OrientDBDatastoreProvider provider = getProvider( sessionFactory );
-		OrientJdbcConnection connection = (OrientJdbcConnection) provider.getConnection();
-		log.infof( "call dropSchemaAndDatabase! db closed: %b ", connection.getDatabase().isClosed() );
-		if ( !connection.getDatabase().isClosed() ) {
-			ODatabaseDocumentTx db = (ODatabaseDocumentTx) connection.getDatabase();
-			if ( !db.isActiveOnCurrentThread() ) {
-				db.activateOnCurrentThread();
-			}
-			if ( db.getTransaction().isActive() ) {
-				db.getTransaction().close();
-			}
-			MemoryDBUtil.dropInMemoryDb();
+		ConfigurationPropertyReader propertyReader = provider.getPropertyReader();
+		OrientDBProperties.StorageModeEnum databaseType = propertyReader
+				.property( OrientDBProperties.STORAGE_MODE_TYPE, OrientDBProperties.StorageModeEnum.class )
+				.withDefault( OrientDBProperties.StorageModeEnum.MEMORY ).getValue();
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
+		log.infof( "call dropSchemaAndDatabase! db closed: %b ", db.isClosed() );
+		String database = propertyReader.property( OgmProperties.DATABASE, String.class ).getValue();
+		if ( OrientDBProperties.StorageModeEnum.REMOTE.equals( databaseType ) ) {
+			String rootUser = propertyReader.property( OrientDBProperties.ROOT_USERNAME, String.class ).withDefault( "root" ).getValue();
+			String rootPassword = propertyReader.property( OrientDBProperties.ROOT_USERNAME, String.class ).withDefault( "root" ).getValue();
+			String host = propertyReader.property( OgmProperties.HOST, String.class ).withDefault( "localhost" ).getValue();
+			OServerAdmin serverAdmin = null;
 			try {
-				connection.close();
+				serverAdmin = new OServerAdmin( "remote:" + host ).connect( rootUser, rootPassword );
+				serverAdmin.dropDatabase( database, OrientDBConstant.PLOCAL_STORAGE_TYPE );
 			}
-			catch (SQLException e) {
+			catch (IOException ioe) {
+				log.error( "Canot drop database", ioe );
 			}
-			log.info( "call dropSchemaAndDatabase! db droped! " );
+			finally {
+				if ( serverAdmin != null ) {
+					serverAdmin.close( true );
+				}
+
+			}
+		}
+		else {
+			db.drop();
 		}
 	}
 
 	@Override
 	public Map<String, String> getEnvironmentProperties() {
-
 		return readProperties();
 	}
 
@@ -238,4 +251,5 @@ public class OrientDBTestHelper implements GridDialectTestHelper {
 		GridDialect dialect = ( (SessionFactoryImplementor) sessionFactory ).getServiceRegistry().getService( GridDialect.class );
 		return dialect;
 	}
+
 }
