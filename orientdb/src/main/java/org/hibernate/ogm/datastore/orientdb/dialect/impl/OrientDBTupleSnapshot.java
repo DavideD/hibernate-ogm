@@ -16,6 +16,8 @@ import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
 
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 
 /**
  * Represents a tuple snapshot as loaded by the datastore.
@@ -33,14 +35,11 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 public class OrientDBTupleSnapshot implements TupleSnapshot {
 
 	private static final Log log = LoggerFactory.getLogger();
-	private final Map<String, Object> dbNameValueMap;
+	private final ODocument document;
 
-	public OrientDBTupleSnapshot() {
-		this( Collections.<String, Object> emptyMap() );
-	}
-
-	public OrientDBTupleSnapshot(Map<String, Object> dbNameValueMap) {
-		this.dbNameValueMap = dbNameValueMap;
+	
+        public OrientDBTupleSnapshot(ODocument document) {
+		this.document = document;
 	}
 
 	@Override
@@ -48,8 +47,8 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		log.debugf( "targetColumnName: %s", targetColumnName );
 		Object value = null;
 		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) ) {
-			if ( dbNameValueMap.containsKey( OrientDBConstant.SYSTEM_VERSION ) ) {
-				value = dbNameValueMap.get( OrientDBConstant.SYSTEM_VERSION );
+			if ( targetColumnName.equalsIgnoreCase(OrientDBConstant.SYSTEM_VERSION ) ) {
+				value = document.getVersion();
 			}
 			else {
 				value = 0;
@@ -57,33 +56,32 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 			log.debugf( "targetColumnName: %s, value: %d", targetColumnName, value );
 		}
 		else if ( targetColumnName.equals( "version" ) ) {
-			if ( dbNameValueMap.containsKey( OrientDBConstant.SYSTEM_VERSION ) ) {
-				value = dbNameValueMap.get( OrientDBConstant.SYSTEM_VERSION );
+			if ( targetColumnName.equalsIgnoreCase(OrientDBConstant.SYSTEM_VERSION ) ) {
+				value = document.getVersion();
 			}
 			else {
 				value = 0;
 			}
 		}
 		else if ( targetColumnName.startsWith( "_identifierMapper." ) ) {
-			value = dbNameValueMap.get( targetColumnName.substring( "_identifierMapper.".length() ) );
-		}
-		else if ( OrientDBConstant.MAPPING_FIELDS.containsKey( targetColumnName ) ) {
-			value = dbNameValueMap.get( OrientDBConstant.MAPPING_FIELDS.get( targetColumnName ) );
+			value = document.field( targetColumnName.substring( "_identifierMapper.".length() ) );
 		}
 		else {
-			value = dbNameValueMap.get( targetColumnName );
+			value = document.field(targetColumnName );
 		}
 		return value;
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return dbNameValueMap.isEmpty();
+		return document.isEmpty();
 	}
 
 	@Override
 	public Set<String> getColumnNames() {
-		return dbNameValueMap.keySet();
+                Set<String> set = new LinkedHashSet<>();
+                set.addAll(Arrays.asList(document.fieldNames()));
+		return set;
 	}
 
 	/**
@@ -94,6 +92,6 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	 * @return true if the snapshot is new (not saved in database yet), otherwise false
 	 */
 	public boolean isNew() {
-		return ( dbNameValueMap == null || dbNameValueMap.isEmpty() );
+		return ( document == null || document.isEmpty() );
 	}
 }

@@ -45,4 +45,11 @@ public class ODocumentUtil {
 		}
 		return map;
 	}
+
+	public static Map<String, Object> toMap(ODocument document) {
+		Map<String, Object> allFields = new LinkedHashMap<>( 20 );
+		allFields.putAll( document.toMap() );
+		allFields.put( "@version", document.field( "@version", Integer.class ) );
+		return allFields;
+	}
 }

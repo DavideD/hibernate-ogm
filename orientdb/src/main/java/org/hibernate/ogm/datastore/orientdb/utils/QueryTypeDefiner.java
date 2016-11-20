@@ -34,7 +34,7 @@ public class QueryTypeDefiner {
 		if ( isNewSnapshot && !existsInDB ) {
 			type = QueryType.INSERT;
 		}
-		else if ( !isNewSnapshot && existsInDB ) {
+		else if ( existsInDB ) {
 			type = QueryType.UPDATE;
 		}
 		return type;

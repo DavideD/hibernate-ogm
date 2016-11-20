@@ -16,6 +16,7 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 
 /**
  * Description of errors and messages, that can be throw by the module
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 @MessageLogger(projectCode = "OGM")
@@ -58,7 +59,7 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 	HibernateException cannotParseEmbeddedClass(String column, String json, @Cause Exception cause);
 
 	@Message(id = 1712, value = "Sequence %s not exists.")
-	HibernateException sequenceNotExists(String sequenceName, @Cause Exception cause);
+	HibernateException sequenceNotExists(String sequenceName);
 
 	@Message(id = 1713, value = "Cannot create stored procedure %s .")
 	HibernateException cannotCreateStoredProcedure(String storedProcName, @Cause Exception cause);
@@ -74,4 +75,10 @@ public interface Log extends org.hibernate.ogm.util.impl.Log {
 
 	@Message(id = 1717, value = "Cannot alter database properties")
 	HibernateException cannotAlterDatabaseProperties(@Cause Exception cause);
+
+	@Message(id = 1718, value = "Cannot create database %s.")
+	HibernateException cannotCreateDatabase(String database, @Cause Exception cause);
+
+	@Message(id = 1719, value = "Query %s is not idempotent.")
+	HibernateException queryMustBeIdempotentQuery(String query);
 }

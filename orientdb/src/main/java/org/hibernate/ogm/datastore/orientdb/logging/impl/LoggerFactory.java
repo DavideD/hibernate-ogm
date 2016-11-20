@@ -10,6 +10,7 @@ import org.jboss.logging.Logger;
 
 /**
  * Factory of logger
+ *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class LoggerFactory {

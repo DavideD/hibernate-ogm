@@ -16,7 +16,7 @@ import org.hibernate.ogm.cfg.OgmProperties;
 public class OrientDBProperties implements OgmProperties {
 
 	/**
-	 * Format of datetime. Default value 'yyyy-MM-dd HH:mm:ss'
+	 * Format of datetime. Default value 'yyyy-MM-dd HH:mm:ss z'
 	 */
 	public static final String DATETIME_FORMAT = "hibernate.ogm.orientdb.format.datetime";
 	/**
@@ -30,6 +30,27 @@ public class OrientDBProperties implements OgmProperties {
 	 * @see DatabaseTypeEnum
 	 */
 	public static final String DATEBASE_TYPE = "hibernate.ogm.orientdb.dbtype";
+	/**
+	 * Type of storage.
+	 *
+	 * @see StorageModeEnum
+	 */
+	public static final String STORAGE_MODE_TYPE = "hibernate.ogm.orientdb.storage";
+	/**
+	 * Database pool size
+	 *
+	 * @see StorageModeEnum
+	 */
+	public static final String POOL_SIZE = "hibernate.ogm.orientdb.pool.size";
+	/**
+	 * Property for setting the user name to connect with. Accepts {@code String}.
+	 */
+	public static final String ROOT_USERNAME = "hibernate.ogm.orientdb.root.username";
+
+	/**
+	 * Property for setting the password to connect with. Accepts {@code String}.
+	 */
+	public static final String ROOT_PASSWORD = "hibernate.ogm.orientdb.root.password";
 
 	private OrientDBProperties() {
 	}
@@ -39,7 +60,11 @@ public class OrientDBProperties implements OgmProperties {
 	 *
 	 * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
 	 */
-	public static enum DatabaseTypeEnum {
+	public static enum StorageModeEnum {
 		MEMORY, PLOCAL, REMOTE
+	}
+
+	public static enum DatabaseTypeEnum {
+		DOCUMENT, GRAPH;
 	}
 }

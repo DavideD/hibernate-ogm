@@ -7,9 +7,6 @@
 package org.hibernate.ogm.datastore.orientdb;
 
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,16 +19,15 @@ import java.util.Map;
 import org.hibernate.StaleObjectStateException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
-import org.hibernate.ogm.datastore.orientdb.constant.OrientDBMapping;
 import org.hibernate.ogm.datastore.orientdb.dialect.impl.OrientDBAssociationQueries;
 import org.hibernate.ogm.datastore.orientdb.dialect.impl.OrientDBAssociationSnapshot;
 import org.hibernate.ogm.datastore.orientdb.dialect.impl.OrientDBEntityQueries;
 import org.hibernate.ogm.datastore.orientdb.dialect.impl.OrientDBTupleAssociationSnapshot;
 import org.hibernate.ogm.datastore.orientdb.dialect.impl.OrientDBTupleSnapshot;
-import org.hibernate.ogm.datastore.orientdb.dialect.impl.ResultSetTupleIterator;
+import org.hibernate.ogm.datastore.orientdb.dialect.impl.ODocumentListTupleIterator;
 import org.hibernate.ogm.datastore.orientdb.dto.GenerationResult;
 import org.hibernate.ogm.datastore.orientdb.impl.OrientDBDatastoreProvider;
-import org.hibernate.ogm.datastore.orientdb.impl.OrientDBSchemaDefiner;
+import org.hibernate.ogm.datastore.orientdb.schema.OrientDBDocumentSchemaDefiner;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.ogm.datastore.orientdb.query.impl.OrientDBParameterMetadataBuilder;
@@ -81,10 +77,13 @@ import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.type.Type;
 
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.exception.OConcurrentModificationException;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.hibernate.ogm.datastore.orientdb.utils.NativeQueryUtil;
+import org.hibernate.ogm.model.spi.EntityMetadataInformation;
 
 /**
  * Implementation of dialect for OrientDB
@@ -102,7 +101,8 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
  * @see IdentityColumnAwareGridDialect
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
-public class OrientDBDialect extends BaseGridDialect implements QueryableGridDialect<String>, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
+public class OrientDBDialect extends BaseGridDialect
+implements QueryableGridDialect<String>, SessionFactoryLifecycleAwareDialect, IdentityColumnAwareGridDialect {
 
 	private static final long serialVersionUID = 1L;
 	private static final Log log = LoggerFactory.getLogger();
@@ -124,24 +124,23 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	public OrientDBDialect(OrientDBDatastoreProvider provider) {
 		this.provider = provider;
 	}
- 
+
 	@Override
 	public Tuple getTuple(EntityKey key, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
 		log.debugf( "getTuple:EntityKey: %s ; tupleContext: %s; current thread: %s ", key, tupleContext, Thread.currentThread().getName() );
-		Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getConnection(), key );
-		if ( dbValuesMap == null || dbValuesMap.isEmpty() ) {
+		ODocument document = entityQueries.get( key.getMetadata() ).findEntity( provider.getCurrentDatabase(), key );
+		if ( document == null ) {
 			return null;
 		}
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot( dbValuesMap );
-		return new Tuple( snapshot, SnapshotType.UPDATE );
+		return new Tuple( new OrientDBTupleSnapshot( document ), SnapshotType.UPDATE );
 	}
 
 	@Override
 	public Tuple createTuple(EntityKey key, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
 		log.debugf( "createTuple:EntityKey: %s ; tupleContext: %s ", key, tupleContext );
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot();
+		TupleSnapshot snapshot = new OrientDBTupleSnapshot(new ODocument(key.getTable()));
 		return new Tuple( snapshot, SnapshotType.INSERT );
 	}
 
@@ -149,7 +148,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	public Tuple createTuple(EntityKeyMetadata entityKeyMetadata, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
 		log.debugf( "createTuple:EntityKeyMetadata: %s ; tupleContext: ", entityKeyMetadata, tupleContext );
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot();
+		TupleSnapshot snapshot = new OrientDBTupleSnapshot(new ODocument(entityKeyMetadata.getTable()));
 		return new Tuple( snapshot, SnapshotType.INSERT );
 	}
 
@@ -163,9 +162,9 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		Tuple tuple = tuplePointer.getTuple();
 		log.debugf( "insertOrUpdateTuple:EntityKey: %s ; tupleContext: %s ; tuple: %s ; thread: %s",
 				key, tupleContext, tuple, Thread.currentThread().getName() );
-		Connection connection = provider.getConnection();
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
 		OrientDBTupleSnapshot snapshot = (OrientDBTupleSnapshot) tuple.getSnapshot();
-		boolean existsInDB = EntityKeyUtil.existsPrimaryKeyInDB( connection, key );
+		boolean existsInDB = EntityKeyUtil.existsPrimaryKeyInDB( db, key );
 		QueryType queryType = QueryTypeDefiner.define( existsInDB, snapshot.isNew() );
 		log.debugf( "insertOrUpdateTuple: snapshot.isNew(): %b ,snapshot.isEmpty(): %b; exists in DB: %b; query type: %s ",
 				snapshot.isNew(), snapshot.isEmpty(), existsInDB, queryType );
@@ -190,18 +189,18 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		}
 
 		try {
-			log.debugf( "insertOrUpdateTuple:Key: %s; Query: %s; ", key, queryBuffer );
-			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
-			int updateCount = pstmt.executeUpdate();
-			log.debugf( "insertOrUpdateTuple:Key: %s ;inserted or updated: %d ", key, updateCount );
-			if ( updateCount == 0 && queryType.equals( QueryType.UPDATE ) ) {
-				// primary key was in DB .... but during prepare query someone remove it from DB.
-				Integer currentVersion = (Integer) snapshot.get( OrientDBConstant.SYSTEM_VERSION );
-				throw log.versionNotActual( key, currentVersion );
+                        log.debugf( "insertOrUpdateTuple:query: %s ", queryBuffer );
+			Object result = NativeQueryUtil.executeNonIdempotentQuery( db, queryBuffer );
+			log.debugf( "insertOrUpdateTuple:executeNonIdempotentQuery: queryType: %s; class: %s ", queryType, result.getClass().getName() );
+			switch ( queryType ) {
+				case INSERT:
+					log.debugf( "insertOrUpdateTuple:Key: %s; Query: %s; Inserted rows: %d ", key,queryBuffer, 1 );
+					break;
+				case UPDATE:
+					log.debugf( "insertOrUpdateTuple:Key: %s; Query: %s; Updated rows: %d ", key, queryBuffer, (Number) result );
+					break;
 			}
-		}
-		catch (SQLException sqle) {
-			throw log.cannotExecuteQuery( queryBuffer.toString(), sqle );
+
 		}
 		catch (OConcurrentModificationException cme) {
 			throw new StaleObjectStateException( key.getTable(), (Serializable) EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
@@ -215,7 +214,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 		String dbKeyName = entityKeyMetadata.getColumnNames()[0];
 		Long dbKeyValue = null;
-		Connection connection = provider.getConnection();
+
 		String query = null;
 
 		if ( dbKeyName.equals( OrientDBConstant.SYSTEM_RID ) ) {
@@ -224,8 +223,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		}
 		else {
 			// use business key. get new id from sequence
-			String seqName = OrientDBSchemaDefiner.generateSeqName( entityKeyMetadata.getTable(), dbKeyName );
-			dbKeyValue = (Long) SequenceUtil.getNextSequenceValue( connection, seqName );
+			String seqName = OrientDBDocumentSchemaDefiner.generateSeqName( entityKeyMetadata.getTable(), dbKeyName );
+			dbKeyValue = (Long) SequenceUtil.getNextSequenceValue( provider.getCurrentDatabase(), seqName );
 			tuple.put( dbKeyName, dbKeyValue );
 		}
 		GenerationResult result = INSERT_QUERY_GENERATOR.generate( entityKeyMetadata.getTable(), tuple, true,
@@ -233,40 +232,33 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		query = result.getExecutionQuery();
 
 		log.debugf( "insertTuple: insertQuery: %s ", result.getExecutionQuery() );
-		try {
-			PreparedStatement pstmt = connection.prepareStatement( result.getExecutionQuery() );
-			log.debugf( "insertTuple:Key: %s (%s) ;inserted or updated: %d ", dbKeyName, dbKeyValue, pstmt.executeUpdate() );
-		}
-		catch (SQLException sqle) {
-			throw log.cannotExecuteQuery( query, sqle );
-		}
+		ODocument insertedRow = (ODocument) NativeQueryUtil.executeNonIdempotentQuery( provider.getCurrentDatabase(), result.getExecutionQuery() );
+
+		log.debugf( "insertTuple: Query: %s; inserted rows: %d ", query, insertedRow );
 	}
 
 	@Override
 	public void removeTuple(EntityKey key, TupleContext tupleContext) {
 		log.debugf( "removeTuple:EntityKey: %s ; tupleContext %s ; current thread: %s",
 				key, tupleContext, Thread.currentThread().getName() );
-		Connection connection = provider.getConnection();
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
 		StringBuilder queryBuffer = new StringBuilder( 100 );
-		try {
-			queryBuffer.append( "DELETE VERTEX " ).append( key.getTable() ).append( " where " ).append( EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
-			log.debugf( "removeTuple:Key: %s. query: %s ", key, queryBuffer );
-			PreparedStatement pstmt = connection.prepareStatement( queryBuffer.toString() );
-			log.debugf( "removeTuple:Key: %s. remove: %s", key, pstmt.executeUpdate() );
+		queryBuffer.append( "select from " ).append( key.getTable() ).append( " where " ).append( EntityKeyUtil.generatePrimaryKeyPredicate( key ) );
+		log.debugf( "removeTuple:Key: %s. query: %s ", key, queryBuffer );
+		List<ODocument> removeDocs = NativeQueryUtil.executeIdempotentQuery( db, queryBuffer );
+		for ( ODocument removeDoc : removeDocs ) {
+			removeDoc.delete();
 		}
-		catch (SQLException e) {
-			throw log.cannotExecuteQuery( queryBuffer.toString(), e );
-		}
+		log.debugf( "removeTuple: removed entities: %d ", removeDocs.size() );
 	}
 
 	@Override
 	public Association getAssociation(AssociationKey associationKey, AssociationContext associationContext) {
 		log.debugf( "getAssociation:AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
 		EntityKey entityKey = associationKey.getEntityKey();
-		Connection connection = provider.getConnection();
-		boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( connection, entityKey );
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
+		boolean existsPrimaryKey = EntityKeyUtil.existsPrimaryKeyInDB( db, entityKey );
 		if ( !existsPrimaryKey ) {
-			// Entity now extists
 			return ASSOCIATION_NOT_FOUND;
 		}
 		Map<RowKey, Tuple> tuples = createAssociationMap( associationKey, associationContext );
@@ -276,9 +268,9 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 
 	private Map<RowKey, Tuple> createAssociationMap(AssociationKey associationKey, AssociationContext associationContext) {
 		log.debugf( "createAssociationMap:AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
-		Connection connection = provider.getConnection();
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
 		List<Map<String, Object>> relationships = entityQueries.get( associationKey.getEntityKey().getMetadata() )
-				.findAssociation( connection, associationKey, associationContext );
+				.findAssociation( db, associationKey, associationContext );
 
 		Map<RowKey, Tuple> tuples = new LinkedHashMap<>();
 
@@ -346,7 +338,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 			return;
 		}
 
-		associationQueries.get( key.getMetadata() ).removeAssociation( provider.getConnection(), key, associationContext );
+		associationQueries.get( key.getMetadata() ).removeAssociation( provider.getCurrentDatabase(), key, associationContext );
 	}
 
 	private void removeAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
@@ -358,15 +350,15 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		if ( associationKey.getMetadata().isInverse() ) {
 			return;
 		}
-		associationQueries.get( associationKey.getMetadata() ).removeAssociationRow( provider.getConnection(), associationKey, action.getKey() );
+		associationQueries.get( associationKey.getMetadata() ).removeAssociationRow( provider.getCurrentDatabase(), associationKey, action.getKey() );
 	}
 
 	private void putAssociationOperation(Association association, AssociationKey associationKey, AssociationOperation action,
 			AssociatedEntityKeyMetadata associatedEntityKeyMetadata) {
 		log.debugf( "putAssociationOperation: : action: %s ; metadata: %s; association:%s", action, associationKey.getMetadata(), association );
-		Connection connection = provider.getConnection();
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
 		if ( associationQueries.containsKey( associationKey.getMetadata() ) ) {
-			List<Map<String, Object>> relationship = associationQueries.get( associationKey.getMetadata() ).findRelationship( connection,
+			List<Map<String, Object>> relationship = associationQueries.get( associationKey.getMetadata() ).findRelationship( db,
 					associationKey, action.getKey() );
 			if ( relationship.isEmpty() ) {
 				// create
@@ -390,13 +382,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				associationKey.getMetadata(), associationRow, associatedEntityKeyMetadata );
 		GenerationResult result = INSERT_QUERY_GENERATOR.generate( associationKey.getTable(), associationRow, false, Collections.<String>emptySet() );
 		log.debugf( "createRelationshipWithNode: query: %s", result.getExecutionQuery() );
-		try {
-			PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
-			log.debugf( "createRelationshipWithNode: execute insert query: %d", pstmt.executeUpdate() );
-		}
-		catch (SQLException sqle) {
-			throw log.cannotExecuteQuery( result.getExecutionQuery(), sqle );
-		}
+		ODocument insertedRow = (ODocument) NativeQueryUtil.executeNonIdempotentQuery( provider.getCurrentDatabase(), result.getExecutionQuery() );
+		log.debugf( "createRelationshipWithNode: created rows: %d", ( insertedRow != null ? 1 : 0 ) );
 	}
 
 	private void updateRelationshipWithNode(AssociationKey associationKey, Tuple associationRow,
@@ -406,13 +393,8 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 		if ( AssociationKind.EMBEDDED_COLLECTION.equals( associationKey.getMetadata().getAssociationKind() ) ) {
 			GenerationResult result = UPDATE_QUERY_GENERATOR.generate( associationKey, associationRow );
 			log.debugf( "updateRelationshipWithNode: query: %s", result.getExecutionQuery() );
-			try {
-				PreparedStatement pstmt = provider.getConnection().prepareStatement( result.getExecutionQuery() );
-				log.debugf( "updateRelationshipWithNode: execute update query: %d", pstmt.executeUpdate() );
-			}
-			catch (SQLException sqle) {
-				throw log.cannotExecuteQuery( result.getExecutionQuery(), sqle );
-			}
+			Number count = (Number) NativeQueryUtil.executeNonIdempotentQuery( provider.getCurrentDatabase(), result.getExecutionQuery() );
+			log.debugf( "updateRelationshipWithNode: execute update query: %d", count );
 		}
 		else {
 			log.debugf( "updateRelationshipWithNode: update  association  not needs!" );
@@ -428,12 +410,12 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	public Number nextValue(NextValueRequest request) {
 		log.debugf( "NextValueRequest: %s", request );
 		long nextValue = 0;
-		Connection connection = provider.getConnection();
+		ODatabaseDocumentTx db = provider.getCurrentDatabase();
 		IdSourceType type = request.getKey().getMetadata().getType();
 		switch ( type ) {
 			case SEQUENCE:
 				String seqName = request.getKey().getMetadata().getName();
-				nextValue = SequenceUtil.getNextSequenceValue( connection, seqName );
+				nextValue = SequenceUtil.getNextSequenceValue( db, seqName );
 				break;
 			case TABLE:
 				String seqTableName = "sequences";
@@ -442,7 +424,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				String pkColumnValue = (String) request.getKey().getColumnValue();
 				log.debugf( "seqTableName:%s, pkColumnName:%s, pkColumnValue:%s, valueColumnName:%s",
 						seqTableName, pkColumnName, pkColumnValue, valueColumnName );
-				nextValue = SequenceUtil.getNextTableValue( connection, seqTableName, pkColumnName, pkColumnValue, valueColumnName,
+				nextValue = SequenceUtil.getNextTableValue( db, seqTableName, pkColumnName, pkColumnValue, valueColumnName,
 						request.getInitialValue(), request.getIncrement() );
 		}
 		log.debugf( "nextValue: %d", nextValue );
@@ -459,62 +441,40 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	 *
 	 * @param backendQuery represention of NoSQL query
 	 * @param queryParameters parameters of the query
-	 * @return Prepared PreparedStatement
-	 * @throws SQLException if any database exception occurs
+	 * @return Collection with documents
+	 * @see ODocument
 	 */
 
-	@SuppressWarnings("unchecked")
-	private PreparedStatement prepareStatement(BackendQuery<String> backendQuery, QueryParameters queryParameters) throws SQLException {
+	private List<ODocument> executeNativeQueryWithParams(BackendQuery<String> backendQuery, QueryParameters queryParameters) {
 		Map<String, Object> parameters = getNamedParameterValuesConvertedByGridType( queryParameters );
-		log.debugf( "prepareStatement: parameters: %s ; ",
+		log.debugf( "executeNativeQueryWithParams: parameters: %s ; ",
 				parameters.keySet() );
-		String nativeQuery = backendQuery.getQuery();
-		log.debugf( "prepareStatement: nativeQuery: %s ; metadata: %s",
-				backendQuery.getQuery(), backendQuery.getSingleEntityMetadataInformationOrNull() );
-		PreparedStatement pstmt = provider.getConnection().prepareStatement( nativeQuery );
-		int paramIndex = 1;
+		String nativeQueryTemplate = backendQuery.getQuery();
+		EntityMetadataInformation queryMetadata = backendQuery.getSingleEntityMetadataInformationOrNull();
+		log.debugf( "executeNativeQueryWithParams: nativeQuery: %s ; metadata: %s",
+				backendQuery.getQuery(), queryMetadata.toString() );
+		Map<String, Object> queryParams = new HashMap<>();
 		for ( Map.Entry<String, TypedGridValue> entry : queryParameters.getNamedParameters().entrySet() ) {
 			String key = entry.getKey();
 			TypedGridValue value = entry.getValue();
-			log.debugf( "prepareStatement: key: %s ; type: %s ; value: %s; type class: %s ",
+			log.debugf( "executeNativeQueryWithParams: paramName: %s ; type: %s ; value: %s; type class: %s ",
 					key, value.getType(), value.getValue(), value.getType().getReturnedClass() );
-			try {
-				if ( OrientDBMapping.SIMPLE_VALUE_SETTER_MAP.containsKey( value.getType() ) ) {
-					OrientDBMapping.SIMPLE_VALUE_SETTER_MAP.get( value.getType() ).setValue( pstmt, paramIndex, value.getValue() );
-				}
-				else {
-					throw new UnsupportedOperationException( "Type " + value.getType() + " is not supported!" );
-				}
-
-			}
-			catch (SQLException sqle) {
-				throw log.cannotSetValueForParameter( paramIndex, sqle );
-			}
-			paramIndex++;
+			queryParams.put( key, value.getValue() );
 		}
-		return pstmt;
+		log.debugf( "executeNativeQueryWithParams: nativeQuery: %s ; params: %s",
+				backendQuery.getQuery(), queryParams );
+		return NativeQueryUtil.executeIdempotentQueryWithParams( provider.getCurrentDatabase(), nativeQueryTemplate, queryParams );
 	}
 
 	@Override
 	public int executeBackendUpdateQuery(BackendQuery<String> query, QueryParameters queryParameters, TupleContext tupleContext) {
-		try {
-			PreparedStatement pstmt = prepareStatement( query, queryParameters );
-			return pstmt.executeUpdate();
-		}
-		catch (SQLException e) {
-			throw log.cannotExecuteQuery( query.getQuery(), e );
-		}
+		//List<ODocument> documents = executeNativeQueryWithParams( query, queryParameters );
+		throw new UnsupportedOperationException( "call executeBackendUpdateQuery!" );
 	}
 
 	@Override
 	public ClosableIterator<Tuple> executeBackendQuery(BackendQuery<String> query, QueryParameters queryParameters, TupleContext tupleContext) {
-		try {
-			PreparedStatement pstmt = prepareStatement( query, queryParameters );
-			return new ResultSetTupleIterator( pstmt.executeQuery() );
-		}
-		catch (SQLException e) {
-			throw log.cannotExecuteQuery( query.getQuery(), e );
-		}
+		return new ODocumentListTupleIterator( executeNativeQueryWithParams( query, queryParameters ) );
 	}
 
 	/**

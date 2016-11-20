@@ -7,18 +7,18 @@
 
 package org.hibernate.ogm.datastore.orientdb.utils;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
 import org.hibernate.mapping.Column;
 import org.hibernate.ogm.model.key.spi.EntityKey;
+
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 
 /**
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
@@ -74,24 +74,15 @@ public class EntityKeyUtil {
 		return buffer.toString();
 	}
 
-	public static boolean existsPrimaryKeyInDB(Connection connection, EntityKey key) {
-		boolean exists = false;
-		StringBuilder buffer = new StringBuilder( 100 );
-		try {
-			Statement stmt = connection.createStatement();
-			buffer.append( "select count(@rid) from " );
-			buffer.append( key.getTable() ).append( " where " );
-			buffer.append( generatePrimaryKeyPredicate( key ) );
-			ResultSet rs = stmt.executeQuery( buffer.toString() );
-			if ( rs.next() ) {
-				long count = rs.getLong( 1 );
-				exists = count > 0;
-			}
-		}
-		catch (SQLException sqle) {
-			throw log.cannotExecuteQuery( buffer.toString(), sqle );
+	public static boolean existsPrimaryKeyInDB(ODatabaseDocumentTx db, EntityKey key) {
 
-		}
-		return exists;
+		StringBuilder buffer = new StringBuilder( 100 );
+		buffer.append( "select count(@rid) as c from " );
+		buffer.append( key.getTable() ).append( " where " );
+		buffer.append( generatePrimaryKeyPredicate( key ) );
+		List<ODocument> documents = NativeQueryUtil.executeIdempotentQuery( db, buffer );
+		Long count = (Long) ( documents.isEmpty() ? 0L : documents.get( 0 ).field( "c", Long.class ) );
+
+		return ( count > 0 );
 	}
 }

@@ -13,11 +13,12 @@ import org.hibernate.ogm.options.navigation.spi.ConfigurationContext;
 import org.hibernate.ogm.options.navigation.spi.GenericOptionModel;
 
 /**
- *  Allows to configure options specific to the OrientDB graph data store.
+ * Allows to configure options specific to the OrientDB graph data store.
  *
  * @author Sergey Chernolyas &lt;sergey.chernolyas@gmail.com&gt;
  */
 public class OrientDB implements DatastoreConfiguration<GlobalContext<?, ?>> {
+
 	/**
 	 * Short name of this data store provider.
 	 *

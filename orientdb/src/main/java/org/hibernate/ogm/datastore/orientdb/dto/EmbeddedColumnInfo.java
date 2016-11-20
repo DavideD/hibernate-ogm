@@ -6,9 +6,11 @@
  */
 package org.hibernate.ogm.datastore.orientdb.dto;
 
-import java.util.Arrays;
+
 import java.util.LinkedList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
+
 
 /**
  * The class is presentation of column of embedded entity.
@@ -31,7 +33,11 @@ public class EmbeddedColumnInfo {
 	 */
 	public EmbeddedColumnInfo(String sourcePropertyName) {
 		String[] parts = sourcePropertyName.split( "\\." );
-		classNames = new LinkedList<>( Arrays.asList( parts ) );
+                classNames = new LinkedList<>();
+                for (int i = 0; i < parts.length; i++) {
+                    String part = parts[i];
+                    classNames.add(StringUtils.capitalize(part));
+                }
 		propertyName = classNames.getLast();
 		classNames.removeLast();
 	}
