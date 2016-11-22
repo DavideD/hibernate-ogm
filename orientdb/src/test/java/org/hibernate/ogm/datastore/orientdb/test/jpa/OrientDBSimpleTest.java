@@ -70,9 +70,9 @@ public class OrientDBSimpleTest extends OgmJpaTestCase {
 			log.debug( "New Customer ready for  persit" );
 			em.persist( newCustomer );
 			em.flush();
-                        em.getTransaction().commit();
-                        
-                        em.getTransaction().begin();
+			em.getTransaction().commit();
+
+			em.getTransaction().begin();
 			Query query = em.createNativeQuery( "select from Customer where name=:name", Customer.class );
 			query.setParameter( "name", "test" );
 			List<Customer> customers = query.getResultList();
@@ -99,9 +99,9 @@ public class OrientDBSimpleTest extends OgmJpaTestCase {
 			newPizza.setName( "Marinero" );
 			em.persist( newPizza );
 			em.flush();
-                        em.getTransaction().commit();
-                        
-                        em.getTransaction().begin();
+			em.getTransaction().commit();
+
+			em.getTransaction().begin();
 			Query query = em.createNativeQuery( "select from Pizza where name=:name", Pizza.class );
 			query.setParameter( "name", "Marinero" );
 			List<Pizza> pizzaList = query.getResultList();
@@ -124,7 +124,7 @@ public class OrientDBSimpleTest extends OgmJpaTestCase {
 			em.getTransaction().begin();
 			Customer customer = em.find( Customer.class, 1L );
 			em.refresh( customer );
-                        
+
 			log.debug( "read entity properties:" );
 			log.debug( "customer.getbKey():" + customer.getbKey() );
 			log.debug( "customer.getName(): " + customer.getName() );
@@ -213,9 +213,9 @@ public class OrientDBSimpleTest extends OgmJpaTestCase {
 			log.debug( "old version:" + oldVersion );
 			em.merge( customer );
 			em.flush();
-                        em.getTransaction().commit();
-                        
-                        em.getTransaction().begin();                        
+			em.getTransaction().commit();
+
+			em.getTransaction().begin();
 			Customer newCustomer = em.find( Customer.class, id );
 			assertNotNull( "Must not be null", newCustomer );
 			assertEquals( customer.getRid(), newCustomer.getRid() );
@@ -287,7 +287,7 @@ public class OrientDBSimpleTest extends OgmJpaTestCase {
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
 		return new Class<?>[]{ Customer.class, Pizza.class, Product.class, BuyingOrder.class,
-			ProductType.class, OrderItem.class };
+				ProductType.class, OrderItem.class };
 	}
 
 }

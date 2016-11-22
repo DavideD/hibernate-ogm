@@ -98,7 +98,7 @@ public class SequenceNextValueGenerationTest extends TestNextValueGeneration {
 
 		@Id
 		@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "gen1")
-		@SequenceGenerator( name = "gen1", sequenceName = INITIAL_VALUE_SEQUENCE, initialValue = INITIAL_VALUE_TEST_FIRST_VALUE )
+		@SequenceGenerator( name = "gen1", sequenceName = INITIAL_VALUE_SEQUENCE, initialValue = INITIAL_VALUE_TEST_FIRST_VALUE, allocationSize = 1 )
 		Long id;
 	}
 
@@ -108,7 +108,7 @@ public class SequenceNextValueGenerationTest extends TestNextValueGeneration {
 
 		@Id
 		@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "gen2")
-		@SequenceGenerator( name = "gen2", sequenceName = THREAD_SAFETY_SEQUENCE, initialValue = THREAD_SAFETY_FIRST_VALUE )
+		@SequenceGenerator( name = "gen2", sequenceName = THREAD_SAFETY_SEQUENCE, initialValue = THREAD_SAFETY_FIRST_VALUE, allocationSize = 3 )
 		Long id;
 	}
 }

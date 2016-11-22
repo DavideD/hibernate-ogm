@@ -9,7 +9,6 @@ package org.hibernate.ogm.datastore.orientdb.utils;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.metadata.function.OFunction;
-import com.orientechnologies.orient.core.metadata.sequence.OSequence;
 import com.orientechnologies.orient.core.metadata.sequence.OSequenceLibrary;
 
 import org.hibernate.HibernateException;
@@ -38,8 +37,7 @@ public class SequenceUtil {
 		if ( !library.getSequenceNames().contains( seqNameUpperCase ) ) {
 			throw log.sequenceNotExists( seqName );
 		}
-		OSequence sequence = library.getSequence( seqNameUpperCase );
-		return sequence.next();
+		return library.getSequence( seqNameUpperCase ).next();
 	}
 
 	/**

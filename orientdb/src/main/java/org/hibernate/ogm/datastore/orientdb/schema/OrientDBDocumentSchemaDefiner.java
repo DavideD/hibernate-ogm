@@ -47,6 +47,7 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.sequence.OSequence;
 import com.orientechnologies.orient.core.metadata.sequence.OSequence.CreateParams;
 import com.orientechnologies.orient.core.metadata.sequence.OSequence.SEQUENCE_TYPE;
+import com.orientechnologies.orient.core.metadata.sequence.OSequenceLibrary;
 
 import org.hibernate.boot.model.relational.Sequence;
 import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
@@ -96,15 +97,21 @@ public class OrientDBDocumentSchemaDefiner extends BaseSchemaDefiner {
 	}
 
 	private void createSequence(ODatabaseDocumentTx db, String seqName, int startValue, int incValue) {
-		OSequence seq = db.getMetadata().getSequenceLibrary().getSequence( seqName );
+		OSequenceLibrary library = db.getMetadata().getSequenceLibrary();
+		OSequence seq = library.getSequence( seqName );
 		if ( seq == null ) {
 			CreateParams p = new CreateParams();
-			p.setStart( (long) ( startValue == 0 ? 0 : startValue - 1 ) );
-			if ( incValue > 0 ) {
+			p.setStart( (long) ( startValue == 0 ? 0 : startValue - incValue ) );
+			// p.setStart( (long) ( startValue ) );
+			if ( incValue != -1 ) {
 				p.setIncrement( incValue );
 			}
-			seq = db.getMetadata().getSequenceLibrary().createSequence( seqName, SEQUENCE_TYPE.ORDERED, p );
-			log.debugf( "sequence %s created. current value: %d ", seq.getName(), seq.current() );
+			else {
+				p.setIncrement( 1 );
+			}
+			log.debugf( "sequence %s created. incValue: %d ", seqName, incValue );
+			seq = library.createSequence( seqName, SEQUENCE_TYPE.ORDERED, p );
+			log.debugf( "sequence %s created. current value: %d, json:%s ", seq.getName(), seq.current(), seq.getDocument().toJSON() );
 		}
 	}
 
@@ -195,6 +202,8 @@ public class OrientDBDocumentSchemaDefiner extends BaseSchemaDefiner {
 
 		for ( Namespace namespace : context.getDatabase().getNamespaces() ) {
 			for ( Sequence sequence : namespace.getSequences() ) {
+				log.debugf( "createEntities. sequence %s . incValue: %d, increment size: %d ",
+						sequence.getName().getSequenceName().getCanonicalName(), sequence.getInitialValue(), sequence.getIncrementSize() );
 				createSequence( db, sequence.getName().getSequenceName().getCanonicalName(), sequence.getInitialValue(), sequence.getIncrementSize() );
 			}
 
@@ -327,7 +336,6 @@ public class OrientDBDocumentSchemaDefiner extends BaseSchemaDefiner {
 		}
 		uniqueIndexQuery.append( ") UNIQUE" );
 
-		// try {
 		log.debugf( "primary key query: %s", uniqueIndexQuery );
 		NativeQueryUtil.executeNonIdempotentQuery( db, uniqueIndexQuery );
 

@@ -424,6 +424,7 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 						seqTableName, pkColumnName, pkColumnValue, valueColumnName );
 				nextValue = SequenceUtil.getNextTableValue( db, seqTableName, pkColumnName, pkColumnValue, valueColumnName,
 						request.getInitialValue(), request.getIncrement() );
+				break;
 		}
 		log.debugf( "nextValue: %d", nextValue );
 		return nextValue;
