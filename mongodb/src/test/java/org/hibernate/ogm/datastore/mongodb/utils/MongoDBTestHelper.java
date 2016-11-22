@@ -241,7 +241,11 @@ public class MongoDBTestHelper implements GridDialectTestHelper {
 
 	@Override
 	public Map<String, String> getEnvironmentProperties() {
-		//read variables from the System properties set in the static initializer
+		return getMongoDBSettings();
+	}
+
+	// read variables from the System properties set in the static initializer
+	public static Map<String, String> getMongoDBSettings() {
 		Map<String, String> envProps = new HashMap<String, String>( 4 );
 		copyFromSystemPropertiesToLocalEnvironment( OgmProperties.HOST, envProps );
 		copyFromSystemPropertiesToLocalEnvironment( OgmProperties.PORT, envProps );
@@ -250,7 +254,7 @@ public class MongoDBTestHelper implements GridDialectTestHelper {
 		return envProps;
 	}
 
-	private void copyFromSystemPropertiesToLocalEnvironment(String environmentVariableName, Map<String, String> envProps) {
+	private static void copyFromSystemPropertiesToLocalEnvironment(String environmentVariableName, Map<String, String> envProps) {
 		String value = System.getProperties().getProperty( environmentVariableName );
 		if ( value != null && value.length() > 0 ) {
 			envProps.put( environmentVariableName, value );
