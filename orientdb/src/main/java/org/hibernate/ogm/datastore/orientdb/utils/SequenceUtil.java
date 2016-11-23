@@ -25,7 +25,7 @@ public class SequenceUtil {
 	private static final Log log = LoggerFactory.getLogger();
 
 	/**
-	 * Get next value from sequence *
+	 * Get next value from sequence
 	 *
 	 * @param db instance of OrientDB
 	 * @param seqName name of sequence
@@ -51,7 +51,8 @@ public class SequenceUtil {
 	 * @throws HibernateException if {@link SQLException} or {@link OException} occurs
 	 */
 
-	public static long getNextTableValue(ODatabaseDocumentTx db, String seqTable, String pkColumnName, String pkColumnValue, String valueColumnName,
+	public static synchronized long getNextTableValue(ODatabaseDocumentTx db, String seqTable, String pkColumnName, String pkColumnValue,
+			String valueColumnName,
 			Integer initValue, Integer inc) {
 		OFunction getTableSeqValue = db.getMetadata().getFunctionLibrary().getFunction( OrientDBConstant.GET_TABLE_SEQ_VALUE_FUNC );
 		Number nextValue = (Number) getTableSeqValue.execute( seqTable, pkColumnName, pkColumnValue, valueColumnName, initValue, inc );
