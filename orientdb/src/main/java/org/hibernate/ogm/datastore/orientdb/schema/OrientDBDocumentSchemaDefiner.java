@@ -128,9 +128,9 @@ public class OrientDBDocumentSchemaDefiner extends BaseSchemaDefiner {
 
 	private void createGetTableSeqValueFunc(ODatabaseDocumentTx db) {
 		log.debugf( "functions : %s", db.getMetadata().getFunctionLibrary().getFunctionNames() );
-		OFunction getTableSeqValue = db.getMetadata().getFunctionLibrary().getFunction( "getTableSeqValue" );
+		OFunction getTableSeqValue = db.getMetadata().getFunctionLibrary().getFunction( OrientDBConstant.GET_TABLE_SEQ_VALUE_FUNC );
 		if ( getTableSeqValue == null ) {
-			getTableSeqValue = db.getMetadata().getFunctionLibrary().createFunction( "getTableSeqValue" );
+			getTableSeqValue = db.getMetadata().getFunctionLibrary().createFunction( OrientDBConstant.GET_TABLE_SEQ_VALUE_FUNC );
 			getTableSeqValue.setLanguage( "groovy" );
 			getTableSeqValue.setIdempotent( false );
 			getTableSeqValue.setParameters( Arrays.asList( new String[]{ "seqName", "pkColumnName",
@@ -156,21 +156,37 @@ public class OrientDBDocumentSchemaDefiner extends BaseSchemaDefiner {
 					+ "};   "
 					+ "return nextValue; " );
 			getTableSeqValue.save();
-			log.infof( "stored procedure % created", "getTableSeqValue" );
+			log.infof( "stored procedure % created", OrientDBConstant.GET_TABLE_SEQ_VALUE_FUNC );
+		}
+	}
+
+	private void createGetNextSeqValueFunc(ODatabaseDocumentTx db) {
+		log.debugf( "functions : %s", db.getMetadata().getFunctionLibrary().getFunctionNames() );
+		OFunction getTableSeqValue = db.getMetadata().getFunctionLibrary().getFunction( OrientDBConstant.GET_NEXT_SEQ_VALUE_FUNC );
+		if ( getTableSeqValue == null ) {
+			getTableSeqValue = db.getMetadata().getFunctionLibrary().createFunction( OrientDBConstant.GET_NEXT_SEQ_VALUE_FUNC );
+			getTableSeqValue.setLanguage( "groovy" );
+			getTableSeqValue.setIdempotent( false );
+			getTableSeqValue.setParameters( Arrays.asList( new String[]{ "seqName" } ) );
+			getTableSeqValue.setCode( " def db = orient.getDatabase();"
+					+ " com.orientechnologies.orient.core.metadata.sequence.OSequenceLibrary library = db.getMetadata().getSequenceLibrary(); "
+					+ " return library.getSequence( seqName.toUpperCase() ).next(); " );
+			getTableSeqValue.save();
+			log.infof( "stored procedure % created", OrientDBConstant.GET_NEXT_SEQ_VALUE_FUNC );
 		}
 	}
 
 	private void createExecuteQueryFunc(ODatabaseDocumentTx db) {
 		log.debugf( "functions : %s", db.getMetadata().getFunctionLibrary().getFunctionNames() );
-		OFunction executeQuery = db.getMetadata().getFunctionLibrary().getFunction( "executeQuery" );
+		OFunction executeQuery = db.getMetadata().getFunctionLibrary().getFunction( OrientDBConstant.EXECUTE_QUERY_FUNC );
 		if ( executeQuery == null ) {
-			executeQuery = db.getMetadata().getFunctionLibrary().createFunction( "executeQuery" );
+			executeQuery = db.getMetadata().getFunctionLibrary().createFunction( OrientDBConstant.EXECUTE_QUERY_FUNC );
 			executeQuery.setLanguage( "groovy" );
 			executeQuery.setIdempotent( false );
 			executeQuery.setParameters( Arrays.asList( new String[]{ "insertQuery" } ) );
 			executeQuery.setCode( "return orient.getDatabase().command(insertQuery);" );
 			executeQuery.save();
-			log.infof( "stored procedure % created", "executeQuery" );
+			log.infof( "stored procedure % created", OrientDBConstant.EXECUTE_QUERY_FUNC );
 		}
 	}
 
@@ -503,6 +519,7 @@ public class OrientDBDocumentSchemaDefiner extends BaseSchemaDefiner {
 
 		createExecuteQueryFunc( db );
 		createGetTableSeqValueFunc( db );
+		createGetNextSeqValueFunc( db );
 		for ( IdSourceKeyMetadata metadata : context.getAllIdSourceKeyMetadata() ) {
 			log.debugf( "Name: %s ;KeyColumnName:%s ;ValueColumnName:%s ",
 					metadata.getName(), metadata.getKeyColumnName(), metadata.getValueColumnName() );
