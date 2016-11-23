@@ -25,13 +25,14 @@ public class SequenceUtil {
 	private static final Log log = LoggerFactory.getLogger();
 
 	/**
-	 * Get next value from sequence
+	 * Get next value from sequence	 *
 	 *
 	 * @param db instance of OrientDB
 	 * @param seqName name of sequence
 	 * @return next value of the sequence
 	 */
-	public static long getNextSequenceValue(ODatabaseDocumentTx db, String seqName) {
+	public static synchronized  long getNextSequenceValue(ODatabaseDocumentTx db, String seqName) {
+		// @todo set bug to OrientDB team about sequence and synchronized or try to use function (SQL)
 		OSequenceLibrary library = db.getMetadata().getSequenceLibrary();
 		final String seqNameUpperCase = seqName.toUpperCase();
 		if ( !library.getSequenceNames().contains( seqNameUpperCase ) ) {
