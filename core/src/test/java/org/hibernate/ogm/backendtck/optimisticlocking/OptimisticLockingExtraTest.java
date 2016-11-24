@@ -34,7 +34,7 @@ import org.junit.rules.ExpectedException;
  * @author Gunnar Morling
  */
 @SkipByGridDialect(
-		value = { GridDialectType.CASSANDRA, GridDialectType.INFINISPAN_REMOTE },
+		value = { GridDialectType.CASSANDRA, GridDialectType.INFINISPAN_REMOTE, GridDialectType.ORIENTDB },
 		comment = "list - bag semantics unsupported (no primary key),  OrientDB uses paradigm 'one thread, one connection, one transaction'"
 )
 public class OptimisticLockingExtraTest extends OgmTestCase {
