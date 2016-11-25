@@ -60,9 +60,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 	 */
 
 	public Map<String, Object> findEntity(ODatabaseDocumentTx db, EntityKey entityKey) {
-		Map<String, Object> dbValues = new LinkedHashMap<>();
 		StringBuilder query = new StringBuilder( "select from " );
-
 		if ( entityKey.getColumnNames().length == 1 && entityKey.getColumnValues()[0] instanceof ORecordId ) {
 			// search by @rid
 			ORecordId rid = (ORecordId) entityKey.getColumnValues()[0];
@@ -81,29 +79,16 @@ public class OrientDBEntityQueries extends QueriesBase {
 			return null;
 		}
 		ODocument currentDocument = documents.get( 0 );
-		dbValues = currentDocument.toMap();
+		Map<String, Object> dbValues = ODocumentUtil.toMap( currentDocument );
 		for ( String fieldName : dbValues.keySet() ) {
 			Object fieldValue = dbValues.get( fieldName );
 			if ( fieldValue instanceof ODocument ) {
 				dbValues.remove( fieldName );
 				dbValues.putAll( ODocumentUtil.extractNamesTree( fieldName, (ODocument) fieldValue ) );
 			}
-
 		}
 		reCastValues( dbValues );
-		/*
-		 * ResultSet rs = stmt.executeQuery( query.toString() ); if ( rs.next() ) { ResultSetMetaData metadata =
-		 * rs.getMetaData(); for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) { dbValues.put( systemField,
-		 * rs.getObject( systemField ) ); } for ( int i = 0; i < rs.getMetaData().getColumnCount(); i++ ) { int
-		 * dbFieldNo = i + 1; String dbColumnName = metadata.getColumnName( dbFieldNo ); Object dbValue = rs.getObject(
-		 * dbColumnName ); log.debugf( "%d dbColumnName: %s; dbValue class: %s; dbvalue: %s", i, dbColumnName, ( dbValue
-		 * != null ? dbValue.getClass() : null ), dbValue ); log.debugf( "%d dbColumnName: %s ; sql type: %s", i,
-		 * dbColumnName, rs.getMetaData().getColumnTypeName( dbFieldNo ) ); dbValues.put( dbColumnName, dbValue ); if (
-		 * dbValue instanceof ODocument ) { dbValues.remove( dbColumnName ); dbValues.putAll(
-		 * ODocumentUtil.extractNamesTree( dbColumnName, (ODocument) dbValue ) ); } } reCastValues( dbValues );
-		 * log.debugf( " entity values from db:  %s", dbValues ); } else { log.debugf(
-		 * " entity by primary key %s not found!", entityKey ); return null; }
-		 */
+		
 		return dbValues;
 	}
 
@@ -115,7 +100,6 @@ public class OrientDBEntityQueries extends QueriesBase {
 				BigDecimal bd = (BigDecimal) value;
 				entry.setValue( bd.toString() );
 			}
-
 		}
 	}
 
@@ -163,21 +147,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 			}
 			association.add( dbValues );
 		}
-		log.debugf( "findAssociation: rows :  %d", association.size() );
-
-		/*
-		 * try { Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery( query.toString() );
-		 * while ( rs.next() ) { Map<String, Object> dbValues = new LinkedHashMap<>(); ResultSetMetaData metadata =
-		 * rs.getMetaData(); for ( String systemField : OrientDBConstant.SYSTEM_FIELDS ) { dbValues.put( systemField,
-		 * rs.getObject( systemField ) ); } for ( int i = 0; i < rs.getMetaData().getColumnCount(); i++ ) { int
-		 * dbFieldNo = i + 1; String dbColumnName = metadata.getColumnName( dbFieldNo ); if ( isLinkedProperty(
-		 * dbColumnName ) ) { continue; } Object dbValue = rs.getObject( dbColumnName ); dbValues.put( dbColumnName,
-		 * dbValue ); if ( dbValue instanceof ODocument ) { dbValues.remove( dbColumnName ); dbValues.putAll(
-		 * ODocumentUtil.extractNamesTree( dbColumnName, (ODocument) dbValue ) ); } } log.debugf(
-		 * " entiry values from db: %s", dbValues ); association.add( dbValues ); } log.debugf(
-		 * "findAssociation: rows :  %d", association.size() ); } catch (SQLException sqle) { throw
-		 * log.cannotExecuteQuery( query.toString(), sqle ); }
-		 */
+		log.debugf( "findAssociation: rows :  %d", association.size() );		
 		return association;
 	}
 }
