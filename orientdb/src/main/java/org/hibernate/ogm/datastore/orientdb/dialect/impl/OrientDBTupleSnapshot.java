@@ -47,7 +47,7 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 	public Object get(String targetColumnName) {
 		log.debugf( "targetColumnName: %s", targetColumnName );
 		Object value = null;
-		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) ) {
+		if ( targetColumnName.equals( OrientDBConstant.SYSTEM_VERSION ) || targetColumnName.equals( "version" ) ) {
 			if ( dbNameValueMap.containsKey( OrientDBConstant.SYSTEM_VERSION ) ) {
 				value = dbNameValueMap.get( OrientDBConstant.SYSTEM_VERSION );
 			}
@@ -55,14 +55,6 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 				value = 0;
 			}
 			log.debugf( "targetColumnName: %s, value: %d", targetColumnName, value );
-		}
-		else if ( targetColumnName.equals( "version" ) ) {
-			if ( dbNameValueMap.containsKey( OrientDBConstant.SYSTEM_VERSION ) ) {
-				value = dbNameValueMap.get( OrientDBConstant.SYSTEM_VERSION );
-			}
-			else {
-				value = 0;
-			}
 		}
 		else if ( targetColumnName.startsWith( "_identifierMapper." ) ) {
 			value = dbNameValueMap.get( targetColumnName.substring( "_identifierMapper.".length() ) );

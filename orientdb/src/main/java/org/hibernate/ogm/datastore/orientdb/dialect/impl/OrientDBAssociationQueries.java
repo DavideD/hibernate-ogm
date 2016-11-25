@@ -49,7 +49,7 @@ public class OrientDBAssociationQueries extends QueriesBase {
 		log.debugf( "removeAssociation: %s ;associationKey: %s;", associationKey );
 		log.debugf( "removeAssociation: AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
 		log.debugf( "removeAssociation: getAssociationKind: %s", associationKey.getMetadata().getAssociationKind() );
-		StringBuilder deleteQuery = new StringBuilder( "select from " );
+		StringBuilder deleteQuery = new StringBuilder( "SELECT FROM " );
 		String columnName = null;
 		log.debugf( "removeAssociation:%s", associationKey.getMetadata().getAssociationKind() );
 		log.debugf( "removeAssociation:getRoleOnMainSide:%s", associationContext.getAssociationTypeContext().getRoleOnMainSide() );
@@ -57,7 +57,7 @@ public class OrientDBAssociationQueries extends QueriesBase {
 		log.debugf( "removeAssociation:AssociatedEntityKeyMetadata:%s", associationKey.getMetadata().getAssociatedEntityKeyMetadata() );
 		switch ( associationKey.getMetadata().getAssociationKind() ) {
 			case EMBEDDED_COLLECTION:
-				deleteQuery.append( associationKey.getTable() ).append( " where " );
+				deleteQuery.append( associationKey.getTable() ).append( " WHERE " );
 				columnName = associationKey.getColumnNames()[0];
 				deleteQuery.append( columnName ).append( "=" );
 				EntityKeyUtil.setFieldValue( deleteQuery, associationKey.getColumnValues()[0] );
@@ -66,7 +66,7 @@ public class OrientDBAssociationQueries extends QueriesBase {
 				String tableName = associationKey.getTable();
 				log.debugf( "removeAssociation:getColumnNames:%s", Arrays.asList( associationKey.getColumnNames() ) );
 				columnName = associationKey.getColumnNames()[0];
-				deleteQuery.append( tableName ).append( " where " );
+				deleteQuery.append( tableName ).append( " WHERE " );
 				deleteQuery.append( columnName ).append( "=" );
 				EntityKeyUtil.setFieldValue( deleteQuery, associationKey.getColumnValues()[0] );
 				break;
@@ -85,7 +85,7 @@ public class OrientDBAssociationQueries extends QueriesBase {
 	public void removeAssociationRow(ODatabaseDocumentTx db, AssociationKey associationKey, RowKey rowKey) {
 		log.debugf( "removeAssociationRow: associationKey: %s; RowKey:%s ", associationKey, rowKey );
 		StringBuilder loadingDocsForDelete = new StringBuilder( 100 );
-		loadingDocsForDelete.append( "select from " ).append( associationKey.getTable() ).append( " where " );
+		loadingDocsForDelete.append( "SELECT FROM " ).append( associationKey.getTable() ).append( " WHERE " );
 		for ( int i = 0; i < rowKey.getColumnNames().length; i++ ) {
 			String columnName = rowKey.getColumnNames()[i];
 			Object columnValue = rowKey.getColumnValues()[i];
@@ -149,7 +149,7 @@ public class OrientDBAssociationQueries extends QueriesBase {
 		}
 		List<Map<String, Object>> dbValues = new LinkedList<>();
 		StringBuilder queryBuilder = new StringBuilder( 100 );
-		queryBuilder.append( "SELECT  FROM " ).append( associationKey.getTable() ).append( " WHERE " );
+		queryBuilder.append( "SELECT FROM " ).append( associationKey.getTable() ).append( " WHERE " );
 		int index = 0;
 		for ( Map.Entry<String, Object> entry : relationshipValues.entrySet() ) {
 			String key = entry.getKey();

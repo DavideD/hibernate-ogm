@@ -7,7 +7,6 @@
 package org.hibernate.ogm.datastore.orientdb.dialect.impl;
 
 import java.math.BigDecimal;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -54,13 +53,13 @@ public class OrientDBEntityQueries extends QueriesBase {
 	/**
 	 * Find the node corresponding to the entity key.
 	 *
-	 * @param connection the connection
+	 * @param db current instance of db
 	 * @param entityKey entity key
 	 * @return the corresponding node
 	 */
 
 	public Map<String, Object> findEntity(ODatabaseDocumentTx db, EntityKey entityKey) {
-		StringBuilder query = new StringBuilder( "select from " );
+		StringBuilder query = new StringBuilder( "SELECT FROM " );
 		if ( entityKey.getColumnNames().length == 1 && entityKey.getColumnValues()[0] instanceof ORecordId ) {
 			// search by @rid
 			ORecordId rid = (ORecordId) entityKey.getColumnValues()[0];
@@ -106,7 +105,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 	/**
 	 * find association that corresponding to the association key.
 	 *
-	 * @param connection connection to OrientDB
+	 * @param db connection to OrientDB
 	 * @param associationKey association key
 	 * @param associationContext context
 	 * @return list of associations

@@ -42,7 +42,7 @@ public class CollectionUnidirectionalTest extends OgmTestCase {
 		session.persist( cloud );
 		session.flush();
 		assertThat( getNumberOfEntities( session ) ).isEqualTo( 3 );
-		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+		if ( SkipByHelper.isCurrentGridDialect( GridDialectType.ORIENTDB ) ) {
 			assertThat( getNumberOfAssociations( session ) ).isEqualTo( 2 );
 		}
 		else {
@@ -51,7 +51,7 @@ public class CollectionUnidirectionalTest extends OgmTestCase {
 		transaction.commit();
 
 		assertThat( getNumberOfEntities( sessionFactory ) ).isEqualTo( 3 );
-		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+		if ( SkipByHelper.isCurrentGridDialect( GridDialectType.ORIENTDB ) ) {
 			assertThat( getNumberOfAssociations( sessionFactory ) ).isEqualTo( 2 );
 		}
 		else {
@@ -73,7 +73,7 @@ public class CollectionUnidirectionalTest extends OgmTestCase {
 		transaction.commit();
 
 		assertThat( getNumberOfEntities( sessionFactory ) ).isEqualTo( 4 );
-		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+		if ( SkipByHelper.isCurrentGridDialect( GridDialectType.ORIENTDB ) ) {
 			assertThat( getNumberOfAssociations( sessionFactory ) ).isEqualTo( 2 );
 		}
 		else {
