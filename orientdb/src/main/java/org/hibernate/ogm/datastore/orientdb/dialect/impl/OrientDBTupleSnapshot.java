@@ -13,6 +13,7 @@ import org.hibernate.ogm.model.spi.TupleSnapshot;
 
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import java.math.BigDecimal;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -44,10 +45,6 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 		this.document = document;
 	}
 
-	private Object getValue(String targetColumnName, OClass schemaClass) {
-		return document.field( targetColumnName, schemaClass.getProperty( targetColumnName ).getType() );
-	}
-
 	@Override
 	public Object get(String targetColumnName) {
 		log.debugf( "targetColumnName: %s", targetColumnName );
@@ -66,15 +63,10 @@ public class OrientDBTupleSnapshot implements TupleSnapshot {
 			value = document.getIdentity();
 			log.debugf( "targetColumnName: %s, value: %d", targetColumnName, value );
 		}
-		/*
-		 * else if ( OrientDBConstant.MAPPING_FIELDS.containsKey( targetColumnName ) ) { value = dbNameValueMap.get(
-		 * OrientDBConstant.MAPPING_FIELDS.get( targetColumnName ) ); }
-		 */
 		else {
-
-			value = getValue( targetColumnName, schemaClass );
+			value = document.field( targetColumnName );
 		}
-		return value;
+		return value instanceof BigDecimal ? ( (BigDecimal) value ).toString() : value;
 	}
 
 	@Override

@@ -7,7 +7,6 @@
 package org.hibernate.ogm.datastore.orientdb.dialect.impl;
 
 import java.math.BigDecimal;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
@@ -22,7 +21,6 @@ import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import org.hibernate.ogm.datastore.orientdb.utils.ODocumentUtil;
 import org.hibernate.ogm.datastore.orientdb.utils.NativeQueryUtil;
 
 /**
@@ -68,12 +66,6 @@ public class OrientDBEntityQueries extends QueriesBase {
 			log.debugf( " entity by primary key %s not found!", entityKey );
 			return null;
 		}
-		/*
-		 * Map<String, Object> dbValues = ODocumentUtil.toMap( documents.get( 0 ) ); for ( String fieldName :
-		 * dbValues.keySet() ) { Object fieldValue = dbValues.get( fieldName ); if ( fieldValue instanceof ODocument ) {
-		 * dbValues.remove( fieldName ); dbValues.putAll( ODocumentUtil.extractNamesTree( fieldName, (ODocument)
-		 * fieldValue ) ); } } reCastValues( dbValues ); return dbValues;
-		 */
 		return documents.isEmpty() ? null : documents.get( 0 );
 	}
 
@@ -97,9 +89,8 @@ public class OrientDBEntityQueries extends QueriesBase {
 	 * @return list of associations
 	 */
 
-	public List<Map<String, Object>> findAssociation(ODatabaseDocumentTx db, AssociationKey associationKey,
+	public List<ODocument> findAssociation(ODatabaseDocumentTx db, AssociationKey associationKey,
 			AssociationContext associationContext) {
-		List<Map<String, Object>> association = new LinkedList<>();
 		log.debugf( "findAssociation: associationKey: %s; associationContext: %s", associationKey, associationContext );
 		log.debugf( "findAssociation: associationKeyMetadata: %s", associationKey.getMetadata() );
 
@@ -123,16 +114,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 
 		log.debugf( "findAssociation: query: %s", query );
 		List<ODocument> documents = NativeQueryUtil.executeIdempotentQuery( db, query );
-		for ( ODocument doc : documents ) {
-			Map<String, Object> dbValues = ODocumentUtil.toMap( doc );
-			for ( String fieldName : dbValues.keySet() ) {
-				if ( dbValues.get( fieldName ) instanceof ODocument ) {
-					dbValues.put( fieldName, ODocumentUtil.extractNamesTree( fieldName, (ODocument) dbValues.get( fieldName ) ) );
-				}
-			}
-			association.add( dbValues );
-		}
-		log.debugf( "findAssociation: rows :  %d", association.size() );
-		return association;
+		log.debugf( "findAssociation: rows :  %d", documents.size() );
+		return documents;
 	}
 }

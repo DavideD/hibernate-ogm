@@ -73,7 +73,6 @@ public class UpdateQueryGenerator {
 			}
 		}
 
-
 		return new GenerationResult( Collections.emptyList(), updateQuery.toString() );
 	}
 
@@ -127,7 +126,6 @@ public class UpdateQueryGenerator {
 			// process ODocument
 			if ( value instanceof ODocument ) {
 				allValuesMap.remove( fieldName );
-				allValuesMap.putAll( ODocumentUtil.extractNamesTree( fieldName, (ODocument) value ) );
 			}
 			else {
 				allValuesMap.put( fieldName, value );

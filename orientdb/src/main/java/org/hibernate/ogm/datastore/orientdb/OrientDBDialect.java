@@ -263,12 +263,12 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	private Map<RowKey, Tuple> createAssociationMap(AssociationKey associationKey, AssociationContext associationContext) {
 		log.debugf( "createAssociationMap:AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
 		ODatabaseDocumentTx db = provider.getCurrentDatabase();
-		List<Map<String, Object>> relationships = entityQueries.get( associationKey.getEntityKey().getMetadata() )
+		List<ODocument> relationships = entityQueries.get( associationKey.getEntityKey().getMetadata() )
 				.findAssociation( db, associationKey, associationContext );
 
 		Map<RowKey, Tuple> tuples = new LinkedHashMap<>();
 
-		for ( Map<String, Object> relationship : relationships ) {
+		for ( ODocument relationship : relationships ) {
 			OrientDBTupleAssociationSnapshot snapshot = new OrientDBTupleAssociationSnapshot( relationship, associationKey, associationContext );
 			tuples.put( convertToRowKey( associationKey, snapshot ), new Tuple( snapshot, SnapshotType.UPDATE ) );
 		}

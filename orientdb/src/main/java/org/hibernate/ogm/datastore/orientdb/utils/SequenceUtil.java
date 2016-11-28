@@ -29,7 +29,7 @@ public class SequenceUtil {
 	 * @param seqName name of sequence
 	 * @return next value of the sequence
 	 */
-	public static long getNextSequenceValue(ODatabaseDocumentTx db, String seqName) {
+	public static synchronized long getNextSequenceValue(ODatabaseDocumentTx db, String seqName) {
 		OFunction getNextSeqValue = db.getMetadata().getFunctionLibrary().getFunction( OrientDBConstant.GET_NEXT_SEQ_VALUE_FUNC );
 		Number value = (Number) getNextSeqValue.execute( seqName );
 		return value.longValue();
