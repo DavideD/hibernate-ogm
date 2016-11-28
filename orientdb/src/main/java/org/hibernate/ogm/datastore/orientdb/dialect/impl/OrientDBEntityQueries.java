@@ -21,7 +21,6 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.hibernate.ogm.datastore.orientdb.utils.ODocumentUtil;
 import org.hibernate.ogm.datastore.orientdb.utils.NativeQueryUtil;
@@ -58,37 +57,24 @@ public class OrientDBEntityQueries extends QueriesBase {
 	 * @return the corresponding node
 	 */
 
-	public Map<String, Object> findEntity(ODatabaseDocumentTx db, EntityKey entityKey) {
+	public ODocument findEntity(ODatabaseDocumentTx db, EntityKey entityKey) {
 		StringBuilder query = new StringBuilder( "SELECT FROM " );
-		if ( entityKey.getColumnNames().length == 1 && entityKey.getColumnValues()[0] instanceof ORecordId ) {
-			// search by @rid
-			ORecordId rid = (ORecordId) entityKey.getColumnValues()[0];
-			query.append( rid );
-		}
-		else {
-			// search by business key
-			log.debugf( "column names: %s", Arrays.asList( entityKey.getColumnNames() ) );
-			query.append( entityKey.getTable() ).append( " WHERE " ).append( EntityKeyUtil.generatePrimaryKeyPredicate( entityKey ) );
-
-		}
+		// search by business key
+		log.debugf( "column names: %s", Arrays.asList( entityKey.getColumnNames() ) );
+		query.append( entityKey.getTable() ).append( " WHERE " ).append( EntityKeyUtil.generatePrimaryKeyPredicate( entityKey ) );
 		log.debugf( "find entiry query: %s", query.toString() );
 		List<ODocument> documents = NativeQueryUtil.executeIdempotentQuery( db, query );
 		if ( documents.isEmpty() ) {
 			log.debugf( " entity by primary key %s not found!", entityKey );
 			return null;
 		}
-		ODocument currentDocument = documents.get( 0 );
-		Map<String, Object> dbValues = ODocumentUtil.toMap( currentDocument );
-		for ( String fieldName : dbValues.keySet() ) {
-			Object fieldValue = dbValues.get( fieldName );
-			if ( fieldValue instanceof ODocument ) {
-				dbValues.remove( fieldName );
-				dbValues.putAll( ODocumentUtil.extractNamesTree( fieldName, (ODocument) fieldValue ) );
-			}
-		}
-		reCastValues( dbValues );
-		
-		return dbValues;
+		/*
+		 * Map<String, Object> dbValues = ODocumentUtil.toMap( documents.get( 0 ) ); for ( String fieldName :
+		 * dbValues.keySet() ) { Object fieldValue = dbValues.get( fieldName ); if ( fieldValue instanceof ODocument ) {
+		 * dbValues.remove( fieldName ); dbValues.putAll( ODocumentUtil.extractNamesTree( fieldName, (ODocument)
+		 * fieldValue ) ); } } reCastValues( dbValues ); return dbValues;
+		 */
+		return documents.isEmpty() ? null : documents.get( 0 );
 	}
 
 	private void reCastValues(Map<String, Object> map) {
@@ -146,7 +132,7 @@ public class OrientDBEntityQueries extends QueriesBase {
 			}
 			association.add( dbValues );
 		}
-		log.debugf( "findAssociation: rows :  %d", association.size() );		
+		log.debugf( "findAssociation: rows :  %d", association.size() );
 		return association;
 	}
 }

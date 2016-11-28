@@ -69,7 +69,6 @@ import org.hibernate.ogm.model.spi.Association;
 import org.hibernate.ogm.model.spi.AssociationOperation;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.model.spi.Tuple.SnapshotType;
-import org.hibernate.ogm.model.spi.TupleSnapshot;
 import org.hibernate.ogm.persister.impl.OgmCollectionPersister;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
 import org.hibernate.ogm.type.spi.GridType;
@@ -126,29 +125,26 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	@Override
 	public Tuple getTuple(EntityKey key, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
-		log.debugf( "getTuple:EntityKey: %s ; tupleContext: %s; current thread: %s ", key, tupleContext, Thread.currentThread().getName() );
-		Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getCurrentDatabase(), key );
-		if ( dbValuesMap == null || dbValuesMap.isEmpty() ) {
+		log.debugf( "getTuple:EntityKey: %s ; tupleContext: %s", key, tupleContext );
+		ODocument document = entityQueries.get( key.getMetadata() ).findEntity( provider.getCurrentDatabase(), key );
+		if ( document == null ) {
 			return null;
 		}
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot( dbValuesMap );
-		return new Tuple( snapshot, SnapshotType.UPDATE );
+		return new Tuple( new OrientDBTupleSnapshot( document ), SnapshotType.UPDATE );
 	}
 
 	@Override
 	public Tuple createTuple(EntityKey key, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
 		log.debugf( "createTuple:EntityKey: %s ; tupleContext: %s ", key, tupleContext );
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot();
-		return new Tuple( snapshot, SnapshotType.INSERT );
+		return new Tuple( new OrientDBTupleSnapshot( key.getTable() ), SnapshotType.INSERT );
 	}
 
 	@Override
 	public Tuple createTuple(EntityKeyMetadata entityKeyMetadata, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
 		log.debugf( "createTuple:EntityKeyMetadata: %s ; tupleContext: ", entityKeyMetadata, tupleContext );
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot();
-		return new Tuple( snapshot, SnapshotType.INSERT );
+		return new Tuple( new OrientDBTupleSnapshot( entityKeyMetadata.getTable() ), SnapshotType.INSERT );
 	}
 
 	@Override

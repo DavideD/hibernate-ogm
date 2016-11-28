@@ -6,11 +6,9 @@
  */
 package org.hibernate.ogm.datastore.orientdb.utils;
 
-import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.metadata.function.OFunction;
 
-import org.hibernate.HibernateException;
 import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
@@ -48,7 +46,6 @@ public class SequenceUtil {
 	 * @param initValue initial value
 	 * @param inc value of increment
 	 * @return next value of the sequence
-	 * @throws HibernateException if {@link SQLException} or {@link OException} occurs
 	 */
 
 	public static synchronized long getNextTableValue(ODatabaseDocumentTx db, String seqTable, String pkColumnName, String pkColumnValue,
