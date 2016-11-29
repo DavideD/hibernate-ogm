@@ -168,7 +168,7 @@ public class OneToOneTest extends OgmTestCase {
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
 
-		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+		if ( SkipByHelper.isCurrentGridDialect( GridDialectType.ORIENTDB ) ) {
 			return new Class<?>[]{
 				Horse.class,
 				Cavalier.class,

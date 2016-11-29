@@ -11,12 +11,12 @@ import org.hibernate.ogm.dialect.spi.GridDialect;
 
 public class SkipByHelper {
 
-	public static boolean skipForGridDialect(GridDialectType requiredType) {
+	public static boolean isCurrentGridDialect(GridDialectType requiredType) {
 		Class<? extends GridDialect> currentGridDialectClass = TestHelper.getCurrentGridDialectClass();
-		boolean skipForGridDialect = false;
+		boolean isCurrentGridDialect = false;
 		if ( requiredType != null && requiredType.loadGridDialectClass() != null ) {
-			skipForGridDialect = ( requiredType.loadGridDialectClass().equals( currentGridDialectClass ) );
+			isCurrentGridDialect = ( requiredType.loadGridDialectClass().equals( currentGridDialectClass ) );
 		}
-		return skipForGridDialect;
+		return isCurrentGridDialect;
 	}
 }

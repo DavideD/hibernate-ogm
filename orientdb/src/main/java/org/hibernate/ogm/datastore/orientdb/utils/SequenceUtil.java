@@ -6,13 +6,10 @@
  */
 package org.hibernate.ogm.datastore.orientdb.utils;
 
-import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.metadata.function.OFunction;
-import com.orientechnologies.orient.core.metadata.sequence.OSequence;
-import com.orientechnologies.orient.core.metadata.sequence.OSequenceLibrary;
 
-import org.hibernate.HibernateException;
+import org.hibernate.ogm.datastore.orientdb.constant.OrientDBConstant;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
 import org.hibernate.ogm.datastore.orientdb.logging.impl.LoggerFactory;
 
@@ -32,14 +29,10 @@ public class SequenceUtil {
 	 * @param seqName name of sequence
 	 * @return next value of the sequence
 	 */
-	public static long getNextSequenceValue(ODatabaseDocumentTx db, String seqName) {
-		OSequenceLibrary library = db.getMetadata().getSequenceLibrary();
-		final String seqNameUpperCase = seqName.toUpperCase();
-		if ( !library.getSequenceNames().contains( seqNameUpperCase ) ) {
-			throw log.sequenceNotExists( seqName );
-		}
-		OSequence sequence = library.getSequence( seqNameUpperCase );
-		return sequence.next();
+	public static synchronized long getNextSequenceValue(ODatabaseDocumentTx db, String seqName) {
+		OFunction getNextSeqValue = db.getMetadata().getFunctionLibrary().getFunction( OrientDBConstant.GET_NEXT_SEQ_VALUE_FUNC );
+		Number value = (Number) getNextSeqValue.execute( seqName );
+		return value.longValue();
 	}
 
 	/**
@@ -53,13 +46,13 @@ public class SequenceUtil {
 	 * @param initValue initial value
 	 * @param inc value of increment
 	 * @return next value of the sequence
-	 * @throws HibernateException if {@link SQLException} or {@link OException} occurs
 	 */
 
-	public static long getNextTableValue(ODatabaseDocumentTx db, String seqTable, String pkColumnName, String pkColumnValue, String valueColumnName,
+	public static synchronized long getNextTableValue(ODatabaseDocumentTx db, String seqTable, String pkColumnName, String pkColumnValue,
+			String valueColumnName,
 			Integer initValue, Integer inc) {
-		OFunction getTableSeqValue = db.getMetadata().getFunctionLibrary().getFunction( "getTableSeqValue" );
-		Number nextValue = ( (Number) getTableSeqValue.execute( seqTable, pkColumnName, pkColumnValue, valueColumnName, initValue, inc ) );
+		OFunction getTableSeqValue = db.getMetadata().getFunctionLibrary().getFunction( OrientDBConstant.GET_TABLE_SEQ_VALUE_FUNC );
+		Number nextValue = (Number) getTableSeqValue.execute( seqTable, pkColumnName, pkColumnValue, valueColumnName, initValue, inc );
 		return nextValue.longValue();
 	}
 }

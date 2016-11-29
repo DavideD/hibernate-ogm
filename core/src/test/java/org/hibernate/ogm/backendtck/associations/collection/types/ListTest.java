@@ -178,7 +178,7 @@ public class ListTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		if ( SkipByHelper.skipForGridDialect( GridDialectType.ORIENTDB ) ) {
+		if ( SkipByHelper.isCurrentGridDialect( GridDialectType.ORIENTDB ) ) {
 			return new Class<?>[]{
 				Father.class,
 				GrandMother.class,

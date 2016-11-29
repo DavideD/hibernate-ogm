@@ -19,9 +19,12 @@ import org.hibernate.ogm.dialect.impl.ForwardingGridDialect;
 import org.hibernate.ogm.dialect.spi.TupleContext;
 import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.spi.Tuple;
+import org.hibernate.ogm.util.impl.Log;
+import org.hibernate.ogm.util.impl.LoggerFactory;
 import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
 import org.hibernate.ogm.utils.SkipByGridDialect;
+import org.hibernate.ogm.utils.SkipByHelper;
 import org.hibernate.ogm.utils.TestHelper;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,9 +38,11 @@ import org.junit.rules.ExpectedException;
  */
 @SkipByGridDialect(
 		value = { GridDialectType.CASSANDRA, GridDialectType.INFINISPAN_REMOTE },
-		comment = "list - bag semantics unsupported (no primary key),  OrientDB uses paradigm 'one thread, one connection, one transaction'"
+		comment = "list - bag semantics unsupported (no primary key)"
 )
 public class OptimisticLockingExtraTest extends OgmTestCase {
+
+	private static final Log log = LoggerFactory.make();
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
@@ -59,7 +64,15 @@ public class OptimisticLockingExtraTest extends OgmTestCase {
 		transaction = session.beginTransaction();
 
 		entity = session.get( Galaxy.class, galaxy.getId() );
-		assertThat( entity.getVersion() ).isEqualTo( 1 );
+
+		if ( SkipByHelper.isCurrentGridDialect( GridDialectType.ORIENTDB ) ) {
+			// version 1 after 'persistGalaxy()' and 2 - after 'entity.getStars().add( new Star( "Algol" ) );'
+			assertThat( entity.getVersion() ).isEqualTo( 2 );
+		}
+		else {
+			assertThat( entity.getVersion() ).isEqualTo( 1 );
+
+		}
 		assertThat( entity.getStars() ).hasSize( 3 );
 
 		transaction.commit();

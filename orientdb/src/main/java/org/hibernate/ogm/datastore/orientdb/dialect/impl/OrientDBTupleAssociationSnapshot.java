@@ -20,6 +20,7 @@ import org.hibernate.ogm.model.key.spi.AssociationKey;
 import org.hibernate.ogm.model.spi.TupleSnapshot;
 
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.hibernate.ogm.datastore.orientdb.utils.ODocumentUtil;
 
 /**
  * Represents a association tuple snapshot as loaded by the datastore.
@@ -32,20 +33,20 @@ public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 	private static final Log log = LoggerFactory.getLogger();
 	private final AssociationContext associationContext;
 	private final AssociationKey associationKey;
-	private final Map<String, Object> properties;
+	private final Map<String, Object> properties = new LinkedHashMap<>();
 
-	private final Map<String, Object> relationship;
+	private final ODocument relationship;
 
-	public OrientDBTupleAssociationSnapshot(Map<String, Object> relationship, AssociationKey associationKey, AssociationContext associationContext) {
+	public OrientDBTupleAssociationSnapshot(ODocument relationship, AssociationKey associationKey, AssociationContext associationContext) {
 		log.debug( "OrientDBTupleAssociationSnapshot: AssociationKey:" + associationKey + "; AssociationContext" + associationContext );
 		this.relationship = relationship;
 		this.associationKey = associationKey;
 		this.associationContext = associationContext;
-		properties = collectProperties();
+		collectProperties();
 	}
 
-	private Map<String, Object> collectProperties() {
-		Map<String, Object> properties = new LinkedHashMap<>();
+	private void collectProperties() {
+
 		String[] rowKeyColumnNames = associationKey.getMetadata().getRowKeyColumnNames();
 
 		// Index columns
@@ -61,11 +62,9 @@ public class OrientDBTupleAssociationSnapshot implements TupleSnapshot {
 					properties.put( rowKeyColumn, associationKey.getColumnValue( columnName ) );
 				}
 			}
-
 		}
-		properties.putAll( relationship );
+		properties.putAll( ODocumentUtil.toMap( relationship ) );
 		log.debug( "1.collectProperties: " + properties );
-		return properties;
 	}
 
 	@Override

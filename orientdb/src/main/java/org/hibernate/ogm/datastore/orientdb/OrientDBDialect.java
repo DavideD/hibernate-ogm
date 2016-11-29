@@ -69,7 +69,6 @@ import org.hibernate.ogm.model.spi.Association;
 import org.hibernate.ogm.model.spi.AssociationOperation;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.model.spi.Tuple.SnapshotType;
-import org.hibernate.ogm.model.spi.TupleSnapshot;
 import org.hibernate.ogm.persister.impl.OgmCollectionPersister;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
 import org.hibernate.ogm.type.spi.GridType;
@@ -126,29 +125,26 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	@Override
 	public Tuple getTuple(EntityKey key, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
-		log.debugf( "getTuple:EntityKey: %s ; tupleContext: %s; current thread: %s ", key, tupleContext, Thread.currentThread().getName() );
-		Map<String, Object> dbValuesMap = entityQueries.get( key.getMetadata() ).findEntity( provider.getCurrentDatabase(), key );
-		if ( dbValuesMap == null || dbValuesMap.isEmpty() ) {
+		log.debugf( "getTuple:EntityKey: %s ; tupleContext: %s", key, tupleContext );
+		ODocument document = entityQueries.get( key.getMetadata() ).findEntity( provider.getCurrentDatabase(), key );
+		if ( document == null ) {
 			return null;
 		}
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot( dbValuesMap );
-		return new Tuple( snapshot, SnapshotType.UPDATE );
+		return new Tuple( new OrientDBTupleSnapshot( document ), SnapshotType.UPDATE );
 	}
 
 	@Override
 	public Tuple createTuple(EntityKey key, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
 		log.debugf( "createTuple:EntityKey: %s ; tupleContext: %s ", key, tupleContext );
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot();
-		return new Tuple( snapshot, SnapshotType.INSERT );
+		return new Tuple( new OrientDBTupleSnapshot( key.getTable() ), SnapshotType.INSERT );
 	}
 
 	@Override
 	public Tuple createTuple(EntityKeyMetadata entityKeyMetadata, OperationContext operationContext) {
 		TupleTypeContext tupleContext = operationContext.getTupleTypeContext();
 		log.debugf( "createTuple:EntityKeyMetadata: %s ; tupleContext: ", entityKeyMetadata, tupleContext );
-		TupleSnapshot snapshot = new OrientDBTupleSnapshot();
-		return new Tuple( snapshot, SnapshotType.INSERT );
+		return new Tuple( new OrientDBTupleSnapshot( entityKeyMetadata.getTable() ), SnapshotType.INSERT );
 	}
 
 	@Override
@@ -267,12 +263,12 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 	private Map<RowKey, Tuple> createAssociationMap(AssociationKey associationKey, AssociationContext associationContext) {
 		log.debugf( "createAssociationMap:AssociationKey: %s ; AssociationContext: %s", associationKey, associationContext );
 		ODatabaseDocumentTx db = provider.getCurrentDatabase();
-		List<Map<String, Object>> relationships = entityQueries.get( associationKey.getEntityKey().getMetadata() )
+		List<ODocument> relationships = entityQueries.get( associationKey.getEntityKey().getMetadata() )
 				.findAssociation( db, associationKey, associationContext );
 
 		Map<RowKey, Tuple> tuples = new LinkedHashMap<>();
 
-		for ( Map<String, Object> relationship : relationships ) {
+		for ( ODocument relationship : relationships ) {
 			OrientDBTupleAssociationSnapshot snapshot = new OrientDBTupleAssociationSnapshot( relationship, associationKey, associationContext );
 			tuples.put( convertToRowKey( associationKey, snapshot ), new Tuple( snapshot, SnapshotType.UPDATE ) );
 		}
@@ -416,14 +412,15 @@ public class OrientDBDialect extends BaseGridDialect implements QueryableGridDia
 				nextValue = SequenceUtil.getNextSequenceValue( db, seqName );
 				break;
 			case TABLE:
-				String seqTableName = "sequences";
-				String pkColumnName = "key";
-				String valueColumnName = "seed";
+				String seqTableName = request.getKey().getTable();
+				String pkColumnName = request.getKey().getColumnName();
+				String valueColumnName = request.getKey().getColumnValue();
 				String pkColumnValue = (String) request.getKey().getColumnValue();
 				log.debugf( "seqTableName:%s, pkColumnName:%s, pkColumnValue:%s, valueColumnName:%s",
 						seqTableName, pkColumnName, pkColumnValue, valueColumnName );
 				nextValue = SequenceUtil.getNextTableValue( db, seqTableName, pkColumnName, pkColumnValue, valueColumnName,
 						request.getInitialValue(), request.getIncrement() );
+				break;
 		}
 		log.debugf( "nextValue: %d", nextValue );
 		return nextValue;

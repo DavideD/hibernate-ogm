@@ -31,7 +31,7 @@ public class Song {
 	@SequenceGenerator(name = "songSequenceGenerator",
 			sequenceName = "song_sequence_name",
 			initialValue = INITIAL_VALUE,
-			allocationSize = 10)
+			allocationSize = 1)
 	public Long getId() {
 		return id;
 	}
