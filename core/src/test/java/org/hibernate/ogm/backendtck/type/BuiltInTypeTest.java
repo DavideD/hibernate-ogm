@@ -344,7 +344,6 @@ public class BuiltInTypeTest extends OgmTestCase {
 		assertEquals( "BigDecimal value does not match", bookmark.getSiteWeight(), loadedBookmark.getSiteWeight() );
 	}
 
-	@SkipByGridDialect(value = { GridDialectType.ORIENTDB },comment = "OrientDB is not supports the type" )
 	@Test
 	public void testBigIntegerSupport() throws Exception {
 		bookmark.setVisitCount( new BigInteger( "444" ) );

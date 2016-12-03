@@ -25,7 +25,7 @@ import org.hibernate.resource.transaction.TransactionCoordinator;
 public class OrientDBLocalTransactionCoordinator extends ForwardingTransactionCoordinator {
 
 	private static Log log = LoggerFactory.getLogger();
-	private OrientDBDatastoreProvider datastoreProvider;
+	private final OrientDBDatastoreProvider datastoreProvider;
 	private OTransaction currentOrientDBTransaction;
 
 	/**

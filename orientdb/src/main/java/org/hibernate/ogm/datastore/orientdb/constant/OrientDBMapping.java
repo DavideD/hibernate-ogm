@@ -121,10 +121,11 @@ public class OrientDBMapping {
 		map.put( CharacterType.class, "string" );
 		map.put( UUIDBinaryType.class, "string" );
 
+		map.put( BigIntegerType.class, "string" );
+
 		map.put( BinaryType.class, "binary" ); // byte[]
 		map.put( MaterializedBlobType.class, "binary" ); // byte[]
 		map.put( SerializableToBlobType.class, "binary" ); // byte[]
-		map.put( BigIntegerType.class, "binary" );
 		map.put( MaterializedClobType.class, "binary" );
 
 		map.put( BigDecimalType.class, "decimal" );

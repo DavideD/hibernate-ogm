@@ -26,8 +26,8 @@ import com.orientechnologies.orient.core.tx.OTransaction;
  */
 public class OrientDBJtaTransactionCoordinator extends ForwardingTransactionCoordinator {
 
-	private static Log log = LoggerFactory.getLogger();
-	private OrientDBDatastoreProvider datastoreProvider;
+	private static final Log log = LoggerFactory.getLogger();
+	private final OrientDBDatastoreProvider datastoreProvider;
 	private OTransaction currentOrientDBTransaction;
 
 	/**

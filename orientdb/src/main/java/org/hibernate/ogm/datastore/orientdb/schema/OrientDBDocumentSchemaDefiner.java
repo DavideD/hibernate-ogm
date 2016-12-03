@@ -92,14 +92,14 @@ public class OrientDBDocumentSchemaDefiner extends BaseSchemaDefiner {
 	}
 
 	private void createSequence(ODatabaseDocumentTx db, String name, int startValue) {
-		createSequence( db, name, startValue, -1 );
+		createSequence( db, name, startValue, 0 );
 	}
 
 	private void createSequence(ODatabaseDocumentTx db, String seqName, int startValue, int incValue) {
 		OSequence seq = db.getMetadata().getSequenceLibrary().getSequence( seqName );
 		if ( seq == null ) {
 			CreateParams p = new CreateParams();
-			p.setStart( (long) ( startValue == 0 ? 0 : startValue - 1 ) );
+			p.setStart( (long) ( startValue == 0 ? 0 : startValue - incValue ) );
 			if ( incValue > 0 ) {
 				p.setIncrement( incValue );
 			}

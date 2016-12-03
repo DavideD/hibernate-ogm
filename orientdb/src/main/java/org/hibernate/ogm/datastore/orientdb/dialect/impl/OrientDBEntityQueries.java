@@ -6,9 +6,7 @@
  */
 package org.hibernate.ogm.datastore.orientdb.dialect.impl;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Arrays;
 
 import org.hibernate.ogm.datastore.orientdb.logging.impl.Log;
@@ -67,17 +65,6 @@ public class OrientDBEntityQueries extends QueriesBase {
 			return null;
 		}
 		return documents.isEmpty() ? null : documents.get( 0 );
-	}
-
-	private void reCastValues(Map<String, Object> map) {
-		for ( Map.Entry<String, Object> entry : map.entrySet() ) {
-			String key = entry.getKey();
-			Object value = entry.getValue();
-			if ( value instanceof BigDecimal ) {
-				BigDecimal bd = (BigDecimal) value;
-				entry.setValue( bd.toString() );
-			}
-		}
 	}
 
 	/**

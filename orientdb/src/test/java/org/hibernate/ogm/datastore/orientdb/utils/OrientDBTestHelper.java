@@ -15,7 +15,6 @@ import java.util.Properties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.ogm.cfg.OgmProperties;
 import org.hibernate.ogm.datastore.document.options.AssociationStorageType;
 import org.hibernate.ogm.datastore.orientdb.OrientDB;
@@ -48,21 +47,6 @@ import java.util.List;
 public class OrientDBTestHelper implements GridDialectTestHelper {
 
 	private static final Log log = LoggerFactory.getLogger();
-	private static final String COUNT_QUERY = "select @class,count(@rid) as c from V group by @class";
-
-	private ClassMetadata searchMetadata(Map<String, ClassMetadata> meta, String simpleClassName) {
-		ClassMetadata metadata = null;
-		for ( Map.Entry<String, ClassMetadata> entry : meta.entrySet() ) {
-			String currentFullClassName = entry.getKey();
-			ClassMetadata currentMetadata = entry.getValue();
-			if ( currentFullClassName.toUpperCase().endsWith( ".".concat( simpleClassName.toUpperCase() ) ) ) {
-				metadata = currentMetadata;
-				break;
-			}
-		}
-		return metadata;
-	}
-
 	@Override
 	public long getNumberOfEntities(Session session) {
 		return getNumberOfEntities( session.getSessionFactory() );

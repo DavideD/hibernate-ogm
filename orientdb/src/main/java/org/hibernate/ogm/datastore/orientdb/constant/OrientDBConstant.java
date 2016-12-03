@@ -25,10 +25,6 @@ import java.util.Set;
 public class OrientDBConstant {
 
 	/**
-	 * Set of system fields of linking documents
-	 */
-	public static final Set<String> LINK_FIELDS;
-	/**
 	 * Set of system fields of OrientDB document
 	 */
 	public static final Set<String> SYSTEM_FIELDS;
@@ -84,7 +80,6 @@ public class OrientDBConstant {
 		set.add( SYSTEM_VERSION );
 		set.add( SYSTEM_CLASS );
 		SYSTEM_FIELDS = Collections.unmodifiableSet( set );
-		LINK_FIELDS = Collections.unmodifiableSet( new HashSet<>( Arrays.asList( new String[]{ "in_", "out_" } ) ) );
 		Map<String, String> map = new HashMap<>();
 		map.put( "version", "@version" );
 		MAPPING_FIELDS = Collections.unmodifiableMap( map );
