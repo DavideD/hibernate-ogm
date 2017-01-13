@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +44,7 @@ import org.hibernate.ogm.util.impl.StringHelper;
  */
 public class Association {
 	private final AssociationSnapshot snapshot;
-	private final Map<RowKey, AssociationOperation> currentState = new HashMap<RowKey, AssociationOperation>();
+	private final Map<RowKey, AssociationOperation> currentState = new LinkedHashMap<RowKey, AssociationOperation>();
 	private boolean cleared;
 
 	/**
@@ -184,7 +186,7 @@ public class Association {
 		}
 		else {
 			// It may be a bit too large in case of removals, but that's fine for now
-			Set<RowKey> keys = new HashSet<RowKey>( cleared ? currentState.size() : snapshot.size() + currentState.size() );
+			Set<RowKey> keys = new LinkedHashSet<RowKey>( cleared ? currentState.size() : snapshot.size() + currentState.size() );
 
 			if ( !cleared ) {
 				// we add the snapshot RowKeys only if the association has not been cleared

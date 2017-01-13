@@ -6,9 +6,8 @@
  */
 package org.hibernate.ogm.datastore.document.association.spi;
 
-import static org.hibernate.ogm.util.impl.CollectionHelper.newHashMap;
-
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,7 +27,7 @@ public class AssociationRows implements AssociationSnapshot {
 	private final Map<RowKey, AssociationRow<?>> rows;
 
 	public AssociationRows(AssociationKey associationKey, Collection<?> wrapped, AssociationRowFactory associationRowFactory) {
-		this.rows = newHashMap( wrapped.size() );
+		this.rows = new LinkedHashMap<>( wrapped.size() );
 
 		for ( Object object : wrapped ) {
 			AssociationRow<?> row = associationRowFactory.createAssociationRow( associationKey, object );
