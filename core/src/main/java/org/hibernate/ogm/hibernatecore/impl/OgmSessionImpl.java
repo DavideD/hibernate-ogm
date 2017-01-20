@@ -11,6 +11,9 @@ import static org.hibernate.cfg.AvailableSettings.JPA_LOCK_TIMEOUT;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.Tuple;
+
+import org.hibernate.AssertionFailure;
 import org.hibernate.Criteria;
 import org.hibernate.Filter;
 import org.hibernate.HibernateException;
@@ -21,13 +24,21 @@ import org.hibernate.NaturalIdLoadAccess;
 import org.hibernate.SessionException;
 import org.hibernate.SharedSessionBuilder;
 import org.hibernate.SimpleNaturalIdLoadAccess;
+import org.hibernate.Transaction;
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
+import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
+import org.hibernate.engine.ResultSetMappingDefinition;
 import org.hibernate.engine.query.spi.HQLQueryPlan;
+import org.hibernate.engine.query.spi.sql.NativeSQLQueryConstructorReturn;
+import org.hibernate.engine.query.spi.sql.NativeSQLQueryReturn;
+import org.hibernate.engine.query.spi.sql.NativeSQLQueryRootReturn;
 import org.hibernate.engine.query.spi.sql.NativeSQLQuerySpecification;
 import org.hibernate.engine.spi.NamedQueryDefinition;
 import org.hibernate.engine.spi.NamedSQLQueryDefinition;
 import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.SessionDelegatorBaseImpl;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.event.service.spi.EventListenerGroup;
 import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.AutoFlushEvent;
@@ -38,6 +49,7 @@ import org.hibernate.internal.SessionImpl;
 import org.hibernate.jdbc.ReturningWork;
 import org.hibernate.jdbc.Work;
 import org.hibernate.jpa.QueryHints;
+import org.hibernate.jpa.spi.TupleBuilderTransformer;
 import org.hibernate.loader.custom.CustomQuery;
 import org.hibernate.ogm.OgmSession;
 import org.hibernate.ogm.OgmSessionFactory;
@@ -169,10 +181,104 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 		return query;
 	}
 
-	private void resultClassChecking(Class resultType, NamedSQLQueryDefinition queryDefinition) {
+	/*
+	 *  Copied from org.hibernate.jpa.spi.AbstractEntityManagerImpl
+	 */
+	protected void resultClassChecking(Class resultType, NamedSQLQueryDefinition namedQueryDefinition) {
+		final SessionFactoryImplementor sfi = (SessionFactoryImplementor) factory.getSessionFactory();
+
+		final NativeSQLQueryReturn[] queryReturns;
+		if ( namedQueryDefinition.getQueryReturns() != null ) {
+			queryReturns = namedQueryDefinition.getQueryReturns();
+		}
+		else if ( namedQueryDefinition.getResultSetRef() != null ) {
+			final ResultSetMappingDefinition rsMapping = sfi.getResultSetMapping( namedQueryDefinition.getResultSetRef() );
+			queryReturns = rsMapping.getQueryReturns();
+		}
+		else {
+			throw new AssertionFailure( "Unsupported named query model. Please report the bug in Hibernate EntityManager" );
+		}
+
+		if ( queryReturns.length > 1 ) {
+			throw new IllegalArgumentException( "Cannot create TypedQuery for query with more than one return" );
+		}
+
+		final NativeSQLQueryReturn nativeSQLQueryReturn = queryReturns[0];
+
+		if ( nativeSQLQueryReturn instanceof NativeSQLQueryRootReturn ) {
+			final Class<?> actualReturnedClass;
+			final String entityClassName = ( (NativeSQLQueryRootReturn) nativeSQLQueryReturn ).getReturnEntityName();
+			try {
+				actualReturnedClass = sfi.getServiceRegistry().getService( ClassLoaderService.class ).classForName( entityClassName );
+			}
+			catch ( ClassLoadingException e ) {
+				throw new AssertionFailure(
+						"Unable to load class [" + entityClassName + "] declared on named native query [" +
+								namedQueryDefinition.getName() + "]"
+				);
+			}
+			if ( !resultType.isAssignableFrom( actualReturnedClass ) ) {
+				throw buildIncompatibleException( resultType, actualReturnedClass );
+			}
+		}
+		else if ( nativeSQLQueryReturn instanceof NativeSQLQueryConstructorReturn ) {
+			final NativeSQLQueryConstructorReturn ctorRtn = (NativeSQLQueryConstructorReturn) nativeSQLQueryReturn;
+			if ( !resultType.isAssignableFrom( ctorRtn.getTargetClass() ) ) {
+				throw buildIncompatibleException( resultType, ctorRtn.getTargetClass() );
+			}
+		}
+		else {
+			//TODO support other NativeSQLQueryReturn type. For now let it go.
+		}
 	}
 
-	private void resultClassChecking(Class resultType, QueryImplementor query) {
+	/*
+	 *  Copied from org.hibernate.jpa.spi.AbstractEntityManagerImpl
+	 */
+	private void resultClassChecking(Class resultClass, org.hibernate.Query hqlQuery) {
+		// make sure the query is a select -> HHH-7192
+		final SessionImplementor session = unwrap( SessionImplementor.class );
+		final HQLQueryPlan queryPlan = session.getFactory().getQueryPlanCache()
+				.getHQLQueryPlan( hqlQuery.getQueryString(), false, session.getLoadQueryInfluencers().getEnabledFilters() );
+		if ( queryPlan.getTranslators()[0].isManipulationStatement() ) {
+			throw new IllegalArgumentException( "Update/delete queries cannot be typed" );
+		}
+
+		// do some return type validation checking
+		if ( Object[].class.equals( resultClass ) ) {
+			// no validation needed
+		}
+		else if ( Tuple.class.equals( resultClass ) ) {
+			TupleBuilderTransformer tupleTransformer = new TupleBuilderTransformer( hqlQuery );
+			hqlQuery.setResultTransformer( tupleTransformer );
+		}
+		else {
+			final Class dynamicInstantiationClass = queryPlan.getDynamicInstantiationResultType();
+			if ( dynamicInstantiationClass != null ) {
+				if ( !resultClass.isAssignableFrom( dynamicInstantiationClass ) ) {
+					throw new IllegalArgumentException( "Mismatch in requested result type [" + resultClass.getName() + "] and actual result type ["
+							+ dynamicInstantiationClass.getName() + "]" );
+				}
+			}
+			else if ( hqlQuery.getReturnTypes().length == 1 ) {
+				// if we have only a single return expression, its java type should match with the requested type
+				if ( !resultClass.isAssignableFrom( hqlQuery.getReturnTypes()[0].getReturnedClass() ) ) {
+					throw new IllegalArgumentException( "Type specified for TypedQuery [" + resultClass.getName()
+							+ "] is incompatible with query return type [" + hqlQuery.getReturnTypes()[0].getReturnedClass() + "]" );
+				}
+			}
+			else {
+				throw new IllegalArgumentException( "Cannot create TypedQuery for query with more than one return using requested result type ["
+						+ resultClass.getName() + "]" );
+			}
+		}
+	}
+
+	private IllegalArgumentException buildIncompatibleException(Class<?> resultClass, Class<?> actualResultClass) {
+		return new IllegalArgumentException(
+				"Type specified for TypedQuery [" + resultClass.getName() +
+						"] is incompatible with query return type [" + actualResultClass + "]"
+		);
 	}
 
 	protected QueryImplementor createQuery(NamedQueryDefinition queryDefinition) {
@@ -509,6 +615,11 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 
 	public <G extends GlobalContext<?, ?>, D extends DatastoreConfiguration<G>> G configureDatastore(Class<D> datastoreType) {
 		throw new UnsupportedOperationException( "OGM-343 Session specific options are not currently supported" );
+	}
+
+	@Override
+	public Transaction getTransaction() {
+		return super.getTransaction();
 	}
 
 	/**
