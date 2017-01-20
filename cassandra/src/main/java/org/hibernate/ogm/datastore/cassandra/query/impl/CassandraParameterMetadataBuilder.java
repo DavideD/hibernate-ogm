@@ -10,10 +10,11 @@ import java.util.Map;
 
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.engine.query.spi.OrdinalParameterDescriptor;
-import org.hibernate.engine.query.spi.ParameterMetadata;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.Table;
 import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
+import org.hibernate.query.ParameterMetadata;
+import org.hibernate.query.internal.ParameterMetadataImpl;
 import org.hibernate.type.Type;
 
 import com.datastax.driver.core.ColumnDefinitions;
@@ -61,6 +62,6 @@ public class CassandraParameterMetadataBuilder implements ParameterMetadataBuild
 			}
 		}
 
-		return new ParameterMetadata( ordinalDescriptors, null );
+		return new ParameterMetadataImpl( ordinalDescriptors, null );
 	}
 }
