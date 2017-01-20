@@ -12,6 +12,7 @@ import static org.hibernate.ogm.datastore.neo4j.test.dsl.GraphAssertions.assertT
 import java.util.Map;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.ogm.datastore.neo4j.test.dsl.NodeForGraphAssertions;
@@ -19,7 +20,6 @@ import org.hibernate.ogm.datastore.neo4j.test.dsl.RelationshipsChainForGraphAsse
 import org.hibernate.ogm.datastore.neo4j.utils.Neo4jTestHelper;
 import org.hibernate.ogm.datastore.neo4j.utils.Neo4jTestHelperDelegate;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
-import org.hibernate.ogm.jpa.impl.OgmEntityManagerFactory;
 import org.hibernate.ogm.utils.jpa.OgmJpaTestCase;
 import org.junit.After;
 import org.junit.Before;
@@ -72,9 +72,9 @@ public abstract class Neo4jJpaTestCase extends OgmJpaTestCase {
 	}
 
 	private DatastoreProvider datastoreProvider() {
-		OgmEntityManagerFactory emFactory = ( (OgmEntityManagerFactory) getFactory() );
+		EntityManagerFactory emFactory = getFactory();
 		if ( emFactory != null ) {
-			SessionFactoryImplementor sessionFactory = emFactory.getSessionFactory();
+			SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor) emFactory;
 			DatastoreProvider datastoreProvider = sessionFactory.getServiceRegistry().getService( DatastoreProvider.class );
 			return datastoreProvider;
 		}

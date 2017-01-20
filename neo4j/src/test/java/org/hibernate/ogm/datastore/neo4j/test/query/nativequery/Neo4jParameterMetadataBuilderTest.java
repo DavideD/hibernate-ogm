@@ -8,9 +8,9 @@ package org.hibernate.ogm.datastore.neo4j.test.query.nativequery;
 
 import static org.fest.assertions.Assertions.assertThat;
 
-import org.hibernate.engine.query.spi.ParameterMetadata;
 import org.hibernate.ogm.datastore.neo4j.query.impl.Neo4jParameterMetadataBuilder;
 import org.hibernate.ogm.dialect.query.spi.ParameterMetadataBuilder;
+import org.hibernate.query.ParameterMetadata;
 import org.junit.Test;
 
 /**
