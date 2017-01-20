@@ -11,6 +11,7 @@ import static org.hibernate.cfg.AvailableSettings.JPA_LOCK_TIMEOUT;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.EntityManager;
 import javax.persistence.Tuple;
 
 import org.hibernate.AssertionFailure;
@@ -21,10 +22,10 @@ import org.hibernate.LockMode;
 import org.hibernate.LockOptions;
 import org.hibernate.MappingException;
 import org.hibernate.NaturalIdLoadAccess;
+import org.hibernate.Session;
 import org.hibernate.SessionException;
 import org.hibernate.SharedSessionBuilder;
 import org.hibernate.SimpleNaturalIdLoadAccess;
-import org.hibernate.Transaction;
 import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
 import org.hibernate.engine.ResultSetMappingDefinition;
@@ -39,6 +40,7 @@ import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.SessionDelegatorBaseImpl;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.event.service.spi.EventListenerGroup;
 import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.AutoFlushEvent;
@@ -81,8 +83,9 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 
 	private LockOptions lockOptions = new LockOptions();
 
-	private final EventSource delegate;
 	private final OgmSessionFactoryImpl factory;
+
+	private EventSource delegate;
 
 	public OgmSessionImpl(OgmSessionFactory factory, EventSource delegate) {
 		super( delegate );
@@ -617,11 +620,6 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 		throw new UnsupportedOperationException( "OGM-343 Session specific options are not currently supported" );
 	}
 
-	@Override
-	public Transaction getTransaction() {
-		return super.getTransaction();
-	}
-
 	/**
 	 * Returns the underlying ORM session to which most work is delegated.
 	 *
@@ -649,5 +647,26 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 	@Override
 	public SimpleNaturalIdLoadAccess bySimpleNaturalId(String entityName) {
 		throw new UnsupportedOperationException( "OGM-589 - Natural id look-ups are not yet supported" );
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T> T unwrap(Class<T> clazz) {
+		checkOpen();
+
+		if ( Session.class.isAssignableFrom( clazz ) ) {
+			return (T) this;
+		}
+		if ( SessionImplementor.class.isAssignableFrom( clazz ) ) {
+			return (T) this;
+		}
+		if ( SharedSessionContractImplementor.class.isAssignableFrom( clazz ) ) {
+			return (T) this;
+		}
+		if ( EntityManager.class.isAssignableFrom( clazz ) ) {
+			return (T) this;
+		}
+
+		return super.unwrap( clazz );
 	}
 }
