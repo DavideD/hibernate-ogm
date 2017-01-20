@@ -9,7 +9,7 @@ package org.hibernate.ogm.datastore.redis.impl.hash;
 
 import org.hibernate.HibernateException;
 import org.hibernate.cfg.NotYetImplementedException;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.type.impl.EnumType;
 import org.hibernate.ogm.util.impl.Log;
@@ -29,7 +29,7 @@ public class RedisHashEnumType extends EnumType {
 	}
 
 	@Override
-	public void nullSafeSet(Tuple resultset, Object value, String[] names, SessionImplementor session)
+	public void nullSafeSet(Tuple resultset, Object value, String[] names, SharedSessionContractImplementor session)
 			throws HibernateException {
 		if ( names.length > 1 ) {
 			throw new NotYetImplementedException( "Multi column property not implemented yet" );
