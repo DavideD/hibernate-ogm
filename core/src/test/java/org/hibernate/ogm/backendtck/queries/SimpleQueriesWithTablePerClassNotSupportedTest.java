@@ -6,7 +6,7 @@
  */
 package org.hibernate.ogm.backendtck.queries;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.isA;
 import static org.hibernate.ogm.utils.GridDialectType.CASSANDRA;
 import static org.hibernate.ogm.utils.GridDialectType.COUCHDB;
 import static org.hibernate.ogm.utils.GridDialectType.EHCACHE;
@@ -20,6 +20,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.PersistenceException;
 import javax.persistence.Table;
 
 import org.fest.assertions.Fail;
@@ -82,16 +83,20 @@ public class SimpleQueriesWithTablePerClassNotSupportedTest extends OgmTestCase 
 	@Test
 	@TestForIssue(jiraKey = "OGM-732")
 	public void testExceptionFromPerson() throws Exception {
-		assertExceptionIsThrown( "from Person p" );
+		assertThatThrowsException( "from Person p" );
 	}
 
 	@Test
 	@TestForIssue(jiraKey = "OGM-732")
 	public void testExceptionFromCommunityMember() throws Exception {
-		assertExceptionIsThrown( "from CommunityMember c" );
+		assertThatThrowsException( "from CommunityMember c" );
 	}
 
-	private void assertExceptionIsThrown(String queryString) {
+	private void assertThatThrowsException(String queryString) {
+		thrown.expect( PersistenceException.class );
+		thrown.expectCause( isA( HibernateException.class ) );
+		thrown.expectMessage( "OGM000089:" );
+
 		try ( Session session = openSession() ) {
 			Transaction tx = null;
 			try {
@@ -99,10 +104,6 @@ public class SimpleQueriesWithTablePerClassNotSupportedTest extends OgmTestCase 
 				session.createQuery( queryString ).list();
 				tx.commit();
 				Fail.fail( "Expected exception for query: [" + queryString + "]" );
-			}
-			catch ( HibernateException e) {
-				assertThat( e ).isInstanceOf( HibernateException.class );
-				assertThat( e.getMessage() ).startsWith( "OGM000089: " );
 			}
 			finally {
 				if ( tx != null && tx.getStatus() == TransactionStatus.ACTIVE ) {

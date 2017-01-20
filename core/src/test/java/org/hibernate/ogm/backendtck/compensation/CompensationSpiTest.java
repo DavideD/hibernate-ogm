@@ -17,7 +17,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
-import org.hibernate.StaleObjectStateException;
+import javax.persistence.OptimisticLockException;
+
 import org.hibernate.Transaction;
 import org.hibernate.ogm.OgmSession;
 import org.hibernate.ogm.OgmSessionFactory;
@@ -205,7 +206,7 @@ public class CompensationSpiTest extends OgmTestCase {
 
 			fail( "expected exception was not raised" );
 		}
-		catch (StaleObjectStateException sose) {
+		catch (OptimisticLockException e) {
 			// Expected
 		}
 		finally {
@@ -288,7 +289,7 @@ public class CompensationSpiTest extends OgmTestCase {
 
 			fail( "expected exception was not raised" );
 		}
-		catch (StaleObjectStateException sose) {
+		catch (OptimisticLockException e) {
 			// Expected
 		}
 		finally {

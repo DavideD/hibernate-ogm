@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.fest.assertions.Assertions;
 import org.hibernate.Session;
+import org.hibernate.cfg.Environment;
 import org.hibernate.ogm.backendtck.simpleentity.Hypothesis;
 import org.hibernate.ogm.cfg.OgmProperties;
 import org.hibernate.ogm.datastore.spi.BaseDatastoreProvider;
@@ -43,7 +44,6 @@ import org.junit.Test;
 public class BatchExecutionTest extends OgmTestCase {
 
 	static boolean batchExecuted = false;
-
 
 	@Before
 	public void before() {
@@ -81,6 +81,7 @@ public class BatchExecutionTest extends OgmTestCase {
 
 	@Override
 	protected void configure(Map<String, Object> settings) {
+		settings.put( Environment.ALLOW_UPDATE_OUTSIDE_TRANSACTION, Boolean.TRUE );
 		settings.put( OgmProperties.DATASTORE_PROVIDER, SampleBatchableDatastoreProvider.class.getName() );
 	}
 

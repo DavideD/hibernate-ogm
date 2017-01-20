@@ -25,9 +25,7 @@ import javax.transaction.TransactionManager;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
-import org.hibernate.jpa.HibernateEntityManagerFactory;
 import org.hibernate.ogm.jpa.HibernateOgmPersistence;
-import org.hibernate.ogm.jpa.impl.OgmEntityManagerFactory;
 import org.hibernate.ogm.utils.SkippableTestRunner;
 import org.hibernate.ogm.utils.TestHelper;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
@@ -88,10 +86,9 @@ public abstract class SingleJpaTestCase {
 	}
 
 	/**
-	 * @return Return the transaction manager in the case where one is available. Can be {@code null}.
-	 * A transaction manager will be available if JBoss Transaction is on the classpath. Where it is in use depends on
-	 * the current persistence unit under test and its persistence type setting.
-	 *
+	 * @return Return the transaction manager in the case where one is available. Can be {@code null}. A transaction
+	 * manager will be available if JBoss Transaction is on the classpath. Where it is in use depends on the current
+	 * persistence unit under test and its persistence type setting.
 	 * @throws Exception
 	 */
 	public TransactionManager getTransactionManager() throws Exception {
@@ -102,13 +99,12 @@ public abstract class SingleJpaTestCase {
 	 * Get JBoss TM out of Hibernate
 	 */
 	private static TransactionManager extractJBossTransactionManager(EntityManagerFactory factory) {
-		SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor) ( (HibernateEntityManagerFactory) factory ).getSessionFactory();
+		SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor) factory;
 		return sessionFactory.getServiceRegistry().getService( JtaPlatform.class ).retrieveTransactionManager();
 	}
 
 	protected ServiceRegistryImplementor getServiceRegistry() {
-		OgmEntityManagerFactory emFactory = ( (OgmEntityManagerFactory) getFactory() );
-		SessionFactoryImplementor sessionFactory = emFactory.getSessionFactory();
+		SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor) getFactory();
 		ServiceRegistryImplementor serviceRegistry = sessionFactory.getServiceRegistry();
 		return serviceRegistry;
 	}

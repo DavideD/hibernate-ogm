@@ -6,6 +6,7 @@
  */
 package org.hibernate.ogm.backendtck.queries;
 
+import static org.hamcrest.CoreMatchers.isA;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.hibernate.ogm.utils.GridDialectType.MONGODB;
 import static org.hibernate.ogm.utils.GridDialectType.NEO4J_EMBEDDED;
@@ -19,6 +20,8 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.TimeZone;
+
+import javax.persistence.PersistenceException;
 
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
@@ -93,8 +96,10 @@ public class SimpleQueriesTest extends OgmTestCase {
 
 	@Test
 	public void testFailingQuery() {
-		thrown.expect( HibernateException.class );
+		thrown.expect( PersistenceException.class );
+		thrown.expectCause( isA( HibernateException.class ) );
 		thrown.expectMessage( "OGM000024" );
+
 		assertQuery( session, 4, session.createQuery( "from Object" ) ); // Illegal query
 	}
 
