@@ -165,7 +165,7 @@ public class MongoDBSessionNativeQueryTest extends OgmTestCase {
 
 		try {
 			OscarWildePoem uniqueResult = (OscarWildePoem) session.getNamedQuery( "AthanasiaQuery" )
-					.uniqueResult();
+					.getSingleResult();
 			assertAreEquals( uniqueResult, athanasia );
 			transaction.commit();
 		}
@@ -235,7 +235,7 @@ public class MongoDBSessionNativeQueryTest extends OgmTestCase {
 		@SuppressWarnings("unchecked")
 		List<OscarWildePoem> result = session.createNativeQuery( nativeQuery )
 				.addEntity( OscarWildePoem.TABLE_NAME, OscarWildePoem.class )
-				.list();
+				.getResultList();
 
 		assertThat( result ).onProperty( "id" ).containsExactly( 2L, 3L, 1L );
 
@@ -254,7 +254,7 @@ public class MongoDBSessionNativeQueryTest extends OgmTestCase {
 		@SuppressWarnings("unchecked")
 		List<OscarWildePoem> result = session.createNativeQuery( nativeQuery )
 				.addEntity( OscarWildePoem.TABLE_NAME, OscarWildePoem.class )
-				.list();
+				.getResultList();
 
 		assertThat( result ).onProperty( "id" ).containsExactly( 2L, 3L, 1L );
 

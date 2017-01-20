@@ -21,8 +21,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Makes sure generated collection names are validated according to
- * the restrictions imposed by MongoDB collection names.
+ * Makes sure generated collection names are validated according to the restrictions imposed by MongoDB collection
+ * names.
  *
  * @author Sanne Grinovero
  */
@@ -58,9 +58,8 @@ public class CollectionNamingValidationTest {
 	@TestForIssue(jiraKey = "OGM-900")
 	public void shouldSupportDotInCollectionName() {
 		OgmSessionFactory ogmSessionFactory = TestHelper.getDefaultTestSessionFactory( DottedNamedTable.class );
-		assertThat( ogmSessionFactory.getAllClassMetadata().containsKey( DottedNamedTable.class.getName() ) );
+		assertThat( ogmSessionFactory.getMetamodel().entity( DottedNamedTable.class ) ).isNotNull();
 	}
-
 
 	private void assertTableCausesException(Class<?> mappedType, String expectedExceptionPrefix) {
 		try {
@@ -74,33 +73,51 @@ public class CollectionNamingValidationTest {
 
 	@Entity
 	public static class EmptyNamedTable {
-		@Id Long id;
+
+		@Id
+		Long id;
 	}
 
-	@Entity @Table(name = "system.blue.pill")
+	@Entity
+	@Table(name = "system.blue.pill")
 	public static class SystemNamedTable {
-		@Id Long id;
+
+		@Id
+		Long id;
 	}
 
-	@Entity @Table(name = "bl\0ah")
+	@Entity
+	@Table(name = "bl\0ah")
 	public static class NULNamedTable {
-		@Id Long id;
+
+		@Id
+		Long id;
 	}
 
-	@Entity @Table(name = "blah$0")
+	@Entity
+	@Table(name = "blah$0")
 	public static class DollarNamedTable {
-		@Id Long id;
+
+		@Id
+		Long id;
 	}
 
-	@Entity @Table(name = "valid")
+	@Entity
+	@Table(name = "valid")
 	public static class InvalidColumnsTable {
-		@Id Long id;
-		@Column(name = "$DOLLARS") String field;
+
+		@Id
+		Long id;
+		@Column(name = "$DOLLARS")
+		String field;
 	}
 
-	@Entity @Table(name = "table.with.dot")
+	@Entity
+	@Table(name = "table.with.dot")
 	public static class DottedNamedTable {
-		@Id Long id;
+
+		@Id
+		Long id;
 	}
 
 }
