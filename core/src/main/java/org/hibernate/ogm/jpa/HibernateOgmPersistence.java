@@ -100,11 +100,7 @@ public class HibernateOgmPersistence implements PersistenceProvider {
 					),
 					protectiveCopy
 			);
-			if ( coreEMF != null ) {
-				//delegate might return null to refuse the configuration
-				//(like when the configuration file is not defining the expected persistent unit)
-				return new OgmSessionFactoryImpl( (SessionFactoryImplementor) coreEMF );
-			}
+			return coreEMF;
 		}
 		//not the right provider
 		return null;
