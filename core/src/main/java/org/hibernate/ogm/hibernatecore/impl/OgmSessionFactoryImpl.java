@@ -7,15 +7,20 @@
 package org.hibernate.ogm.hibernatecore.impl;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
+import javax.persistence.EntityGraph;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceUnitUtil;
+import javax.persistence.Query;
+import javax.persistence.SynchronizationType;
+import javax.persistence.criteria.CriteriaBuilder;
 
-import org.hibernate.Cache;
 import org.hibernate.CustomEntityDirtinessStrategy;
 import org.hibernate.EntityNameResolver;
 import org.hibernate.HibernateException;
@@ -40,6 +45,7 @@ import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.hibernate.engine.profile.FetchProfile;
 import org.hibernate.engine.query.spi.QueryPlanCache;
+import org.hibernate.engine.spi.CacheImplementor;
 import org.hibernate.engine.spi.FilterDefinition;
 import org.hibernate.engine.spi.NamedQueryDefinition;
 import org.hibernate.engine.spi.NamedSQLQueryDefinition;
@@ -48,9 +54,9 @@ import org.hibernate.event.spi.EventSource;
 import org.hibernate.exception.spi.SQLExceptionConverter;
 import org.hibernate.id.IdentifierGenerator;
 import org.hibernate.id.factory.IdentifierGeneratorFactory;
-import org.hibernate.internal.NamedQueryRepository;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.metadata.CollectionMetadata;
+import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.ogm.OgmSession;
 import org.hibernate.ogm.engine.spi.OgmSessionBuilderImplementor;
 import org.hibernate.ogm.engine.spi.OgmSessionFactoryImplementor;
@@ -58,8 +64,8 @@ import org.hibernate.ogm.exception.NotSupportedException;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.proxy.EntityNotFoundDelegate;
+import org.hibernate.query.spi.NamedQueryRepository;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
-import org.hibernate.stat.Statistics;
 import org.hibernate.stat.spi.StatisticsImplementor;
 import org.hibernate.type.Type;
 import org.hibernate.type.TypeResolver;
@@ -82,7 +88,7 @@ public class OgmSessionFactoryImpl implements OgmSessionFactoryImplementor {
 	}
 
 	@Override
-	public Properties getProperties() {
+	public Map<String, Object> getProperties() {
 		return delegate.getProperties();
 	}
 
@@ -344,7 +350,7 @@ public class OgmSessionFactoryImpl implements OgmSessionFactoryImplementor {
 	}
 
 	@Override
-	public Statistics getStatistics() {
+	public StatisticsImplementor getStatistics() {
 		return delegate.getStatistics();
 	}
 
@@ -359,7 +365,7 @@ public class OgmSessionFactoryImpl implements OgmSessionFactoryImplementor {
 	}
 
 	@Override
-	public Cache getCache() {
+	public CacheImplementor getCache() {
 		return delegate.getCache();
 	}
 
@@ -444,5 +450,91 @@ public class OgmSessionFactoryImpl implements OgmSessionFactoryImplementor {
 	@Override
 	public String getUuid() {
 		return delegate.getUuid();
+	}
+
+	@Override
+	public EntityManager createEntityManager() {
+		return new OgmSessionImpl( this, (EventSource) delegate.createEntityManager() );
+	}
+
+	@Override
+	public EntityManager createEntityManager(Map map) {
+		return new OgmSessionImpl( this, (EventSource) delegate.createEntityManager( map ) );
+	}
+
+	@Override
+	public EntityManager createEntityManager(SynchronizationType synchronizationType) {
+		return new OgmSessionImpl( this, (EventSource) delegate.createEntityManager( synchronizationType ) );
+	}
+
+	@Override
+	public EntityManager createEntityManager(SynchronizationType synchronizationType, Map map) {
+		return new OgmSessionImpl( this, (EventSource) delegate.createEntityManager( synchronizationType, map ) );
+	}
+
+	@Override
+	public CriteriaBuilder getCriteriaBuilder() {
+		return delegate.getCriteriaBuilder();
+	}
+
+	@Override
+	public boolean isOpen() {
+		return delegate.isOpen();
+	}
+
+	@Override
+	public PersistenceUnitUtil getPersistenceUnitUtil() {
+		return delegate.getPersistenceUnitUtil();
+	}
+
+	@Override
+	public void addNamedQuery(String name, Query query) {
+		delegate.addNamedQuery( name, query );
+	}
+
+	@Override
+	public <T> T unwrap(Class<T> cls) {
+		if ( cls != null && cls.isAssignableFrom( getClass() ) ) {
+			@SuppressWarnings("unchecked")
+			T result = (T) this;
+			return result;
+		}
+
+		return delegate.unwrap( cls );
+	}
+
+	@Override
+	public <T> void addNamedEntityGraph(String graphName, EntityGraph<T> entityGraph) {
+		throw new IllegalStateException( "Hibernate OGM does not support entity graphs" );
+	}
+
+	@Override
+	public <T> List<EntityGraph<? super T>> findEntityGraphsByType(Class<T> entityClass) {
+		return delegate.findEntityGraphsByType( entityClass );
+	}
+
+	@Override
+	public String getName() {
+		return delegate.getName();
+	}
+
+	@Override
+	public MetamodelImplementor getMetamodel() {
+		return delegate.getMetamodel();
+	}
+
+	@Override
+	public EntityGraph findEntityGraphByName(String name) {
+		return delegate.findEntityGraphByName( name );
+	}
+
+	@Override
+	public Type resolveParameterBindType(Object bindValue) {
+		return delegate.resolveParameterBindType( bindValue );
+	}
+
+	@Override
+	public Type resolveParameterBindType(Class clazz) {
+		return delegate.resolveParameterBindType( clazz );
 	}
 }

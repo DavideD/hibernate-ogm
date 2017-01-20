@@ -17,6 +17,7 @@ import org.hibernate.MultiTenancyStrategy;
 import org.hibernate.NullPrecedence;
 import org.hibernate.SessionFactoryObserver;
 import org.hibernate.boot.SessionFactoryBuilder;
+import org.hibernate.boot.spi.SessionFactoryBuilderImplementor;
 import org.hibernate.cache.spi.QueryCacheFactory;
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
 import org.hibernate.dialect.function.SQLFunction;
@@ -32,7 +33,7 @@ import org.hibernate.tuple.entity.EntityTuplizerFactory;
  *
  * @author Gunnar Morling
  */
-public interface OgmSessionFactoryBuilder extends SessionFactoryBuilder {
+public interface OgmSessionFactoryBuilder extends SessionFactoryBuilderImplementor {
 
 	@Override
 	OgmSessionFactoryBuilder applyValidatorFactory(Object validatorFactory);

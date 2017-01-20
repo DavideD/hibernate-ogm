@@ -12,8 +12,9 @@ import org.hibernate.ogm.dialect.impl.EmptyTransactionContext;
 import org.hibernate.ogm.dialect.impl.IdentifiableDriver;
 import org.hibernate.ogm.dialect.impl.TransactionContextImpl;
 import org.hibernate.ogm.dialect.spi.TransactionContext;
-import org.hibernate.resource.transaction.TransactionCoordinator;
-import org.hibernate.resource.transaction.TransactionCoordinator.TransactionDriver;
+import org.hibernate.resource.jdbc.spi.JdbcSessionOwner;
+import org.hibernate.resource.transaction.spi.TransactionCoordinator;
+import org.hibernate.resource.transaction.spi.TransactionCoordinator.TransactionDriver;
 
 /**
  * @author Davide D'Alto
@@ -30,17 +31,17 @@ public final class TransactionContextHelper {
 	 * @return the {@link TransactionContext}
 	 */
 	public static TransactionContext transactionContext(Session session) {
-		return transactionContext( (SessionImplementor) session );
+		return transactionContext( (JdbcSessionOwner) session );
 	}
 
 	/**
 	 * Return a transaction context given the session implementor; it never returns {@code null}.
 	 *
-	 * @param session current {@link SessionImplementor}
+	 * @param jdbcSessionOwner current {@link SessionImplementor}
 	 * @return the {@link TransactionContext}
 	 */
-	public static TransactionContext transactionContext(SessionImplementor session) {
-		TransactionCoordinator transactionCoordinator = session.getTransactionCoordinator();
+	public static TransactionContext transactionContext(JdbcSessionOwner jdbcSessionOwner) {
+		TransactionCoordinator transactionCoordinator = jdbcSessionOwner.getTransactionCoordinator();
 		if ( transactionCoordinator != null && transactionCoordinator.getTransactionDriverControl() != null ) {
 			TransactionDriver driver = transactionCoordinator.getTransactionDriverControl();
 			if ( driver instanceof IdentifiableDriver ) {

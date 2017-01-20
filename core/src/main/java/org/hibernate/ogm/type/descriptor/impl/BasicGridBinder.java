@@ -7,6 +7,7 @@
 package org.hibernate.ogm.type.descriptor.impl;
 
 import java.util.Arrays;
+import java.util.TimeZone;
 
 import org.hibernate.engine.jdbc.LobCreator;
 import org.hibernate.engine.jdbc.NonContextualLobCreator;
@@ -38,6 +39,11 @@ public abstract class BasicGridBinder<X> implements GridValueBinder<X> {
 		public SqlTypeDescriptor remapSqlTypeDescriptor(SqlTypeDescriptor sqlTypeDescriptor) {
 			//OGM dialect don't remap types yet
 			return sqlTypeDescriptor;
+		}
+
+		@Override
+		public TimeZone getJdbcTimeZone() {
+			return TimeZone.getDefault();
 		}
 	};
 

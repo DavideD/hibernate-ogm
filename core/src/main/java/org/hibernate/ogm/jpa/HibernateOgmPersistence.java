@@ -18,14 +18,15 @@ import javax.persistence.spi.PersistenceUnitInfo;
 import javax.persistence.spi.ProviderUtil;
 
 import org.hibernate.cfg.Environment;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.jpa.AvailableSettings;
 import org.hibernate.jpa.HibernateEntityManagerFactory;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.ogm.cfg.OgmProperties;
+import org.hibernate.ogm.hibernatecore.impl.OgmSessionFactoryImpl;
 import org.hibernate.ogm.jpa.impl.DelegatorPersistenceUnitInfo;
-import org.hibernate.ogm.jpa.impl.OgmEntityManagerFactory;
 
 /**
  * JPA PersistenceProvider implementation specific to Hibernate OGM
@@ -62,7 +63,7 @@ public class HibernateOgmPersistence implements PersistenceProvider {
 					if ( coreEMF != null ) {
 						//delegate might return null to refuse the configuration
 						//(like when the configuration file is not defining the expected persistent unit)
-						return new OgmEntityManagerFactory( coreEMF );
+						return new OgmSessionFactoryImpl( (SessionFactoryImplementor) coreEMF );
 					}
 				}
 			}
@@ -93,7 +94,7 @@ public class HibernateOgmPersistence implements PersistenceProvider {
 			//HEM only builds an EntityManagerFactory when HibernatePersistence.class.getName() is the PersistenceProvider
 			//that's why we override it when
 			//new DelegatorPersistenceUnitInfo(info)
-			final HibernateEntityManagerFactory coreEMF = (HibernateEntityManagerFactory) delegate.createContainerEntityManagerFactory(
+			final EntityManagerFactory coreEMF = delegate.createContainerEntityManagerFactory(
 					new DelegatorPersistenceUnitInfo(
 							info
 					),
@@ -102,7 +103,7 @@ public class HibernateOgmPersistence implements PersistenceProvider {
 			if ( coreEMF != null ) {
 				//delegate might return null to refuse the configuration
 				//(like when the configuration file is not defining the expected persistent unit)
-				return new OgmEntityManagerFactory( coreEMF );
+				return new OgmSessionFactoryImpl( (SessionFactoryImplementor) coreEMF );
 			}
 		}
 		//not the right provider

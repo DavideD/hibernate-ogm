@@ -6,6 +6,7 @@
  */
 package org.hibernate.ogm.boot.impl;
 
+import org.hibernate.Interceptor;
 import org.hibernate.boot.SessionFactoryBuilder;
 import org.hibernate.boot.spi.AbstractDelegatingSessionFactoryBuilder;
 import org.hibernate.boot.spi.MetadataImplementor;
@@ -50,13 +51,33 @@ public class OgmSessionFactoryBuilderImpl extends AbstractDelegatingSessionFacto
 
 	@Override
 	public OgmSessionFactory build() {
-		OgmSessionFactoryOptions options = new OgmSessionFactoryOptions( delegate.buildSessionFactoryOptions() );
+		return new OgmSessionFactoryImpl( new SessionFactoryImpl( metadata, buildSessionFactoryOptions() ) );
+	}
 
-		return new OgmSessionFactoryImpl( new SessionFactoryImpl( metadata, options ) );
+	@Override
+	public OgmSessionFactoryOptions buildSessionFactoryOptions() {
+		OgmSessionFactoryOptions options = new OgmSessionFactoryOptions( delegate.buildSessionFactoryOptions() );
+		return options;
 	}
 
 	@Override
 	public SessionFactoryBuilder applyConnectionHandlingMode(PhysicalConnectionHandlingMode connectionHandlingMode) {
 		return delegate.applyConnectionHandlingMode( connectionHandlingMode );
 	}
+
+	@Override
+	public SessionFactoryBuilder applyStatelessInterceptor(Class<? extends Interceptor> statelessInterceptorClass) {
+		return delegate.applyStatelessInterceptor( statelessInterceptorClass );
+	}
+
+	@Override
+	public void markAsJpaBootstrap() {
+		delegate.markAsJpaBootstrap();
+	}
+
+	@Override
+	public void disableJtaTransactionAccess() {
+		delegate.disableJtaTransactionAccess();
+	}
+
 }

@@ -22,7 +22,7 @@ import org.hibernate.cache.spi.access.CollectionRegionAccessStrategy;
 import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.spi.LoadQueryInfluencers;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.engine.spi.SubselectFetch;
 import org.hibernate.internal.FilterAliasGenerator;
 import org.hibernate.internal.StaticFilterAliasGenerator;
@@ -226,7 +226,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public Object readKey(ResultSet rs, String[] aliases, SessionImplementor session)
+	public Object readKey(ResultSet rs, String[] aliases, SharedSessionContractImplementor session)
 			throws HibernateException, SQLException {
 		final TupleAsMapResultSet resultset = rs.unwrap( TupleAsMapResultSet.class );
 		final Tuple keyTuple = resultset.getTuple();
@@ -234,7 +234,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public Object readElement(ResultSet rs, Object owner, String[] aliases, SessionImplementor session)
+	public Object readElement(ResultSet rs, Object owner, String[] aliases, SharedSessionContractImplementor session)
 			throws HibernateException, SQLException {
 		final TupleAsMapResultSet resultset = rs.unwrap( TupleAsMapResultSet.class );
 		final Tuple keyTuple = resultset.getTuple();
@@ -242,7 +242,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public Object readIdentifier(ResultSet rs, String alias, SessionImplementor session)
+	public Object readIdentifier(ResultSet rs, String alias, SharedSessionContractImplementor session)
 			throws HibernateException, SQLException {
 		final TupleAsMapResultSet resultset = rs.unwrap( TupleAsMapResultSet.class );
 		final Tuple keyTuple = resultset.getTuple();
@@ -250,7 +250,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public Object readIndex(ResultSet rs, String[] aliases, SessionImplementor session)
+	public Object readIndex(ResultSet rs, String[] aliases, SharedSessionContractImplementor session)
 			throws HibernateException, SQLException {
 		final TupleAsMapResultSet resultset = rs.unwrap( TupleAsMapResultSet.class );
 		final Tuple keyTuple = resultset.getTuple();
@@ -258,7 +258,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	protected CollectionInitializer createSubselectInitializer(SubselectFetch subselect, SessionImplementor session) {
+	protected CollectionInitializer createSubselectInitializer(SubselectFetch subselect, SharedSessionContractImplementor session) {
 		return null;
 	}
 
@@ -317,7 +317,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	protected int doUpdateRows(Serializable key, PersistentCollection collection, SessionImplementor session)
+	protected int doUpdateRows(Serializable key, PersistentCollection collection, SharedSessionContractImplementor session)
 			throws HibernateException {
 		if ( ArrayHelper.isAllFalse( elementColumnIsSettable ) ) {
 			return 0;
@@ -369,7 +369,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	 * persister.
 	 */
 	private RowKeyAndTuple createAndPutAssociationRowForInsert(Serializable key, PersistentCollection collection,
-			AssociationPersister associationPersister, SessionImplementor session, int i, Object entry) {
+			AssociationPersister associationPersister, SharedSessionContractImplementor session, int i, Object entry) {
 		RowKeyBuilder rowKeyBuilder = initializeRowKeyBuilder();
 		Tuple associationRow = new Tuple();
 
@@ -424,7 +424,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 		return builder;
 	}
 
-	private RowKey getTupleKeyForUpdate(Serializable key, PersistentCollection collection, SessionImplementor session, int i, Object entry, AssociationPersister associationPersister) {
+	private RowKey getTupleKeyForUpdate(Serializable key, PersistentCollection collection, SharedSessionContractImplementor session, int i, Object entry, AssociationPersister associationPersister) {
 		RowKeyBuilder rowKeyBuilder = initializeRowKeyBuilder();
 		Tuple tuple = new Tuple();
 		if ( hasIdentifier ) {
@@ -451,7 +451,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 		return rowKeyBuilder.build();
 	}
 
-	private RowKey getTupleKeyForDelete(Serializable key, PersistentCollection collection, SessionImplementor session, Object entry, boolean findByIndex, AssociationPersister associationPersister) {
+	private RowKey getTupleKeyForDelete(Serializable key, PersistentCollection collection, SharedSessionContractImplementor session, Object entry, boolean findByIndex, AssociationPersister associationPersister) {
 		RowKeyBuilder rowKeyBuilder = initializeRowKeyBuilder();
 		Tuple tuple = new Tuple();
 		if ( hasIdentifier ) {
@@ -479,7 +479,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public int getSize(Serializable key, SessionImplementor session) {
+	public int getSize(Serializable key, SharedSessionContractImplementor session) {
 		AssociationPersister associationPersister = getAssociationPersister( session.getPersistenceContext().getEntity( new org.hibernate.engine.spi.EntityKey( key, getOwnerEntityPersister() ) ), key, session );
 		final Association collectionMetadata = associationPersister.getAssociationOrNull();
 
@@ -492,7 +492,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public void deleteRows(PersistentCollection collection, Serializable id, SessionImplementor session)
+	public void deleteRows(PersistentCollection collection, Serializable id, SharedSessionContractImplementor session)
 			throws HibernateException {
 
 		if ( !isInverse && isRowDeleteEnabled() ) {
@@ -537,7 +537,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public void insertRows(PersistentCollection collection, Serializable id, SessionImplementor session)
+	public void insertRows(PersistentCollection collection, Serializable id, SharedSessionContractImplementor session)
 			throws HibernateException {
 
 		if ( !isInverse && isRowInsertEnabled() ) {
@@ -574,7 +574,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public void recreate(PersistentCollection collection, Serializable id, SessionImplementor session)
+	public void recreate(PersistentCollection collection, Serializable id, SharedSessionContractImplementor session)
 			throws HibernateException {
 
 		if ( !isInverse && isRowInsertEnabled() ) {
@@ -618,7 +618,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 		}
 	}
 
-	private void updateInverseSideOfAssociationNavigation(SessionImplementor session, Object entity, AssociationKey associationKey, Tuple associationRow, Action action, RowKey rowKey) {
+	private void updateInverseSideOfAssociationNavigation(SharedSessionContractImplementor session, Object entity, AssociationKey associationKey, Tuple associationRow, Action action, RowKey rowKey) {
 		if ( associationType == AssociationType.EMBEDDED_FK_TO_ENTITY ) {
 			// update the associated object
 			Serializable entityId = (Serializable) gridTypeOfAssociatedId.nullSafeGet( associationRow, getElementColumnNames(), session, null );
@@ -708,7 +708,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	public void remove(Serializable id, SessionImplementor session) throws HibernateException {
+	public void remove(Serializable id, SharedSessionContractImplementor session) throws HibernateException {
 
 		if ( !isInverse && isRowDeleteEnabled() ) {
 
@@ -800,7 +800,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	protected CollectionInitializer getAppropriateInitializer(Serializable key, SessionImplementor session) {
+	protected CollectionInitializer getAppropriateInitializer(Serializable key, SharedSessionContractImplementor session) {
 		// we have no query loader
 		// we don't handle subselect
 		// we don't know how to support filters on OGM today
@@ -808,7 +808,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	}
 
 	@Override
-	protected void doProcessQueuedOps(PersistentCollection collection, Serializable key, SessionImplementor session) throws HibernateException {
+	protected void doProcessQueuedOps(PersistentCollection collection, Serializable key, SharedSessionContractImplementor session) throws HibernateException {
 		// nothing to do
 	}
 
@@ -816,7 +816,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	// overriding this variant and the one above to be compatible with any 4.3.x version. This variant can be removed
 	// once we're on ORM 5
 	@Override
-	protected void doProcessQueuedOps(PersistentCollection collection, Serializable key, int nextIndex, SessionImplementor session) throws HibernateException {
+	protected void doProcessQueuedOps(PersistentCollection collection, Serializable key, int nextIndex, SharedSessionContractImplementor session) throws HibernateException {
 		// nothing to do
 	}
 
@@ -872,7 +872,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 		return associationTypeContext;
 	}
 
-	private AssociationPersister getAssociationPersister(Object collectionOwner, Serializable id, SessionImplementor session) {
+	private AssociationPersister getAssociationPersister(Object collectionOwner, Serializable id, SharedSessionContractImplementor session) {
 		return new AssociationPersister(
 				getOwnerEntityPersister().getMappedClass()
 			)
@@ -884,7 +884,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 			.session( session );
 	}
 
-	private AssociationPersister getAssociationPersister(Object collectionOwner, Object[] keyColumnValues, SessionImplementor session) {
+	private AssociationPersister getAssociationPersister(Object collectionOwner, Object[] keyColumnValues, SharedSessionContractImplementor session) {
 		return new AssociationPersister(
 				getOwnerEntityPersister().getMappedClass()
 			)
@@ -896,7 +896,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 			.session( session );
 	}
 
-	private TuplePointer getSharedTuplePointer(EntityKey key, Object entity, TupleContext tupleContext, SessionImplementor session) {
+	private TuplePointer getSharedTuplePointer(EntityKey key, Object entity, TupleContext tupleContext, SharedSessionContractImplementor session) {
 		if ( entity == null ) {
 			return new TuplePointer( gridDialect.getTuple( key, tupleContext ) );
 		}

@@ -11,7 +11,7 @@ import static org.hibernate.ogm.util.impl.TransactionContextHelper.transactionCo
 import java.io.Serializable;
 
 import org.hibernate.SessionFactory;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.ogm.dialect.batch.spi.GroupingByEntityDialect;
 import org.hibernate.ogm.dialect.impl.AssociationContextImpl;
 import org.hibernate.ogm.dialect.impl.GridDialects;
@@ -42,7 +42,7 @@ import org.hibernate.persister.entity.EntityPersister;
 public class AssociationPersister {
 	private GridType keyGridType;
 	private Object key;
-	private SessionImplementor session;
+	private SharedSessionContractImplementor session;
 	private AssociationKey associationKey;
 	private Association association;
 	private Object[] columnValues;
@@ -71,7 +71,7 @@ public class AssociationPersister {
 		return this;
 	}
 
-	public AssociationPersister session(SessionImplementor session) {
+	public AssociationPersister session(SharedSessionContractImplementor session) {
 		this.session = session;
 		return this;
 	}

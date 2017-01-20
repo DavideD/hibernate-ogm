@@ -6,11 +6,14 @@
  */
 package org.hibernate.ogm.service.impl;
 
+import java.util.List;
+
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.spi.SessionFactoryOptions;
 import org.hibernate.engine.config.spi.ConfigurationService;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.service.Service;
+import org.hibernate.service.internal.ProvidedService;
 import org.hibernate.service.internal.SessionFactoryServiceRegistryImpl;
 import org.hibernate.service.spi.Configurable;
 import org.hibernate.service.spi.ServiceBinding;
@@ -24,14 +27,21 @@ import org.hibernate.service.spi.SessionFactoryServiceInitiator;
  */
 public class OgmSessionFactoryServiceRegistryImpl extends SessionFactoryServiceRegistryImpl {
 
-	public OgmSessionFactoryServiceRegistryImpl(ServiceRegistryImplementor parent, SessionFactoryImplementor sessionFactory, SessionFactoryOptions sessionFactoryOptions) {
-		super( parent, sessionFactory, sessionFactoryOptions );
-		createServiceBindings();
+	public OgmSessionFactoryServiceRegistryImpl(ServiceRegistryImplementor parent,
+			List<SessionFactoryServiceInitiator> initiators,
+			List<ProvidedService> providedServices,
+			SessionFactoryImplementor sessionFactory,
+			SessionFactoryOptions sessionFactoryOptions) {
+		super( parent, initiators, providedServices, sessionFactory, sessionFactoryOptions );
 	}
 
-	private void createServiceBindings() {
-		for ( SessionFactoryServiceInitiator<?> inititator : OgmSessionFactoryServiceInitiators.LIST ) {
-			createServiceBinding( inititator );
+	@Override
+	protected <R extends Service> void registerService(ServiceBinding<R> serviceBinding, R service) {
+		if ( service != null ) {
+			super.registerService( serviceBinding, service );
+		}
+		else {
+			System.out.println( "Null" );
 		}
 	}
 

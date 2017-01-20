@@ -6,27 +6,23 @@
  */
 package org.hibernate.ogm.hibernatecore.impl;
 
-import java.io.Serializable;
+import static org.hibernate.cfg.AvailableSettings.JPA_LOCK_TIMEOUT;
+
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.Criteria;
 import org.hibernate.Filter;
 import org.hibernate.HibernateException;
+import org.hibernate.LockMode;
+import org.hibernate.LockOptions;
 import org.hibernate.MappingException;
 import org.hibernate.NaturalIdLoadAccess;
-import org.hibernate.Query;
-import org.hibernate.SQLQuery;
-import org.hibernate.ScrollableResults;
 import org.hibernate.SessionException;
 import org.hibernate.SharedSessionBuilder;
 import org.hibernate.SimpleNaturalIdLoadAccess;
-import org.hibernate.engine.jdbc.connections.spi.JdbcConnectionAccess;
+import org.hibernate.engine.query.spi.HQLQueryPlan;
 import org.hibernate.engine.query.spi.sql.NativeSQLQuerySpecification;
-import org.hibernate.engine.spi.ActionQueue;
-import org.hibernate.engine.spi.EntityEntry;
-import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.engine.spi.NamedQueryDefinition;
 import org.hibernate.engine.spi.NamedSQLQueryDefinition;
 import org.hibernate.engine.spi.QueryParameters;
@@ -41,24 +37,29 @@ import org.hibernate.event.spi.EventType;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.jdbc.ReturningWork;
 import org.hibernate.jdbc.Work;
+import org.hibernate.jpa.QueryHints;
 import org.hibernate.loader.custom.CustomQuery;
 import org.hibernate.ogm.OgmSession;
 import org.hibernate.ogm.OgmSessionFactory;
 import org.hibernate.ogm.datastore.spi.DatastoreConfiguration;
+import org.hibernate.ogm.engine.spi.OgmSessionFactoryImplementor;
 import org.hibernate.ogm.exception.NotSupportedException;
 import org.hibernate.ogm.loader.nativeloader.impl.BackendCustomQuery;
 import org.hibernate.ogm.options.navigation.GlobalContext;
-import org.hibernate.ogm.query.NoSQLQuery;
-import org.hibernate.ogm.query.impl.NoSQLQueryImpl;
 import org.hibernate.ogm.util.impl.Log;
 import org.hibernate.ogm.util.impl.LoggerFactory;
-import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.procedure.ProcedureCall;
+import org.hibernate.query.ParameterMetadata;
+import org.hibernate.query.Query;
+import org.hibernate.query.internal.NativeQueryImpl;
+import org.hibernate.query.internal.QueryImpl;
+import org.hibernate.query.spi.NativeQueryImplementor;
+import org.hibernate.query.spi.QueryImplementor;
 import org.hibernate.resource.transaction.backend.jta.internal.JtaTransactionCoordinatorImpl;
 
 /**
- * An OGM specific session implementation which delegate most of the work to the underlying Hibernate ORM {@code Session},
- * except queries which are redirected to the OGM engine.
+ * An OGM specific session implementation which delegate most of the work to the underlying Hibernate ORM
+ * {@code Session}, except queries which are redirected to the OGM engine.
  *
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
  */
@@ -66,98 +67,312 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 
 	private static final Log log = LoggerFactory.make();
 
+	private LockOptions lockOptions = new LockOptions();
+
 	private final EventSource delegate;
 	private final OgmSessionFactoryImpl factory;
 
 	public OgmSessionImpl(OgmSessionFactory factory, EventSource delegate) {
-		super( delegate, delegate );
+		super( delegate );
 		this.delegate = delegate;
 		this.factory = (OgmSessionFactoryImpl) factory;
 	}
 
-	//Overridden methods
+	// Overridden methods
 	@Override
 	public SessionFactoryImplementor getFactory() {
 		return factory;
 	}
 
 	@Override
-	public OgmSessionFactory getSessionFactory() {
+	public OgmSessionFactoryImplementor getSessionFactory() {
 		return factory;
 	}
 
 	@Override
 	public Criteria createCriteria(Class persistentClass) {
-		//TODO plug the Lucene engine
+		// TODO plug the Lucene engine
 		throw new NotSupportedException( "OGM-23", "Criteria queries are not supported yet" );
 	}
 
 	@Override
 	public Criteria createCriteria(Class persistentClass, String alias) {
-		//TODO plug the Lucene engine
+		// TODO plug the Lucene engine
 		throw new NotSupportedException( "OGM-23", "Criteria queries are not supported yet" );
 	}
 
 	@Override
 	public Criteria createCriteria(String entityName) {
-		//TODO plug the Lucene engine
+		// TODO plug the Lucene engine
 		throw new NotSupportedException( "OGM-23", "Criteria queries are not supported yet" );
 	}
 
 	@Override
 	public Criteria createCriteria(String entityName, String alias) {
-		//TODO plug the Lucene engine
+		// TODO plug the Lucene engine
 		throw new NotSupportedException( "OGM-23", "Criteria queries are not supported yet" );
 	}
 
 	@Override
-	public Query createQuery(NamedQueryDefinition namedQueryDefinition) {
-		errorIfClosed();
+	public QueryImplementor getNamedQuery(String name) {
+		checkOpen();
 		checkTransactionSynchStatus();
+		delayedAfterCompletion();
 
-		String queryString = namedQueryDefinition.getQueryString();
-		Query query = createQuery( queryString );
-		query.setComment( "named HQL/JP-QL query " + namedQueryDefinition.getName() );
-		query.setFlushMode( namedQueryDefinition.getFlushMode() );
+		// look as HQL/JPQL first
+		final NamedQueryDefinition queryDefinition = factory.getNamedQueryRepository().getNamedQueryDefinition( name );
+		if ( queryDefinition != null ) {
+			return createQuery( queryDefinition );
+		}
+
+		// then as a native query
+		final NamedSQLQueryDefinition nativeQueryDefinition = factory.getNamedQueryRepository().getNamedSQLQueryDefinition( name );
+		if ( nativeQueryDefinition != null ) {
+			return createNativeQuery( nativeQueryDefinition, true );
+		}
+
+		throw new IllegalArgumentException( "No query defined for that name [" + name + "]" );
+	}
+
+	@Override
+	public QueryImplementor createNamedQuery(String name) {
+		final QueryImplementor<?> query = buildQueryFromName( name, null );
+		query.getParameterMetadata().setOrdinalParametersZeroBased( false );
 		return query;
 	}
 
-	@Override
-	public NoSQLQuery createSQLQuery(String queryString) throws HibernateException {
-		return createNativeQuery( queryString );
-	}
-
-	@Override
-	public SQLQuery createSQLQuery(NamedSQLQueryDefinition namedQueryDefinition) {
-		return createNativeQuery( namedQueryDefinition.getQuery() );
-	}
-
-	@Override
-	public NoSQLQuery createNativeQuery(String nativeQuery) {
-		errorIfClosed();
+	protected QueryImplementor buildQueryFromName(String name, Class resultType) {
+		checkOpen();
 		checkTransactionSynchStatus();
+		delayedAfterCompletion();
 
-		return new NoSQLQueryImpl(
-				nativeQuery,
+		// todo : apply stored setting at the JPA Query level too
+
+		final NamedQueryDefinition namedQueryDefinition = getFactory().getNamedQueryRepository().getNamedQueryDefinition( name );
+		if ( namedQueryDefinition != null ) {
+			return createQuery( namedQueryDefinition, resultType );
+		}
+
+		final NamedSQLQueryDefinition nativeQueryDefinition = getFactory().getNamedQueryRepository().getNamedSQLQueryDefinition( name );
+		if ( nativeQueryDefinition != null ) {
+			return (QueryImplementor) createNativeQuery( nativeQueryDefinition, resultType );
+		}
+
+		throw new IllegalArgumentException( "No query defined for that name [" + name + "]" ) ;
+	}
+
+	protected <T> QueryImplementor<T> createQuery(NamedQueryDefinition namedQueryDefinition, Class<T> resultType) {
+		final QueryImplementor<T> query = createQuery( namedQueryDefinition );
+		if ( resultType != null ) {
+			resultClassChecking( resultType, query );
+		}
+		return query;
+	}
+
+	private void resultClassChecking(Class resultType, NamedSQLQueryDefinition queryDefinition) {
+	}
+
+	private void resultClassChecking(Class resultType, QueryImplementor query) {
+	}
+
+	protected QueryImplementor createQuery(NamedQueryDefinition queryDefinition) {
+		String queryString = queryDefinition.getQueryString();
+		final QueryImplementor query = new QueryImpl(
 				this,
-				factory.getQueryPlanCache().getSQLParameterMetadata( nativeQuery )
-		);
+				getQueryPlan( queryString, false ).getParameterMetadata(),
+				queryString );
+		query.setHibernateFlushMode( queryDefinition.getFlushMode() );
+		query.setComment( queryDefinition.getComment() != null ? queryDefinition.getComment() : queryDefinition.getName() );
+		if ( queryDefinition.getLockOptions() != null ) {
+			query.setLockOptions( queryDefinition.getLockOptions() );
+		}
+
+		initQueryFromNamedDefinition( query, queryDefinition );
+		// applyQuerySettingsAndHints( query );
+
+		return query;
+	}
+
+	protected HQLQueryPlan getQueryPlan(String query, boolean shallow) throws HibernateException {
+		return getFactory().getQueryPlanCache().getHQLQueryPlan( query, shallow, getLoadQueryInfluencers().getEnabledFilters() );
 	}
 
 	@Override
-	public Query createFilter(Object collection, String queryString) throws HibernateException {
-		//TODO plug the Lucene engine
+	public NativeQueryImplementor createNativeQuery(String sqlString) {
+		final NativeQueryImpl query = (NativeQueryImpl) getNativeQueryImplementor( sqlString, false );
+		query.setZeroBasedParametersIndex( false );
+		return query;
+	}
+
+	@SuppressWarnings({ "WeakerAccess", "unchecked" })
+	protected NativeQueryImplementor createNativeQuery(NamedSQLQueryDefinition queryDefinition, Class resultType) {
+		if ( resultType != null ) {
+			resultClassChecking( resultType, queryDefinition );
+		}
+
+		final NativeQueryImpl query = new NativeQueryImpl(
+				queryDefinition,
+				this,
+				factory.getQueryPlanCache().getSQLParameterMetadata( queryDefinition.getQueryString(), false ) );
+		query.setHibernateFlushMode( queryDefinition.getFlushMode() );
+		query.setComment( queryDefinition.getComment() != null ? queryDefinition.getComment() : queryDefinition.getName() );
+		if ( queryDefinition.getLockOptions() != null ) {
+			query.setLockOptions( queryDefinition.getLockOptions() );
+		}
+
+		initQueryFromNamedDefinition( query, queryDefinition );
+		applyQuerySettingsAndHints( query );
+
+		return query;
+	}
+
+
+	@Override
+	public NativeQueryImplementor createNativeQuery(String sqlString, Class resultClass) {
+		checkOpen();
+		checkTransactionSynchStatus();
+		delayedAfterCompletion();
+
+		try {
+			NativeQueryImplementor query = createNativeQuery( sqlString );
+			query.addEntity( "alias1", resultClass.getName(), LockMode.READ );
+			return query;
+		}
+		catch (RuntimeException he) {
+			throw he;
+		}
+	}
+
+	@Override
+	public NativeQueryImplementor createNativeQuery(String sqlString, String resultSetMapping) {
+		checkOpen();
+		checkTransactionSynchStatus();
+		delayedAfterCompletion();
+
+		try {
+			NativeQueryImplementor query = createNativeQuery( sqlString );
+			query.setResultSetMapping( resultSetMapping );
+			return query;
+		}
+		catch (RuntimeException he) {
+			throw he;
+		}
+	}
+
+	@Override
+	public NativeQueryImplementor getNamedNativeQuery(String name) {
+		checkOpen();
+		checkTransactionSynchStatus();
+		delayedAfterCompletion();
+
+		final NamedSQLQueryDefinition nativeQueryDefinition = factory.getNamedQueryRepository().getNamedSQLQueryDefinition( name );
+		if ( nativeQueryDefinition != null ) {
+			return createNativeQuery( nativeQueryDefinition, true );
+		}
+
+		throw new IllegalArgumentException( "No query defined for that name [" + name + "]" );
+	}
+
+	@Override
+	public NativeQueryImplementor createSQLQuery(String queryString) {
+		return getNativeQueryImplementor( queryString, true );
+	}
+
+	protected NativeQueryImplementor getNativeQueryImplementor(
+			String queryString,
+			boolean isOrdinalParameterZeroBased) {
+		checkOpen();
+		checkTransactionSynchStatus();
+		delayedAfterCompletion();
+
+		try {
+			NativeQueryImpl query = new NativeQueryImpl(
+					queryString,
+					false,
+					this,
+					getFactory().getQueryPlanCache().getSQLParameterMetadata( queryString, isOrdinalParameterZeroBased ) );
+			query.setComment( "dynamic native SQL query" );
+			return query;
+		}
+		catch (RuntimeException he) {
+			throw he;
+		}
+	}
+
+	private <T> NativeQueryImplementor<T> createNativeQuery(NamedSQLQueryDefinition queryDefinition, boolean isOrdinalParameterZeroBased) {
+		final ParameterMetadata parameterMetadata = factory.getQueryPlanCache().getSQLParameterMetadata(
+				queryDefinition.getQueryString(),
+				isOrdinalParameterZeroBased );
+		return getNativeQueryImplementor( queryDefinition, parameterMetadata );
+	}
+
+	private <T> NativeQueryImplementor<T> getNativeQueryImplementor(
+			NamedSQLQueryDefinition queryDefinition,
+			ParameterMetadata parameterMetadata) {
+		final NativeQueryImpl<T> query = new NativeQueryImpl(
+				queryDefinition,
+				this,
+				parameterMetadata );
+		query.setComment( queryDefinition.getComment() != null ? queryDefinition.getComment() : queryDefinition.getName() );
+
+		initQueryFromNamedDefinition( query, queryDefinition );
+		applyQuerySettingsAndHints( query );
+
+		return query;
+	}
+
+	protected <T> void initQueryFromNamedDefinition(Query<T> query, NamedQueryDefinition nqd) {
+		// todo : cacheable and readonly should be Boolean rather than boolean...
+		query.setCacheable( nqd.isCacheable() );
+		query.setCacheRegion( nqd.getCacheRegion() );
+		query.setReadOnly( nqd.isReadOnly() );
+
+		if ( nqd.getTimeout() != null ) {
+			query.setTimeout( nqd.getTimeout() );
+		}
+		if ( nqd.getFetchSize() != null ) {
+			query.setFetchSize( nqd.getFetchSize() );
+		}
+		if ( nqd.getCacheMode() != null ) {
+			query.setCacheMode( nqd.getCacheMode() );
+		}
+		if ( nqd.getComment() != null ) {
+			query.setComment( nqd.getComment() );
+		}
+		if ( nqd.getFirstResult() != null ) {
+			query.setFirstResult( nqd.getFirstResult() );
+		}
+		if ( nqd.getMaxResults() != null ) {
+			query.setMaxResults( nqd.getMaxResults() );
+		}
+		if ( nqd.getFlushMode() != null ) {
+			query.setHibernateFlushMode( nqd.getFlushMode() );
+		}
+	}
+
+	protected <T> void applyQuerySettingsAndHints(Query<T> query) {
+		if ( lockOptions.getLockMode() != LockMode.NONE ) {
+			query.setLockMode( getLockMode( lockOptions.getLockMode() ) );
+		}
+		Object queryTimeout;
+		if ( ( queryTimeout = getProperties().get( QueryHints.SPEC_HINT_TIMEOUT ) ) != null ) {
+			query.setHint( QueryHints.SPEC_HINT_TIMEOUT, queryTimeout );
+		}
+		Object lockTimeout;
+		if ( ( lockTimeout = getProperties().get( JPA_LOCK_TIMEOUT ) ) != null ) {
+			query.setHint( JPA_LOCK_TIMEOUT, lockTimeout );
+		}
+	}
+
+	@Override
+	public QueryImplementor createFilter(Object collection, String queryString) throws HibernateException {
+		// TODO plug the Lucene engine
 		throw new NotSupportedException( "OGM-24", "filters are not supported yet" );
 	}
 
 	@Override
 	public Filter enableFilter(String filterName) {
 		throw new NotSupportedException( "OGM-25", "filters are not supported yet" );
-	}
-
-	@Override
-	public Filter getEnabledFilter(String filterName) {
-		return delegate.getEnabledFilter( filterName );
 	}
 
 	@Override
@@ -195,57 +410,6 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 		throw new NotSupportedException( "OGM-359", "Stored procedures are not supported yet" );
 	}
 
-	//Event Source methods
-	@Override
-	public ActionQueue getActionQueue() {
-		return delegate.getActionQueue();
-	}
-
-	@Override
-	public Object instantiate(EntityPersister persister, Serializable id) throws HibernateException {
-		return delegate.instantiate( persister, id );
-	}
-
-	@Override
-	public void forceFlush(EntityEntry e) throws HibernateException {
-		delegate.forceFlush( e );
-	}
-
-	@Override
-	public void merge(String entityName, Object object, Map copiedAlready) throws HibernateException {
-		delegate.merge( entityName, object, copiedAlready );
-	}
-
-	@Override
-	public void persist(String entityName, Object object, Map createdAlready) throws HibernateException {
-		delegate.persist( entityName, object, createdAlready );
-	}
-
-	@Override
-	public void persistOnFlush(String entityName, Object object, Map copiedAlready) {
-		delegate.persistOnFlush( entityName, object, copiedAlready );
-	}
-
-	@Override
-	public void refresh(String entityName, Object object, Map refreshedAlready) throws HibernateException {
-		delegate.refresh( entityName, object, refreshedAlready );
-	}
-
-	@Override
-	public void delete(String entityName, Object child, boolean isCascadeDeleteEnabled, Set transientEntities) {
-		delegate.delete( entityName, child, isCascadeDeleteEnabled, transientEntities );
-	}
-
-	@Override
-	public JdbcConnectionAccess getJdbcConnectionAccess() {
-		return delegate.getJdbcConnectionAccess();
-	}
-
-	@Override
-	public EntityKey generateEntityKey(Serializable id, EntityPersister persister) {
-		return delegate.generateEntityKey( id, persister );
-	}
-
 	@Override
 	public List<?> listCustomQuery(CustomQuery customQuery, QueryParameters queryParameters) throws HibernateException {
 		errorIfClosed();
@@ -270,7 +434,7 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 	 * to work with our custom loaders.
 	 */
 	private boolean autoFlushIfRequired(Set<String> querySpaces) throws HibernateException {
-		if ( ! isTransactionInProgress() ) {
+		if ( !isTransactionInProgress() ) {
 			// do not auto-flush while outside a transaction
 			return false;
 		}
@@ -290,53 +454,17 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 	}
 
 	@Override
-	public ScrollableResults scrollCustomQuery(CustomQuery customQuery, QueryParameters queryParameters)
-			throws HibernateException {
-		return delegate.scrollCustomQuery( customQuery, queryParameters );
-	}
-
-	@Override
 	public List<?> list(NativeSQLQuerySpecification spec, QueryParameters queryParameters) throws HibernateException {
 		return listCustomQuery(
 				factory.getQueryPlanCache().getNativeSQLQueryPlan( spec ).getCustomQuery(),
-				queryParameters
-		);
+				queryParameters );
 	}
 
 	@Override
-	public ScrollableResults scroll(NativeSQLQuerySpecification spec, QueryParameters queryParameters)
-			throws HibernateException {
-		return delegate.scroll( spec, queryParameters );
-	}
-
-	//SessionImplementor methods
-	@Override
-	public Query getNamedQuery(String name) {
-		errorIfClosed();
-		checkTransactionSynchStatus();
-
-		NamedQueryDefinition namedQuery = factory.getNamedQuery( name );
-		//ORM looks for native queries when no HQL definition is found, we do the same here.
-		if ( namedQuery == null ) {
-			return getNamedSQLQuery( name );
-		}
-
-		return createQuery( namedQuery );
-	}
-
-	@Override
-	public Query getNamedSQLQuery(String queryName) {
-		errorIfClosed();
-		checkTransactionSynchStatus();
-
-		NamedSQLQueryDefinition nsqlqd = findNamedNativeQuery( queryName );
-		Query query = new NoSQLQueryImpl(
-				nsqlqd,
-				this,
-				factory.getQueryPlanCache().getSQLParameterMetadata( nsqlqd.getQuery() )
-		);
-		query.setComment( "named native query " + queryName );
-		return query;
+	public NativeQueryImplementor getNamedSQLQuery(String name) {
+		final NativeQueryImpl nativeQuery = (NativeQueryImpl) getNamedNativeQuery( name );
+		nativeQuery.setZeroBasedParametersIndex( true );
+		return nativeQuery;
 	}
 
 	private NamedSQLQueryDefinition findNamedNativeQuery(String queryName) {
@@ -381,11 +509,6 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 
 	public <G extends GlobalContext<?, ?>, D extends DatastoreConfiguration<G>> G configureDatastore(Class<D> datastoreType) {
 		throw new UnsupportedOperationException( "OGM-343 Session specific options are not currently supported" );
-	}
-
-	@Override
-	public void removeOrphanBeforeUpdates(String entityName, Object child) {
-		delegate.removeOrphanBeforeUpdates( entityName, child );
 	}
 
 	/**

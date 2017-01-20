@@ -9,10 +9,11 @@ package org.hibernate.ogm.transaction.emulated.impl;
 import org.hibernate.ConnectionAcquisitionMode;
 import org.hibernate.ConnectionReleaseMode;
 import org.hibernate.ogm.transaction.impl.ForwardingTransactionCoordinatorOwner;
-import org.hibernate.resource.transaction.TransactionCoordinator;
-import org.hibernate.resource.transaction.TransactionCoordinatorBuilder;
+import org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode;
 import org.hibernate.resource.transaction.backend.jdbc.spi.JdbcResourceTransaction;
 import org.hibernate.resource.transaction.backend.jdbc.spi.JdbcResourceTransactionAccess;
+import org.hibernate.resource.transaction.spi.TransactionCoordinator;
+import org.hibernate.resource.transaction.spi.TransactionCoordinatorBuilder;
 import org.hibernate.resource.transaction.spi.TransactionCoordinatorOwner;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 
@@ -32,7 +33,7 @@ public class EmulatedLocalTransactionCoordinatorBuilder implements TransactionCo
 	}
 
 	@Override
-	public TransactionCoordinator buildTransactionCoordinator(TransactionCoordinatorOwner owner, TransactionCoordinatorOptions options) {
+	public TransactionCoordinator buildTransactionCoordinator(TransactionCoordinatorOwner owner, Options options) {
 		return delegate.buildTransactionCoordinator( new NoopJdbcResourceTransactionCoordinatorOwner( owner ), options );
 	}
 
@@ -49,6 +50,11 @@ public class EmulatedLocalTransactionCoordinatorBuilder implements TransactionCo
 	@Override
 	public ConnectionAcquisitionMode getDefaultConnectionAcquisitionMode() {
 		return ConnectionAcquisitionMode.IMMEDIATELY;
+	}
+
+	@Override
+	public PhysicalConnectionHandlingMode getDefaultConnectionHandlingMode() {
+		return PhysicalConnectionHandlingMode.IMMEDIATE_ACQUISITION_AND_HOLD;
 	}
 
 	/**
@@ -80,12 +86,12 @@ public class EmulatedLocalTransactionCoordinatorBuilder implements TransactionCo
 
 		@Override
 		public void commit() {
-			status = TransactionStatus.NOT_ACTIVE;
+			status = TransactionStatus.COMMITTED;
 		}
 
 		@Override
 		public void rollback() {
-			status = TransactionStatus.NOT_ACTIVE;
+			status = TransactionStatus.ROLLED_BACK;
 		}
 
 		@Override

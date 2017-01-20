@@ -6,12 +6,15 @@
  */
 package org.hibernate.ogm.jpa.impl;
 
-import javax.persistence.EntityManager;
+import java.util.List;
+
 import javax.persistence.TypedQuery;
 
+import org.hibernate.Query;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.jpa.HibernateQuery;
-import org.hibernate.jpa.internal.QueryImpl;
-import org.hibernate.jpa.spi.AbstractEntityManagerImpl;
+import org.hibernate.query.ParameterMetadata;
+import org.hibernate.query.internal.QueryImpl;
 
 /**
  * Hibernate OGM implementation of both {@link HibernateQuery} and {@link TypedQuery}
@@ -20,14 +23,29 @@ import org.hibernate.jpa.spi.AbstractEntityManagerImpl;
  */
 public class OgmJpaQuery<X> extends QueryImpl<X> implements HibernateQuery, TypedQuery<X> {
 
-	public OgmJpaQuery(org.hibernate.Query query, EntityManager em) {
-		super( query, convert( em ) );
+	public OgmJpaQuery(SharedSessionContractImplementor producer, ParameterMetadata parameterMetadata, String queryString) {
+		super( producer, parameterMetadata, queryString );
 	}
 
-	private static AbstractEntityManagerImpl convert(EntityManager em) {
-		if ( AbstractEntityManagerImpl.class.isInstance( em ) ) {
-			return (AbstractEntityManagerImpl) em;
-		}
-		throw new IllegalStateException( String.format( "Unknown entity manager type [%s]", em.getClass().getName() ) );
+	@Override
+	public List getResultList() {
+		return null;
 	}
+
+	@Override
+	public Query getHibernateQuery() {
+		return null;
+	}
+
+//
+//	public OgmJpaQuery(org.hibernate.Query query, EntityManager em) {
+//		super( query, convert( em ) );
+//	}
+//
+//	private static AbstractEntityManagerImpl convert(EntityManager em) {
+//		if ( AbstractEntityManagerImpl.class.isInstance( em ) ) {
+//			return (AbstractEntityManagerImpl) em;
+//		}
+//		throw new IllegalStateException( String.format( "Unknown entity manager type [%s]", em.getClass().getName() ) );
+//	}
 }

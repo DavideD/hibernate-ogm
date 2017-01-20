@@ -17,10 +17,9 @@ import java.util.concurrent.ConcurrentMap;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
 import org.hibernate.QueryException;
-import org.hibernate.ScrollableResults;
 import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.engine.spi.TypedValue;
 import org.hibernate.event.spi.EventSource;
 import org.hibernate.hql.internal.ast.HqlParser;
@@ -39,6 +38,7 @@ import org.hibernate.ogm.query.spi.QueryParsingResult;
 import org.hibernate.ogm.type.spi.GridType;
 import org.hibernate.ogm.util.impl.Log;
 import org.hibernate.ogm.util.impl.LoggerFactory;
+import org.hibernate.query.spi.ScrollableResultsImplementor;
 import org.hibernate.type.EntityType;
 import org.hibernate.type.Type;
 
@@ -124,7 +124,7 @@ public class OgmQueryTranslator extends LegacyParserBridgeQueryTranslator {
 	}
 
 	@Override
-	public List<?> list(SessionImplementor session, QueryParameters queryParameters) throws HibernateException {
+	public List list(SharedSessionContractImplementor session, QueryParameters queryParameters) throws HibernateException {
 		OgmQueryLoader loaderToUse = loader != null ? loader : getLoader( queryParameters );
 		return loaderToUse.list( session, queryParameters );
 	}
@@ -200,12 +200,12 @@ public class OgmQueryTranslator extends LegacyParserBridgeQueryTranslator {
 	}
 
 	@Override
-	public ScrollableResults scroll(QueryParameters queryParameters, SessionImplementor session) throws HibernateException {
+	public ScrollableResultsImplementor scroll(QueryParameters queryParameters, SharedSessionContractImplementor session) throws HibernateException {
 		throw new UnsupportedOperationException( "Not yet implemented" );
 	}
 
 	@Override
-	public int executeUpdate(QueryParameters queryParameters, SessionImplementor session) throws HibernateException {
+	public int executeUpdate(QueryParameters queryParameters, SharedSessionContractImplementor session) throws HibernateException {
 		throw new UnsupportedOperationException( "Not yet implemented" );
 	}
 

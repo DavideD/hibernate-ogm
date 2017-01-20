@@ -21,7 +21,7 @@ import org.hibernate.engine.spi.PersistenceContext;
 import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.RowSelection;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.internal.util.collections.ArrayHelper;
 import org.hibernate.loader.entity.EntityJoinWalker;
@@ -106,7 +106,7 @@ class DynamicBatchingEntityLoaderBuilder extends BatchingEntityLoaderBuilder {
 		}
 
 		@Override
-		public Object load(Serializable id, Object optionalObject, SessionImplementor session, LockOptions lockOptions) {
+		public Object load(Serializable id, Object optionalObject, SharedSessionContractImplementor session, LockOptions lockOptions) {
 			final Serializable[] batch = session.getPersistenceContext()
 					.getBatchFetchQueue()
 					.getEntityBatch( persister(), id, maxBatchSize, persister().getEntityMode() );
@@ -123,7 +123,7 @@ class DynamicBatchingEntityLoaderBuilder extends BatchingEntityLoaderBuilder {
 		}
 
 		@Override
-		public List<Object> loadEntitiesFromTuples(SessionImplementor session, LockOptions lockOptions, OgmLoadingContext ogmContext) {
+		public List<Object> loadEntitiesFromTuples(SharedSessionContractImplementor session, LockOptions lockOptions, OgmLoadingContext ogmContext) {
 			return singleKeyLoader.loadEntitiesFromTuples( session, lockOptions, ogmContext );
 		}
 	}
@@ -190,7 +190,7 @@ class DynamicBatchingEntityLoaderBuilder extends BatchingEntityLoaderBuilder {
 		}
 
 		public List doEntityBatchFetch(
-				SessionImplementor session,
+				SharedSessionContractImplementor session,
 				QueryParameters queryParameters,
 				Serializable[] ids) {
 			final String sql = StringHelper.expandBatchIdPlaceholder(
@@ -245,7 +245,7 @@ class DynamicBatchingEntityLoaderBuilder extends BatchingEntityLoaderBuilder {
 			}
 		}
 
-		private List doTheLoad(String sql, QueryParameters queryParameters, SessionImplementor session) throws SQLException {
+		private List doTheLoad(String sql, QueryParameters queryParameters, SharedSessionContractImplementor session) throws SQLException {
 			final RowSelection selection = queryParameters.getRowSelection();
 			final int maxRows = LimitHelper.hasMaxRows( selection ) ?
 					selection.getMaxRows() :

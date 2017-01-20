@@ -15,6 +15,7 @@ import org.hibernate.cfg.NotYetImplementedException;
 import org.hibernate.engine.spi.Mapping;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.type.descriptor.impl.GridTypeDescriptor;
 import org.hibernate.ogm.type.descriptor.impl.GridValueBinder;
@@ -176,12 +177,12 @@ public abstract class AbstractGenericBasicType<T>
 	}
 
 	@Override
-	public final boolean isDirty(Object old, Object current, SessionImplementor session) {
+	public final boolean isDirty(Object old, Object current, SharedSessionContractImplementor session) {
 		return isDirty( old, current );
 	}
 
 	@Override
-	public final boolean isDirty(Object old, Object current, boolean[] checkable, SessionImplementor session) {
+	public final boolean isDirty(Object old, Object current, boolean[] checkable, SharedSessionContractImplementor session) {
 		return checkable[0] && isDirty( old, current );
 	}
 
@@ -194,7 +195,7 @@ public abstract class AbstractGenericBasicType<T>
 			Object oldHydratedState,
 			Object currentState,
 			boolean[] checkable,
-			SessionImplementor session) {
+			SharedSessionContractImplementor session) {
 		return isDirty( oldHydratedState, currentState );
 	}
 
@@ -202,17 +203,17 @@ public abstract class AbstractGenericBasicType<T>
 	public final Object nullSafeGet(
 			Tuple rs,
 			String[] names,
-			SessionImplementor session,
+			SharedSessionContractImplementor session,
 			Object owner) {
 		return nullSafeGet( rs, names[0], session );
 	}
 
 	@Override
-	public final Object nullSafeGet(Tuple rs, String name, SessionImplementor session, Object owner) {
+	public final Object nullSafeGet(Tuple rs, String name, SharedSessionContractImplementor session, Object owner) {
 		return nullSafeGet( rs, name, session );
 	}
 
-	private T nullSafeGet(Tuple rs, String name, final SessionImplementor session) {
+	private T nullSafeGet(Tuple rs, String name, final SharedSessionContractImplementor session) {
 		return nullSafeGet( rs, name, (WrapperOptions) null );
 	}
 
@@ -230,7 +231,7 @@ public abstract class AbstractGenericBasicType<T>
 			Tuple rs,
 			Object value,
 			String[] names,
-			final SessionImplementor session)  {
+			final SharedSessionContractImplementor session)  {
 		nullSafeSet( rs, value, names, (WrapperOptions) null );
 	}
 
@@ -240,13 +241,13 @@ public abstract class AbstractGenericBasicType<T>
 	}
 
 	@Override
-	public final void nullSafeSet(Tuple st, Object value, String[] names, boolean[] settable, SessionImplementor session)
+	public void nullSafeSet(Tuple resultset, Object value, String[] names, boolean[] settable, SharedSessionContractImplementor session)
 			throws HibernateException {
 		if ( settable.length > 1 ) {
 			throw new NotYetImplementedException( "Multi column property not implemented yet" );
 		}
 		if ( settable[0] ) {
-			nullSafeSet( st, value, names, session );
+			nullSafeSet( resultset, value, names, session );
 		}
 	}
 
@@ -283,33 +284,31 @@ public abstract class AbstractGenericBasicType<T>
 	}
 
 	@Override
-	@SuppressWarnings({ "unchecked" })
-	public final Serializable disassemble(Object value, SessionImplementor session, Object owner) throws HibernateException {
+	public Serializable disassemble(Object value, SharedSessionContractImplementor session, Object owner) throws HibernateException {
 		return getMutabilityPlan().disassemble( (T) value );
 	}
 
 	@Override
-	public final Object assemble(Serializable cached, SessionImplementor session, Object owner) throws HibernateException {
+	public Object assemble(Serializable cached, SharedSessionContractImplementor session, Object owner) throws HibernateException {
 		return getMutabilityPlan().assemble( cached );
 	}
 
 	@Override
-	public final void beforeAssemble(Serializable cached, SessionImplementor session) {
+	public void beforeAssemble(Serializable cached, SharedSessionContractImplementor session) {
 	}
 
 	@Override
-	public final Object hydrate(Tuple rs, String[] names, SessionImplementor session, Object owner)
-			throws HibernateException {
+	public Object hydrate(Tuple rs, String[] names, SharedSessionContractImplementor session, Object owner) throws HibernateException {
 		return nullSafeGet( rs, names, session, owner );
 	}
 
 	@Override
-	public final Object resolve(Object value, SessionImplementor session, Object owner) throws HibernateException {
+	public Object resolve(Object value, SharedSessionContractImplementor session, Object owner) throws HibernateException {
 		return value;
 	}
 
 	@Override
-	public final Object semiResolve(Object value, SessionImplementor session, Object owner) throws HibernateException {
+	public Object semiResolve(Object value, SharedSessionContractImplementor session, Object owner) throws HibernateException {
 		return value;
 	}
 
@@ -320,7 +319,7 @@ public abstract class AbstractGenericBasicType<T>
 
 	@Override
 	@SuppressWarnings({ "unchecked" })
-	public final Object replace(Object original, Object target, SessionImplementor session, Object owner, Map copyCache) {
+	public final Object replace(Object original, Object target, SharedSessionContractImplementor session, Object owner, Map copyCache) {
 		return getReplacement( (T) original, (T) target );
 	}
 
@@ -329,7 +328,7 @@ public abstract class AbstractGenericBasicType<T>
 	public Object replace(
 			Object original,
 			Object target,
-			SessionImplementor session,
+			SharedSessionContractImplementor session,
 			Object owner,
 			Map copyCache,
 			ForeignKeyDirection foreignKeyDirection) {

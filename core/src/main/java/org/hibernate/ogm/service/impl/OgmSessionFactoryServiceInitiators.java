@@ -19,14 +19,15 @@ import org.hibernate.service.spi.SessionFactoryServiceRegistry;
  * Central definition of the standard set of initiators defined by OGM for the {@link SessionFactoryServiceRegistry}.
  *
  * @see OgmSessionFactoryServiceRegistryImpl
- * @author Davide D'Alto &lt;davide@hibernate.org&gt;
+ * @author Davide D'Alto
  */
 public class OgmSessionFactoryServiceInitiators {
 
-	public static List<SessionFactoryServiceInitiator<?>> LIST = Collections.unmodifiableList( Arrays.<SessionFactoryServiceInitiator<?>>asList(
+	@SuppressWarnings("rawtypes")
+	public static List<SessionFactoryServiceInitiator> LIST = Collections.unmodifiableList( Arrays.<SessionFactoryServiceInitiator>asList(
 			QueryParserServicesInitiator.INSTANCE,
 			SchemaDefinerInitiator.INSTANCE,
 			NativeNoSqlQueryInterpreterInitiator.INSTANCE,
-			TypeTranslatorInitiator.INSTANCE
-	) );
+			TypeTranslatorInitiator.INSTANCE ) );
+
 }

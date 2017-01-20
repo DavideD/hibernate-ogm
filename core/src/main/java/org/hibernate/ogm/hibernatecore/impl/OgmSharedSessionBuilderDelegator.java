@@ -6,11 +6,16 @@
  */
 package org.hibernate.ogm.hibernatecore.impl;
 
+import java.util.TimeZone;
+
+import org.hibernate.FlushMode;
+import org.hibernate.SessionBuilder;
 import org.hibernate.SharedSessionBuilder;
 import org.hibernate.engine.spi.AbstractDelegatingSharedSessionBuilder;
 import org.hibernate.event.spi.EventSource;
 import org.hibernate.ogm.OgmSession;
 import org.hibernate.ogm.OgmSessionFactory;
+import org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode;
 
 /**
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
@@ -29,5 +34,30 @@ public class OgmSharedSessionBuilderDelegator extends AbstractDelegatingSharedSe
 	@Override
 	public OgmSession openSession() {
 		return new OgmSessionImpl( factory, (EventSource) builder.openSession() );
+	}
+
+	@Override
+	public SessionBuilder connectionHandlingMode(PhysicalConnectionHandlingMode mode) {
+		return builder.connectionHandlingMode( mode );
+	}
+
+	@Override
+	public SessionBuilder autoClear(boolean autoClear) {
+		return builder.autoClear( autoClear );
+	}
+
+	@Override
+	public SessionBuilder flushMode(FlushMode flushMode) {
+		return builder.flushMode( flushMode );
+	}
+
+	@Override
+	public SessionBuilder jdbcTimeZone(TimeZone timeZone) {
+		return builder.jdbcTimeZone( timeZone );
+	}
+
+	@Override
+	public SharedSessionBuilder flushMode() {
+		return builder.flushMode();
 	}
 }

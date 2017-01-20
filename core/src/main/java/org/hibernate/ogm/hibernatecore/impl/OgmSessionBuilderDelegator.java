@@ -6,7 +6,9 @@
  */
 package org.hibernate.ogm.hibernatecore.impl;
 
+import org.hibernate.FlushMode;
 import org.hibernate.Session;
+import org.hibernate.SessionBuilder;
 import org.hibernate.engine.spi.AbstractDelegatingSessionBuilderImplementor;
 import org.hibernate.engine.spi.SessionBuilderImplementor;
 import org.hibernate.engine.spi.SessionOwner;
@@ -15,6 +17,7 @@ import org.hibernate.ogm.OgmSession;
 import org.hibernate.ogm.OgmSessionFactory;
 import org.hibernate.ogm.engine.spi.OgmSessionBuilderImplementor;
 import org.hibernate.ogm.jpa.impl.OgmExceptionMapper;
+import org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode;
 import org.hibernate.resource.transaction.backend.jta.internal.synchronization.AfterCompletionAction;
 import org.hibernate.resource.transaction.backend.jta.internal.synchronization.ExceptionMapper;
 import org.hibernate.resource.transaction.backend.jta.internal.synchronization.ManagedFlushChecker;
@@ -48,6 +51,21 @@ public class OgmSessionBuilderDelegator extends AbstractDelegatingSessionBuilder
 
 		builder.owner( sessionOwner );
 		return this;
+	}
+
+	@Override
+	public SessionBuilder connectionHandlingMode(PhysicalConnectionHandlingMode mode) {
+		return builder.connectionHandlingMode( mode );
+	}
+
+	@Override
+	public SessionBuilder autoClear(boolean autoClear) {
+		return builder.autoClear( autoClear );
+	}
+
+	@Override
+	public SessionBuilder flushMode(FlushMode flushMode) {
+		return builder.flushMode( flushMode );
 	}
 
 	/**

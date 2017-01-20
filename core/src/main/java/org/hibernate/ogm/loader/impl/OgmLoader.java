@@ -25,7 +25,7 @@ import org.hibernate.engine.spi.EntityUniqueKey;
 import org.hibernate.engine.spi.PersistenceContext;
 import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.event.spi.EventSource;
 import org.hibernate.event.spi.PostLoadEvent;
 import org.hibernate.event.spi.PreLoadEvent;
@@ -145,7 +145,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Object load(Serializable id, Object optionalObject, SessionImplementor session) throws HibernateException {
+	public Object load(Serializable id, Object optionalObject, SharedSessionContractImplementor session) throws HibernateException {
 		return load( id, optionalObject, session, LockOptions.NONE );
 	}
 
@@ -153,7 +153,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Object load(Serializable id, Object optionalObject, SessionImplementor session, LockOptions lockOptions) {
+	public Object load(Serializable id, Object optionalObject, SharedSessionContractImplementor session, LockOptions lockOptions) {
 		List results = loadEntity( id, optionalObject, session, lockOptions, OgmLoadingContext.EMPTY_CONTEXT );
 		if ( results.size() == 1 ) {
 			return results.get( 0 );
@@ -172,7 +172,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	private List<Object> loadEntity(
 			Serializable id,
 			Object optionalObject,
-			SessionImplementor session,
+			SharedSessionContractImplementor session,
 			LockOptions lockOptions,
 			OgmLoadingContext ogmLoadingContext) {
 		final OgmEntityPersister currentPersister = entityPersisters[0];
@@ -216,7 +216,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	 * @return the list of entities corresponding to the given context
 	 */
 	@Override
-	public List<Object> loadEntitiesFromTuples(SessionImplementor session, LockOptions lockOptions, OgmLoadingContext ogmContext) {
+	public List<Object> loadEntitiesFromTuples(SharedSessionContractImplementor session, LockOptions lockOptions, OgmLoadingContext ogmContext) {
 		return loadEntity( null, null, session, lockOptions, ogmContext );
 	}
 
@@ -229,7 +229,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	 * @throws HibernateException if an error occurs
 	 */
 	public final void loadCollection(
-		final SessionImplementor session,
+		final SharedSessionContractImplementor session,
 		final Serializable id,
 		final Type type) throws HibernateException {
 
@@ -267,7 +267,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	 * @return the result of the query
 	 */
 	private List<Object> doQueryAndInitializeNonLazyCollections(
-			SessionImplementor session,
+			SharedSessionContractImplementor session,
 			QueryParameters qp,
 			OgmLoadingContext ogmLoadingContext,
 			boolean returnProxies) {
@@ -311,7 +311,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	 * @return the result of the query
 	 */
 	private List<Object> doQuery(
-			SessionImplementor session,
+			SharedSessionContractImplementor session,
 			QueryParameters qp,
 			OgmLoadingContext ogmLoadingContext,
 			boolean returnProxies) {
@@ -395,7 +395,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 		return results;
 	}
 
-	private void preLoadBatchFetchingQueue(SessionImplementor session, TupleAsMapResultSet resultset) {
+	private void preLoadBatchFetchingQueue(SharedSessionContractImplementor session, TupleAsMapResultSet resultset) {
 		// Logic to eliminate the n+1 issue in collection loading when batch fetching is enabled.
 		//
 		// Walk the resultset to hydrate the collection elements.
@@ -442,7 +442,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	private void handleEmptyCollections(
 		final Serializable[] keys,
 		final ResultSet resultSetId,
-		final SessionImplementor session) {
+		final SharedSessionContractImplementor session) {
 
 		if ( keys != null ) {
 			// this is a collection initializer, so we must create a collection
@@ -475,7 +475,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 
 	private Object getRowFromResultSet(
 			ResultSet resultset,
-			SessionImplementor session,
+			SharedSessionContractImplementor session,
 			QueryParameters qp,
 			OgmLoadingContext ogmLoadingContext,
 			Serializable optionalId,
@@ -523,7 +523,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	}
 
 	private void extractKeysFromResultSet(
-			SessionImplementor session,
+			SharedSessionContractImplementor session,
 			Serializable optionalId,
 			Tuple tuple,
 			org.hibernate.engine.spi.EntityKey[] keys) {
@@ -544,7 +544,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 		}
 	}
 
-	private TupleAsMapResultSet getResultSet(Serializable id, QueryParameters qp, OgmLoadingContext ogmLoadingContext, SessionImplementor session) {
+	private TupleAsMapResultSet getResultSet(Serializable id, QueryParameters qp, OgmLoadingContext ogmLoadingContext, SharedSessionContractImplementor session) {
 		if ( id == null && ogmLoadingContext.hasResultSet() ) {
 			return ogmLoadingContext.getResultSet();
 		}
@@ -622,7 +622,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 
 	}
 
-	private void readCollectionElements(Object[] row, ResultSet resultSet, SessionImplementor session)
+	private void readCollectionElements(Object[] row, ResultSet resultSet, SharedSessionContractImplementor session)
 			throws HibernateException, SQLException {
 		//TODO: make this handle multiple collection roles!
 
@@ -687,7 +687,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 		final CollectionPersister persister,
 		final CollectionAliases descriptor,
 		final ResultSet rs,
-		final SessionImplementor session)
+		final SharedSessionContractImplementor session)
 				throws HibernateException, SQLException {
 
 		final PersistenceContext persistenceContext = session.getPersistenceContext();
@@ -768,7 +768,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	private void initializeEntitiesAndCollections(
 			final List hydratedObjects,
 			final ResultSet resultSetId,
-			final SessionImplementor session,
+			final SharedSessionContractImplementor session,
 			final boolean readOnly)
 	throws HibernateException {
 
@@ -836,7 +836,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	 */
 	private void endCollectionLoad(
 			final ResultSet resultSetId,
-			final SessionImplementor session,
+			final SharedSessionContractImplementor session,
 			final CollectionPersister collectionPersister) {
 		//this is a query and we are loading multiple instances of the same collection role
 		session.getPersistenceContext()
@@ -880,7 +880,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	/**
 	 * Copied from Loader#getOptionalObjectKey
 	 */
-	private static org.hibernate.engine.spi.EntityKey getOptionalObjectKey(QueryParameters queryParameters, SessionImplementor session) {
+	private static org.hibernate.engine.spi.EntityKey getOptionalObjectKey(QueryParameters queryParameters, SharedSessionContractImplementor session) {
 		final Object optionalObject = queryParameters.getOptionalObject();
 		final Serializable optionalId = queryParameters.getOptionalId();
 		final String optionalEntityName = queryParameters.getOptionalEntityName();
@@ -910,7 +910,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 		final org.hibernate.engine.spi.EntityKey optionalObjectKey,
 		final LockMode[] lockModes,
 		final List hydratedObjects,
-		final SessionImplementor session)
+		final SharedSessionContractImplementor session)
 	throws HibernateException {
 		if ( keys.length > 1 ) {
 			throw new NotYetImplementedException( "Loading involving several entities in one result set is not yet supported in OGM" );
@@ -987,7 +987,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 		final org.hibernate.engine.spi.EntityKey key,
 		final Object object,
 		final LockMode lockMode,
-		final SessionImplementor session)
+		final SharedSessionContractImplementor session)
 	throws HibernateException {
 		if ( !persister.isInstance( object ) ) {
 			throw new WrongClassException(
@@ -1031,7 +1031,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 		final org.hibernate.engine.spi.EntityKey optionalObjectKey,
 		final Object optionalObject,
 		final List hydratedObjects,
-		final SessionImplementor session)
+		final SharedSessionContractImplementor session)
 	throws HibernateException {
 		final String instanceClass = getInstanceClass(
 				resultset,
@@ -1085,7 +1085,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 		final int i,
 		final Loadable persister,
 		final Serializable id,
-		final SessionImplementor session)
+		final SharedSessionContractImplementor session)
 	throws HibernateException {
 		String discriminatorColumnName = persister.getDiscriminatorColumnName();
 		if ( discriminatorColumnName == null ) {
@@ -1113,7 +1113,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 		final String rowIdAlias,
 		final LockMode lockMode,
 		final Loadable rootPersister,
-		final SessionImplementor session)
+		final SharedSessionContractImplementor session)
 	throws HibernateException {
 
 		final Serializable id = key.getIdentifier();
@@ -1219,7 +1219,7 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	private void registerNonExists(
 		final org.hibernate.engine.spi.EntityKey[] keys,
 		final Loadable[] persisters,
-		final SessionImplementor session) {
+		final SharedSessionContractImplementor session) {
 
 		final int[] owners = getOwners();
 		if ( owners != null ) {
@@ -1298,8 +1298,8 @@ public class OgmLoader implements UniqueEntityLoader, BatchableEntityLoader, Tup
 	}
 
 	@Override
-	public List<?> loadEntityBatch(SessionImplementor session, Serializable[] ids, Type idType, Object optionalObject, String optionalEntityName, Serializable optionalId, EntityPersister persister, LockOptions lockOptions)
-			throws HibernateException {
+	public List<?> loadEntityBatch(SharedSessionContractImplementor session, Serializable[] ids, Type idType, Object optionalObject, String optionalEntityName,
+			Serializable optionalId, EntityPersister persister, LockOptions lockOptions) throws HibernateException {
 		if ( log.isDebugEnabled() ) {
 			log.debugf( "Batch loading entity: %s", MessageHelper.infoString( persister, ids, getFactory() ) );
 		}
