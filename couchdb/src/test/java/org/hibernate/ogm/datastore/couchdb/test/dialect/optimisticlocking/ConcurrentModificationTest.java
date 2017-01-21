@@ -7,9 +7,12 @@
 package org.hibernate.ogm.datastore.couchdb.test.dialect.optimisticlocking;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.isA;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+
+import javax.persistence.OptimisticLockException;
 
 import org.hibernate.Session;
 import org.hibernate.StaleObjectStateException;
@@ -18,7 +21,9 @@ import org.hibernate.ogm.utils.OgmTestCase;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 /**
  * Tests for concurrent updates of CouchDB entities with mapped revision property.
@@ -26,6 +31,9 @@ import org.junit.Test;
  * @author Gunnar Morling
  */
 public class ConcurrentModificationTest extends OgmTestCase {
+
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
 
 	private Session session;
 
@@ -36,68 +44,81 @@ public class ConcurrentModificationTest extends OgmTestCase {
 
 	@After
 	public void deleteTestDataAndCloseSession() {
-		session.clear();
-		if ( session.getTransaction().getStatus() == TransactionStatus.ACTIVE ) {
-			session.getTransaction().rollback();
+		try {
+			session.clear();
+			if ( session.getTransaction().getStatus() == TransactionStatus.ACTIVE ) {
+				session.getTransaction().rollback();
+			}
+			session.close();
 		}
-		Transaction transaction = session.beginTransaction();
-
-		Novel novel = (Novel) session.get( Novel.class, "novel-1" );
-		if ( novel != null ) {
-			session.delete( novel );
+		finally {
+			cleanup();
 		}
-
-		Animal animal = (Animal) session.get( Animal.class, "animal-1" );
-		if ( animal != null ) {
-			session.delete( animal );
-		}
-
-		animal = (Animal) session.get( Animal.class, "animal-2" );
-		if ( animal != null ) {
-			session.delete( animal );
-		}
-
-		Zoo zoo = (Zoo) session.get( Zoo.class, "zoo-1" );
-		if ( zoo != null ) {
-			session.delete( zoo );
-		}
-
-		Contributor contributor = (Contributor) session.get( Contributor.class, "contributor-1" );
-		if ( contributor != null ) {
-			session.delete( contributor );
-		}
-
-		contributor = (Contributor) session.get( Contributor.class, "contributor-2" );
-		if ( contributor != null ) {
-			session.delete( contributor );
-		}
-
-		Project project = (Project) session.get( Project.class, "project-1" );
-		if ( project != null ) {
-			session.delete( project );
-		}
-
-		project = (Project) session.get( Project.class, "project-2" );
-		if ( project != null ) {
-			session.delete( project );
-		}
-
-		project = (Project) session.get( Project.class, "project-3" );
-		if ( project != null ) {
-			session.delete( project );
-		}
-
-		ProjectGroup projectGroup = (ProjectGroup) session.get( ProjectGroup.class, "project-group-1" );
-		if ( projectGroup != null ) {
-			session.delete( projectGroup );
-		}
-
-		transaction.commit();
-		session.close();
 	}
 
-	@Test(expected = StaleObjectStateException.class)
+	private void cleanup() {
+		try ( Session session = openSession() ) {
+			Transaction transaction = session.beginTransaction();
+
+			Novel novel = (Novel) session.get( Novel.class, "novel-1" );
+			if ( novel != null ) {
+				session.delete( novel );
+			}
+
+			Animal animal = (Animal) session.get( Animal.class, "animal-1" );
+			if ( animal != null ) {
+				session.delete( animal );
+			}
+
+			animal = (Animal) session.get( Animal.class, "animal-2" );
+			if ( animal != null ) {
+				session.delete( animal );
+			}
+
+			Zoo zoo = (Zoo) session.get( Zoo.class, "zoo-1" );
+			if ( zoo != null ) {
+				session.delete( zoo );
+			}
+
+			Contributor contributor = (Contributor) session.get( Contributor.class, "contributor-1" );
+			if ( contributor != null ) {
+				session.delete( contributor );
+			}
+
+			contributor = (Contributor) session.get( Contributor.class, "contributor-2" );
+			if ( contributor != null ) {
+				session.delete( contributor );
+			}
+
+			Project project = (Project) session.get( Project.class, "project-1" );
+			if ( project != null ) {
+				session.delete( project );
+			}
+
+			project = (Project) session.get( Project.class, "project-2" );
+			if ( project != null ) {
+				session.delete( project );
+			}
+
+			project = (Project) session.get( Project.class, "project-3" );
+			if ( project != null ) {
+				session.delete( project );
+			}
+
+			ProjectGroup projectGroup = (ProjectGroup) session.get( ProjectGroup.class, "project-group-1" );
+			if ( projectGroup != null ) {
+				session.delete( projectGroup );
+			}
+
+			transaction.commit();
+		}
+	}
+
+	@Test
 	public void concurrentModificationShouldCauseException() throws Exception {
+		thrown.expect( OptimisticLockException.class );
+		thrown.expectCause( isA( StaleObjectStateException.class ) );
+
 		Novel novel = createAndPersistNovel();
 
 		String newRevision = doConcurrentUpdateToNovel();
@@ -108,8 +129,11 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		transaction.commit();
 	}
 
-	@Test(expected = StaleObjectStateException.class)
+	@Test
 	public void mergeAfterConcurrentModificationShouldCauseException() throws Exception {
+		thrown.expect( OptimisticLockException.class );
+		thrown.expectCause( isA( StaleObjectStateException.class ) );
+
 		Novel novel = createAndPersistNovel();
 		session.clear();
 
@@ -119,8 +143,11 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		novel = (Novel) session.merge( novel );
 	}
 
-	@Test(expected = StaleObjectStateException.class)
+	@Test
 	public void updateAfterConcurrentDeletionShouldCauseException() throws Exception {
+		thrown.expect( OptimisticLockException.class );
+		thrown.expectCause( isA( StaleObjectStateException.class ) );
+
 		createAndPersistNovel();
 		session.clear();
 
@@ -133,8 +160,11 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		transaction.commit();
 	}
 
-	@Test(expected = StaleObjectStateException.class)
+	@Test
 	public void deletionAfterConcurrentModificationShouldCauseException() throws Exception {
+		thrown.expect( OptimisticLockException.class );
+		thrown.expectCause( isA( StaleObjectStateException.class ) );
+
 		Novel novel = createAndPersistNovel();
 
 		doConcurrentUpdateToNovel();
@@ -199,8 +229,11 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		} ).get();
 	}
 
-	@Test(expected = StaleObjectStateException.class)
+	@Test
 	public void customColumnNameShouldBeUsableForRevisionProperty() throws Exception {
+		thrown.expect( OptimisticLockException.class );
+		thrown.expectCause( isA( StaleObjectStateException.class ) );
+
 		Animal animal = createAndPersistAnimal();
 
 		String newRevision = doConcurrentUpdateToAnimal();
@@ -305,8 +338,11 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		transaction.commit();
 	}
 
-	@Test(expected = StaleObjectStateException.class)
+	@Test
 	public void concurrentUpdateToAssociationShouldCauseException() throws Exception {
+		thrown.expect( OptimisticLockException.class );
+		thrown.expectCause( isA( StaleObjectStateException.class ) );
+
 		Animal animal = createAndPersistAnimal();
 		Zoo zoo = createAndPersistZoo( animal );
 
@@ -317,8 +353,11 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		transaction.commit();
 	}
 
-	@Test(expected = StaleObjectStateException.class)
+	@Test
 	public void concurrentUpdateToObjectShouldCauseExceptionWhenUpdatingAssociation() throws Exception {
+		thrown.expect( OptimisticLockException.class );
+		thrown.expectCause( isA( StaleObjectStateException.class ) );
+
 		Animal animal = createAndPersistAnimal();
 		Zoo zoo = createAndPersistZoo( animal );
 
@@ -453,7 +492,7 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		Project ogm = new Project();
 		ogm.setId( "project-1" );
 		ogm.setName( "OGM" );
-		session.persist( ogm  );
+		session.persist( ogm );
 
 		Contributor davide = new Contributor();
 		davide.setId( "contributor-1" );
@@ -473,7 +512,7 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		Project ogm = new Project();
 		ogm.setId( "project-2" );
 		ogm.setName( "Search" );
-		session.persist( ogm  );
+		session.persist( ogm );
 
 		User bob = new User();
 		bob.setId( "user-1" );
@@ -493,7 +532,7 @@ public class ConcurrentModificationTest extends OgmTestCase {
 		Project validator = new Project();
 		validator.setId( "project-3" );
 		validator.setName( "Validator" );
-		session.persist( validator  );
+		session.persist( validator );
 
 		ProjectGroup hibernateProjects = new ProjectGroup();
 		hibernateProjects.setId( "project-group-1" );
@@ -535,6 +574,6 @@ public class ConcurrentModificationTest extends OgmTestCase {
 
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		return new Class<?>[] { Novel.class, Animal.class, Zoo.class, Project.class, Contributor.class, User.class, ProjectGroup.class };
+		return new Class<?>[]{ Novel.class, Animal.class, Zoo.class, Project.class, Contributor.class, User.class, ProjectGroup.class };
 	}
 }

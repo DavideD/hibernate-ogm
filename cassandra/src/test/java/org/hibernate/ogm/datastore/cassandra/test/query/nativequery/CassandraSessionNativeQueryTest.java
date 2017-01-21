@@ -192,7 +192,8 @@ public class CassandraSessionNativeQueryTest extends OgmTestCase {
 		try {
 			String nativeQuery = "SELECT * FROM \"WILDE_POEM\" WHERE name=?";
 			SQLQuery query = session.createNativeQuery( nativeQuery ).addEntity( OscarWildePoem.class );
-			query.setString( 0, "Portia" );
+			// CQL queries positional parameters start from 1
+			query.setString( 1, "Portia" );
 
 			OscarWildePoem uniqueResult = (OscarWildePoem) query.uniqueResult();
 			assertThat( uniqueResult ).isEqualTo( portia );
@@ -212,7 +213,8 @@ public class CassandraSessionNativeQueryTest extends OgmTestCase {
 		try {
 			String nativeQuery = "SELECT * FROM \"WILDE_POEM\" WHERE score=?";
 			SQLQuery query = session.createNativeQuery( nativeQuery ).addEntity( OscarWildePoem.class );
-			query.setParameter( 0, new BigInteger( "10" ) );
+			// CQL queries positional parameters start from 1
+			query.setParameter( 1, new BigInteger( "10" ) );
 
 			OscarWildePoem uniqueResult = (OscarWildePoem) query.uniqueResult();
 			assertThat( uniqueResult ).isEqualTo( athanasia );

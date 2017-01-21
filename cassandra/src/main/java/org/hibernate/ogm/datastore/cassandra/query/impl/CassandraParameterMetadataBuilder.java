@@ -62,6 +62,10 @@ public class CassandraParameterMetadataBuilder implements ParameterMetadataBuild
 			}
 		}
 
-		return new ParameterMetadataImpl( ordinalDescriptors, null );
+
+		ParameterMetadataImpl parameterMetadata = new ParameterMetadataImpl( ordinalDescriptors, null );
+		// CQL ordinal parameters start with 1
+		parameterMetadata.setOrdinalParametersZeroBased( false );
+		return parameterMetadata;
 	}
 }

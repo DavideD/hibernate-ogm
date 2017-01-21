@@ -83,6 +83,7 @@ public class HibernateOgmPersistence implements PersistenceProvider {
 		//we use a placeholder DS to make sure, Hibernate EntityManager (Ejb3Configuration) does not enforce a different connection provider
 		map.put( Environment.DATASOURCE, "---PlaceHolderDSForOGM---" );
 		map.put( OgmProperties.ENABLED, true );
+		map.put( AvailableSettings.ALLOW_JTA_TRANSACTION_ACCESS, true );
 	}
 
 	@Override

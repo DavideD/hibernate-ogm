@@ -308,8 +308,7 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 
 	@Override
 	public NativeQueryImplementor createNativeQuery(String sqlString) {
-		final NativeQueryImpl query = (NativeQueryImpl) getNativeQueryImplementor( sqlString, false );
-		query.setZeroBasedParametersIndex( false );
+		final NativeQueryImpl query = (NativeQueryImpl) getNativeQueryImplementor( sqlString, true );
 		return query;
 	}
 
@@ -322,7 +321,7 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 		final NativeQueryImpl query = new NativeQueryImpl(
 				queryDefinition,
 				this,
-				factory.getQueryPlanCache().getSQLParameterMetadata( queryDefinition.getQueryString(), false ) );
+				factory.getQueryPlanCache().getSQLParameterMetadata( queryDefinition.getQueryString(), true ) );
 		query.setHibernateFlushMode( queryDefinition.getFlushMode() );
 		query.setComment( queryDefinition.getComment() != null ? queryDefinition.getComment() : queryDefinition.getName() );
 		if ( queryDefinition.getLockOptions() != null ) {
