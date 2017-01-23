@@ -19,8 +19,6 @@ import javax.transaction.TransactionManager;
 
 import org.hibernate.ogm.datastore.neo4j.test.dsl.NodeForGraphAssertions;
 import org.hibernate.ogm.datastore.neo4j.test.mapping.Neo4jJpaTestCase;
-import org.hibernate.ogm.utils.GridDialectType;
-import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.hibernate.ogm.utils.jpa.GetterPersistenceUnitInfo;
 import org.junit.Test;
 
@@ -37,7 +35,6 @@ public class JtaRollbackTest extends Neo4jJpaTestCase {
 	}
 
 	@Test
-	@SkipByGridDialect( value = GridDialectType.NEO4J_EMBEDDED )
 	public void testRollbackCausedByException() throws Exception {
 		final Game game1 = new Game( "game-1", "Title 1" );
 		TransactionManager transactionManager = getTransactionManager( getFactory() );

@@ -22,6 +22,7 @@ import org.hibernate.ogm.datastore.spi.DatastoreProvider;
 import org.hibernate.ogm.dialect.spi.GridDialect;
 import org.hibernate.service.spi.Stoppable;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.graphdb.ResourceIterator;
@@ -101,6 +102,9 @@ public class EmbeddedNeo4jTestHelperDelegate implements Neo4jTestHelperDelegate 
 		GraphDatabaseService graphDb = createExecutionEngine( datastoreProvider );
 		Transaction tx = graphDb.beginTx();
 		Result result = graphDb.execute( queryString );
+		Result nodes = graphDb.execute( "MATCH (n) RETURN n" );
+		ResourceIterator<Node> columnAs = nodes.columnAs( "n" );
+		print( columnAs );
 		ResourceIterator<Long> count = result.columnAs( "count" );
 		try {
 			tx.success();
@@ -113,6 +117,18 @@ public class EmbeddedNeo4jTestHelperDelegate implements Neo4jTestHelperDelegate 
 			finally {
 				tx.close();
 			}
+		}
+	}
+
+	private void print(ResourceIterator<Node> resourceIterator) {
+		try {
+			while ( resourceIterator.hasNext() ) {
+				Node node = resourceIterator.next();
+				System.out.println( node + ":" + node.getAllProperties() );
+			}
+		}
+		finally {
+			resourceIterator.close();
 		}
 	}
 
