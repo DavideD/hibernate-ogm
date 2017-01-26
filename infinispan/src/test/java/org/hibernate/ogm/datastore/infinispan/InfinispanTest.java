@@ -6,11 +6,10 @@
  */
 package org.hibernate.ogm.datastore.infinispan;
 
-import org.hibernate.ogm.backendtck.jpa.JPAResourceLocalTest;
+import org.hibernate.ogm.backendtck.massindex.SimpleEntityMassIndexingTest;
 
 /**
  * @author Davide D'Alto
  */
-public class InginispanTest extends JPAResourceLocalTest {
-
+public class InfinispanTest extends SimpleEntityMassIndexingTest {
 }

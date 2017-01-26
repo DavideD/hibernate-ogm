@@ -8,6 +8,7 @@ package org.hibernate.ogm.datastore.infinispan.persistencestrategy.impl;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,7 +83,7 @@ public abstract class LocalCacheManager<EK, AK, ISK> {
 
 				GlobalConfiguration globalConfiguration = serializationConfiguration.build();
 
-				EmbeddedCacheManager cacheManager = new DefaultCacheManager( globalConfiguration, false );
+				EmbeddedCacheManager cacheManager = new DefaultCacheManager( globalConfiguration, tmpCacheManager.getDefaultCacheConfiguration(), false );
 
 				// override the named cache configuration defined in the configuration file to
 				// inject the platform TransactionManager

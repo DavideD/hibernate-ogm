@@ -10,6 +10,7 @@ package org.hibernate.ogm.datastore.infinispan.persistencestrategy.kind.impl;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.hibernate.ogm.datastore.infinispan.persistencestrategy.common.externalizer.impl.RowKeyExternalizer;
@@ -23,8 +24,8 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.IdSourceKey;
 import org.infinispan.commons.marshall.AdvancedExternalizer;
-import org.infinispan.distexec.mapreduce.Collector;
-import org.infinispan.distexec.mapreduce.Mapper;
+import org.infinispan.util.function.SerializableFunction;
+import org.infinispan.util.function.SerializablePredicate;
 
 /**
  * Key provider which stores all keys as is in ISPN.
@@ -49,8 +50,8 @@ public class OnePerKindKeyProvider implements KeyProvider<EntityKey, Association
 	}
 
 	@Override
-	public TupleMapper getMapper(EntityKeyMetadata... entityKeyMetadatas) {
-		return new TupleMapper( entityKeyMetadatas );
+	public SerializablePredicate<Entry<EntityKey, Map<String, Object>>> getFilter(EntityKeyMetadata... entityKeyMetadatas) {
+		return new TupleFilter( entityKeyMetadatas );
 	}
 
 	@Override
@@ -66,21 +67,22 @@ public class OnePerKindKeyProvider implements KeyProvider<EntityKey, Association
 		return Collections.unmodifiableSet( externalizers );
 	}
 
-	private static class TupleMapper implements Mapper<EntityKey, Map<String, Object>, EntityKey, Map<String, Object>> {
+	private static class TupleFilter implements SerializablePredicate<Entry<EntityKey, Map<String, Object>>> {
 
 		private final EntityKeyMetadata[] entityKeyMetadatas;
 
-		public TupleMapper(EntityKeyMetadata... entityKeyMetadatas) {
+		public TupleFilter(EntityKeyMetadata... entityKeyMetadatas) {
 			this.entityKeyMetadatas = entityKeyMetadatas;
 		}
 
 		@Override
-		public void map(EntityKey key, Map<String, Object> value, Collector<EntityKey, Map<String, Object>> collector) {
+		public boolean test(java.util.Map.Entry<EntityKey, Map<String, Object>> cacheEntry) {
 			for ( EntityKeyMetadata entityKeyMetadata : entityKeyMetadatas ) {
-				if ( key.getTable().equals( entityKeyMetadata.getTable() ) ) {
-					collector.emit( key, value );
+				if ( cacheEntry.getKey().getTable().equals( entityKeyMetadata.getTable() ) ) {
+					return true;
 				}
 			}
+			return false;
 		}
 	}
 }

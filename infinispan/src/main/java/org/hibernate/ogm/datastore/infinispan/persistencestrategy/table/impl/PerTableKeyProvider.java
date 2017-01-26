@@ -10,6 +10,7 @@ package org.hibernate.ogm.datastore.infinispan.persistencestrategy.table.impl;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.hibernate.ogm.datastore.infinispan.persistencestrategy.common.externalizer.impl.RowKeyExternalizer;
@@ -25,8 +26,7 @@ import org.hibernate.ogm.model.key.spi.EntityKey;
 import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.key.spi.IdSourceKey;
 import org.infinispan.commons.marshall.AdvancedExternalizer;
-import org.infinispan.distexec.mapreduce.Collector;
-import org.infinispan.distexec.mapreduce.Mapper;
+import org.infinispan.util.function.SerializablePredicate;
 
 /**
  * Provides the persistent keys for the "per-table" strategy. These keys don't contain the table name.
@@ -52,8 +52,8 @@ public class PerTableKeyProvider implements KeyProvider<PersistentEntityKey, Per
 	}
 
 	@Override
-	public TupleMapper getMapper(EntityKeyMetadata... entityKeyMetadatas) {
-		return TupleMapper.INSTANCE;
+	public SerializablePredicate<Entry<PersistentEntityKey, Map<String, Object>>> getFilter(EntityKeyMetadata... entityKeyMetadatas) {
+		return TupleFilter.INSTANCE;
 	}
 
 	@Override
@@ -68,13 +68,13 @@ public class PerTableKeyProvider implements KeyProvider<PersistentEntityKey, Per
 		return Collections.unmodifiableSet( externalizers );
 	}
 
-	private static class TupleMapper implements Mapper<PersistentEntityKey, Map<String, Object>, PersistentEntityKey, Map<String, Object>> {
+	private static class TupleFilter implements SerializablePredicate<Entry<PersistentEntityKey, Map<String, Object>>> {
 
-		private static final TupleMapper INSTANCE = new TupleMapper();
+		private static final TupleFilter INSTANCE = new TupleFilter();
 
 		@Override
-		public void map(PersistentEntityKey key, Map<String, Object> value, Collector<PersistentEntityKey, Map<String, Object>> collector) {
-			collector.emit( key, value );
+		public boolean test(Entry<PersistentEntityKey, Map<String, Object>> cacheEntry) {
+			return true;
 		}
 	}
 }
