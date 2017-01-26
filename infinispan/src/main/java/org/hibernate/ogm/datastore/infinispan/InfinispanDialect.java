@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.hibernate.LockMode;
@@ -50,7 +49,6 @@ import org.hibernate.ogm.model.spi.Tuple.SnapshotType;
 import org.hibernate.persister.entity.Lockable;
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
-import org.infinispan.CacheSet;
 import org.infinispan.atomic.AtomicMapLookup;
 import org.infinispan.atomic.FineGrainedAtomicMap;
 import org.infinispan.context.Flag;
@@ -222,16 +220,14 @@ public class InfinispanDialect<EK,AK,ISK> extends BaseGridDialect {
 	public void forEachTuple(ModelConsumer consumer, TupleTypeContext tupleTypeContext, EntityKeyMetadata entityKeyMetadata) {
 		Set<Bucket<EK>> buckets = getCacheManager().getWorkBucketsFor( entityKeyMetadata );
 		KeyMapper<EK> keyMapper = new KeyMapper<>();
-		ValueMapper<Map<String, Object>> valueMapper = new ValueMapper<>();
+		ValueMapper<EK> valueMapper = new ValueMapper<>();
 
-		Collector<Entry<EK, Map<String, Object>>, ?, Map<EK, Map<String, Object>>> map = Collectors.toMap( new KeyMapper<>(), new ValueMapper<>() );
+		
 		for ( Bucket<EK> bucket : buckets ) {
 			Map<EK, Map<String, Object>> queryResult = bucket.getCache().entrySet()
 					.stream()
-						.filter( getKeyProvider().getFilter( entityKeyMetadata ) )
-						.collect( collector );
-
-			System.out.println( queryResult );
+					.filter( getKeyProvider().getFilter( entityKeyMetadata ) )
+					.collect( Collectors.toMap( keyMapper, valueMapper ) );
 
 			InfinispanTuplesSupplier<EK> supplier = new InfinispanTuplesSupplier( bucket.getCache(), queryResult );
 			consumer.consume( supplier );
