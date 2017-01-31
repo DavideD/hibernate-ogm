@@ -19,7 +19,7 @@ import org.junit.runner.RunWith;
  * @author Sanne Grinovero
  */
 @RunWith(ClasspathSuite.class)
-@ClasspathSuite.ClassnameFilters({ ".*CollectionUnidirectionalTest" })
+@ClasspathSuite.ClassnameFilters({ ".*ManyToOneTest" })
 public class InfinispanRemoteBackendTckHelper {
 
 	@ClassRule

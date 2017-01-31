@@ -26,7 +26,7 @@
             See the version.wildfly property in the hibernate-ogm-parent pom
             See http://search.maven.org/#search|gav|1|g%3A"org.wildfly"%20AND%20a%3A"wildfly-parent"
         -->
-        <hibernateSearchVersion>5.7.0-SNAPSHOT</hibernateSearchVersion>
+        <hibernateSearchVersion>5.7.0.CR1</hibernateSearchVersion>
         <hibernateCommonsAnnotationsVersion>5.0.1.Final</hibernateCommonsAnnotationsVersion>
         <jbossLoggingVersion>3.2.1.Final</jbossLoggingVersion>
         <jbossLoggingProcessorVersion>1.2.0.Final</jbossLoggingProcessorVersion>
@@ -50,8 +50,8 @@
         <asmVersion>5.0.3</asmVersion> <!-- used for Parboiled and Neo4j -->
 
         <!-- Infinispan -->
-        <infinispanVersion>9.0.0.Beta1</infinispanVersion>
-        <protostreamVersion>3.0.7.Final</protostreamVersion>
+        <infinispanVersion>9.0.0.Beta2</infinispanVersion>
+        <protostreamVersion>4.0.0.Alpha4</protostreamVersion>
 
         <!-- Ehcache -->
         <ehcacheVersion>2.6.11</ehcacheVersion>
