@@ -58,6 +58,7 @@ public class JtaRollbackTest extends Neo4jJpaTestCase {
 			// Entity already exists exception
 			assertThat( e.getCause().getMessage() ).matches( ".*OGM000067.*" );
 		}
+		em.clear();
 		em.close();
 
 		NodeForGraphAssertions gameNode1 = node( "g1", Game.class.getSimpleName(), ENTITY.name() )

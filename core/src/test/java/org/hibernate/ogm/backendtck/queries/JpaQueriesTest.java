@@ -157,6 +157,9 @@ public class JpaQueriesTest extends OgmJpaTestCase {
 			if ( !em.getTransaction().getRollbackOnly() ) {
 				em.getTransaction().commit();
 			}
+			else {
+				em.getTransaction().rollback();
+			}
 			em.close();
 			removeEntities();
 		}

@@ -27,6 +27,7 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
 import org.hibernate.engine.config.spi.ConfigurationService;
+import org.hibernate.jpa.AvailableSettings;
 import org.hibernate.jpa.HibernateEntityManagerFactory;
 import org.hibernate.ogm.OgmSessionFactory;
 import org.hibernate.ogm.boot.OgmSessionFactoryBuilder;
@@ -217,6 +218,7 @@ public class TestHelper {
 		settings.put( OgmProperties.ENABLED, "true" );
 		settings.put( Environment.HBM2DDL_AUTO, "none" );
 		settings.put( "hibernate.search.default.directory_provider", "ram" );
+		settings.put( AvailableSettings.ALLOW_JTA_TRANSACTION_ACCESS, "true" );
 
 		Map<String, String> environmentProperties = HELPER.getEnvironmentProperties();
 

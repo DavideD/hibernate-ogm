@@ -36,31 +36,31 @@ public class SimpleEntityMassIndexingTest extends OgmTestCase {
 	@Test
 	public void testSimpleEntityMassIndexing() throws Exception {
 		{
-			Session session = openSession();
-			Transaction transaction = session.beginTransaction();
-			Insurance insurance = new Insurance();
-			insurance.setName( "Insurance Corporation" );
-			session.persist( insurance );
-			transaction.commit();
-			session.clear();
-			session.close();
+			try ( Session session = openSession() ) {
+				Transaction transaction = session.beginTransaction();
+				Insurance insurance = new Insurance();
+				insurance.setName( "Insurance Corporation" );
+				session.persist( insurance );
+				transaction.commit();
+				session.clear();
+			}
 		}
 		{
 			purgeAll( Insurance.class );
 			startAndWaitMassIndexing( Insurance.class );
 		}
 		{
-			FullTextSession session = Search.getFullTextSession( openSession() );
-			QueryBuilder queryBuilder = session.getSearchFactory().buildQueryBuilder().forEntity( Insurance.class ).get();
-			Query luceneQuery = queryBuilder.keyword().wildcard().onField( "name" ).matching( "ins*" ).createQuery();
-			Transaction transaction = session.beginTransaction();
-			@SuppressWarnings("unchecked")
-			List<Insurance> list = session.createFullTextQuery( luceneQuery ).list();
-			assertThat( list ).hasSize( 1 );
-			assertThat( list.get( 0 ).getName() ).isEqualTo( "Insurance Corporation" );
-			transaction.commit();
-			session.clear();
-			session.close();
+			try ( Session session = openSession() ) {
+				FullTextSession fulltextSession = Search.getFullTextSession( session );
+				QueryBuilder queryBuilder = fulltextSession.getSearchFactory().buildQueryBuilder().forEntity( Insurance.class ).get();
+				Query luceneQuery = queryBuilder.keyword().wildcard().onField( "name" ).matching( "ins*" ).createQuery();
+				Transaction transaction = fulltextSession.beginTransaction();
+				@SuppressWarnings("unchecked")
+				List<Insurance> list = fulltextSession.createFullTextQuery( luceneQuery ).getResultList();
+				assertThat( list ).hasSize( 1 );
+				assertThat( list.get( 0 ).getName() ).isEqualTo( "Insurance Corporation" );
+				transaction.commit();
+			}
 		}
 	}
 
@@ -68,13 +68,13 @@ public class SimpleEntityMassIndexingTest extends OgmTestCase {
 	@SkipByGridDialect(value = { MONGODB }, comment = "Uses embedded key which is currently not supported by the db query parsers")
 	public void testEntityWithCompositeIdMassIndexing() throws Exception {
 		{
-			Session session = openSession();
-			Transaction transaction = session.beginTransaction();
-			IndexedNews news = new IndexedNews( new NewsID( "title", "author" ), "content" );
-			session.persist( news );
-			transaction.commit();
-			session.clear();
-			session.close();
+			try ( Session session = openSession() ) {
+				Transaction transaction = session.beginTransaction();
+				IndexedNews news = new IndexedNews( new NewsID( "title", "author" ), "content" );
+				session.persist( news );
+				transaction.commit();
+				session.clear();
+			}
 		}
 		{
 			purgeAll( IndexedNews.class );
@@ -82,19 +82,20 @@ public class SimpleEntityMassIndexingTest extends OgmTestCase {
 		}
 		{
 			// Assert index creation
-			FullTextSession session = Search.getFullTextSession( openSession() );
-			QueryBuilder queryBuilder = session.getSearchFactory().buildQueryBuilder().forEntity( IndexedNews.class ).get();
-			Query luceneQuery = queryBuilder.keyword().wildcard().onField( "newsId" ).ignoreFieldBridge().matching( "tit*" ).createQuery();
-			Transaction transaction = session.beginTransaction();
-			@SuppressWarnings("unchecked")
-			List<IndexedNews> list = session.createFullTextQuery( luceneQuery ).list();
-			assertThat( list ).hasSize( 1 );
-			assertThat( list.get( 0 ).getContent() ).isEqualTo( "content" );
-			assertThat( list.get( 0 ).getNewsId().getTitle() ).isEqualTo( "title" );
-			assertThat( list.get( 0 ).getNewsId().getAuthor() ).isEqualTo( "author" );
-			transaction.commit();
-			session.clear();
-			session.close();
+			try ( Session hibSession = openSession() ) {
+				FullTextSession session = Search.getFullTextSession( hibSession );
+				QueryBuilder queryBuilder = session.getSearchFactory().buildQueryBuilder().forEntity( IndexedNews.class ).get();
+				Query luceneQuery = queryBuilder.keyword().wildcard().onField( "newsId" ).ignoreFieldBridge().matching( "tit*" ).createQuery();
+				Transaction transaction = session.beginTransaction();
+				@SuppressWarnings("unchecked")
+				List<IndexedNews> list = session.createFullTextQuery( luceneQuery ).list();
+				assertThat( list ).hasSize( 1 );
+				assertThat( list.get( 0 ).getContent() ).isEqualTo( "content" );
+				assertThat( list.get( 0 ).getNewsId().getTitle() ).isEqualTo( "title" );
+				assertThat( list.get( 0 ).getNewsId().getAuthor() ).isEqualTo( "author" );
+				transaction.commit();
+				session.clear();
+			}
 		}
 	}
 

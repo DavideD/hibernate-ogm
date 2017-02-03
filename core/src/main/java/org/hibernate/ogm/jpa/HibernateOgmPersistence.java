@@ -83,6 +83,7 @@ public class HibernateOgmPersistence implements PersistenceProvider {
 		//we use a placeholder DS to make sure, Hibernate EntityManager (Ejb3Configuration) does not enforce a different connection provider
 		map.put( Environment.DATASOURCE, "---PlaceHolderDSForOGM---" );
 		map.put( OgmProperties.ENABLED, true );
+		map.put( AvailableSettings.ALLOW_JTA_TRANSACTION_ACCESS, true );
 	}
 
 	@Override
@@ -100,11 +101,7 @@ public class HibernateOgmPersistence implements PersistenceProvider {
 					),
 					protectiveCopy
 			);
-			if ( coreEMF != null ) {
-				//delegate might return null to refuse the configuration
-				//(like when the configuration file is not defining the expected persistent unit)
-				return new OgmSessionFactoryImpl( (SessionFactoryImplementor) coreEMF );
-			}
+			return coreEMF;
 		}
 		//not the right provider
 		return null;

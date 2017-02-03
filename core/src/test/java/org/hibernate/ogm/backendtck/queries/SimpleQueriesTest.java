@@ -68,8 +68,14 @@ public class SimpleQueriesTest extends OgmTestCase {
 
 	@After
 	public void closeSession() {
-		if ( tx != null && tx.getStatus() == TransactionStatus.ACTIVE ) {
-			tx.commit();
+		if ( tx != null ) {
+			TransactionStatus status = tx.getStatus();
+			if ( status == TransactionStatus.ACTIVE ) {
+				tx.commit();
+			}
+			else {
+				tx.rollback();
+			}
 			tx = null;
 		}
 		if ( session != null ) {
