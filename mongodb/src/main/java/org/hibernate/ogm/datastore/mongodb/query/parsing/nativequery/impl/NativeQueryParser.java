@@ -38,6 +38,7 @@ import com.mongodb.util.JSON;
  * <li>count()</li>
  * <li>count(criteria)</li>
  * <li>aggregate(criteria)</li>
+ * <li>distinct(fieldName, options)</li>
  * </ul>
  * The parameter values must be given as JSON objects adhering to the <a
  * href="http://docs.mongodb.org/manual/reference/mongodb-extended-json/">strict mode</a> of MongoDB's JSON handling,

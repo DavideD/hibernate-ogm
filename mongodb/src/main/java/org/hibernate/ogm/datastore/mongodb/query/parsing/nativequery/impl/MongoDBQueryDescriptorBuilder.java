@@ -131,19 +131,16 @@ public class MongoDBQueryDescriptorBuilder {
 		}
 		else if ( operation != Operation.AGGREGATE_PIPELINE ) {
 			return new MongoDBQueryDescriptor(
-					collection,
-					operation,
-					parse( criteria ),
-					parse( projection ),
-					parse( orderBy ),
-					parse( options ),
-					parse( updateOrInsert ),
-					null
-			);
+				collection,
+				operation,
+				parse( criteria ),
+				parse( projection ),
+				parse( orderBy ),
+				parse( options ),
+				parse( updateOrInsert ),
+				null );
 		}
-		else {
-			return new MongoDBQueryDescriptor( collection, operation, pipeline );
-		}
+		return new MongoDBQueryDescriptor( collection, operation, pipeline );
 	}
 
 	/**
