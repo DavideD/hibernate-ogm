@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,13 +21,14 @@
             <artifactId>hibernate-ogm-core</artifactId>
         </dependency>
         <dependency>
-             <groupId>org.hibernate.hql</groupId>
-             <artifactId>hibernate-hql-lucene</artifactId>
-         </dependency>
+            <groupId>org.hibernate.hql</groupId>
+            <artifactId>hibernate-hql-lucene</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-processor</artifactId>
-            <!-- "provided" is used as "compile-only" here; It's NOT needed at runtime -->
+            <!-- "provided" is used as "compile-only" here; It's NOT needed 
+                at runtime -->
             <scope>provided</scope>
         </dependency>
 
@@ -160,8 +162,8 @@
     <profiles>
         <profile>
             <id>skip-couchdb-integration-tests</id>
-            <!-- To run the tests you need to define the 
-                environment property: COUCHDB_HOSTNAME -->
+            <!-- To run the tests you need to define the environment property: 
+                COUCHDB_HOSTNAME -->
             <activation>
                 <property>
                     <name>!env.COUCHDB_HOSTNAME</name>
@@ -170,6 +172,83 @@
             <properties>
                 <skipUnitTests>true</skipUnitTests>
             </properties>
+        </profile>
+        <profile>
+            <id>use-docker</id>
+            <activation>
+                <property>
+                    <name>useDocker</name>
+                </property>
+            </activation>
+            <properties>
+                <couchdb.port>${env.COUCHDB_PORT}</couchdb.port>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-property</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>env.COUCHDB_PORT</property>
+                                            <message>You must set a COUCHDB_PORT environment property!</message>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>0.20.1</version>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>couchdb</name>
+                                    <run>
+                                        <ports>
+                                            <port>${couchdb.port}:5984</port>
+                                        </ports>
+                                        <wait>
+                                            <http>
+                                                <url>http://localhost:${couchdb.port}</url>
+                                            </http>
+                                            <time>10000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
+                        <!-- Connect start/stop to pre- and post-integration-test 
+                            phase, respectively if you want to start your docker containers during integration 
+                            tests -->
+                        <executions>
+                            <execution>
+                                <id>start</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>stop</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                    <goal>remove</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

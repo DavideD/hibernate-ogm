@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
- ~ Hibernate OGM, Domain model persistence for NoSQL datastores
- ~
- ~ License: GNU Lesser General Public License (LGPL), version 2.1 or later
- ~ See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
-  -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<!-- ~ Hibernate OGM, Domain model persistence for NoSQL datastores ~ ~ License: 
+    GNU Lesser General Public License (LGPL), version 2.1 or later ~ See the 
+    lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.hibernate.ogm</groupId>
@@ -26,6 +24,85 @@
                 <filtering>true</filtering>
             </testResource>
         </testResources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>0.20.1</version>
+                    <configuration>
+                        <images>
+                            <image>
+                                <name>neo4j:${neo4jVersion}</name>
+                                <run>
+                                    <ports>
+                                        <port>${neo4j.port}:7474</port>
+                                        <port>7687:7687</port>
+                                    </ports>
+                                    <wait>
+                                        <http>
+                                            <url>http://localhost:${neo4j.port}</url>
+                                        </http>
+                                        <time>10000</time>
+                                    </wait>
+                                </run>
+                            </image>
+                        </images>
+                    </configuration>
+                    <!-- Connect start/stop to pre- and post-integration-test 
+                        phase, respectively if you want to start your docker containers during integration 
+                        tests -->
+                    <executions>
+                        <execution>
+                            <id>start</id>
+                            <phase>compile</phase>
+                            <goals>
+                                <goal>start</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>stop</id>
+                            <phase>post-integration-test</phase>
+                            <goals>
+                                <goal>stop</goal>
+                                <goal>remove</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.6.0</version>
+                    <executions>
+                        <execution>
+                            <id>Set Neo4j password</id>
+                            <phase>compile</phase>
+                            <goals>
+                                <goal>exec</goal>
+                            </goals>
+                            <configuration>
+                                <executable>curl</executable>
+                                <arguments>
+                                    <argument>-H</argument>
+                                    <argument>Authorization: Basic bmVvNGo6bmVvNGo=</argument>
+                                    <argument>-H</argument>
+                                    <argument>Accept: application/json; charset=UTF-8</argument>
+                                    <argument>-H</argument>
+                                    <argument>Content-Type: application/json</argument>
+                                    <argument>-X</argument>
+                                    <argument>POST</argument>
+                                    <argument>-d</argument>
+                                    <argument>{"password":"${env.NEO4J_PASSWORD}"}</argument>
+                                    <argument>http://localhost:${neo4j.port}/user/neo4j/password</argument>
+                                </arguments>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.bsc.maven</groupId>
@@ -40,7 +117,7 @@
                 </configuration>
             </plugin>
             <plugin>
-                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -54,7 +131,8 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-processor</artifactId>
-            <!-- "provided" is used as "compile-only" here; It's NOT needed at runtime -->
+            <!-- "provided" is used as "compile-only" here; It's NOT needed 
+                at runtime -->
             <scope>provided</scope>
         </dependency>
 
@@ -183,7 +261,8 @@
             </properties>
         </profile>
 
-        <!-- Executes the tests against a separately started Neo4j server using the Bolt protocol interface -->
+        <!-- Executes the tests against a separately started Neo4j server 
+            using the Bolt protocol interface -->
         <profile>
             <id>neo4j-bolt</id>
             <properties>
@@ -191,12 +270,60 @@
             </properties>
         </profile>
 
-        <!-- Executes the tests against a separately started Neo4j server using the HTTP interface -->
+        <!-- Executes the tests against a separately started Neo4j server 
+            using the HTTP interface -->
         <profile>
             <id>neo4j-http</id>
             <properties>
                 <datastoreProvider>neo4j_http</datastoreProvider>
             </properties>
+        </profile>
+
+        <profile>
+            <id>use-docker</id>
+            <activation>
+                <property>
+                    <name>useDocker</name>
+                </property>
+            </activation>
+            <properties>
+                <neo4j.port>${env.NEO4J_PORT}</neo4j.port>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-property</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>env.NEO4J_PORT</property>
+                                            <message>NEO4J_PORT environment property not found ( yu)!</message>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>env.NEO4J_PASSWORD</property>
+                                            <message>You must set a NEO4J_PASSWORD environment property!</message>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>
