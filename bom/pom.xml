@@ -75,6 +75,7 @@
         <!-- See Lucene dependency above -->
 
         <!-- Cassandra -->
+        <cassandraFamilyVersion>3.1</cassandraFamilyVersion>
         <cassandraVersion>3.1.0</cassandraVersion>
         <!-- Update dependency versions accordingly when updating C*  -->
         <!--

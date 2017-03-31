@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
- ~ Hibernate OGM, Domain model persistence for NoSQL datastores
- ~
- ~ License: GNU Lesser General Public License (LGPL), version 2.1 or later
- ~ See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
-  -->
+<!-- ~ Hibernate OGM, Domain model persistence for NoSQL datastores ~ ~ License: 
+    GNU Lesser General Public License (LGPL), version 2.1 or later ~ See the 
+    lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,7 +15,7 @@
     </parent>
 
     <artifactId>hibernate-ogm-redis</artifactId>
-    <packaging>jar</packaging>
+<packaging>jar</packaging>
 
     <name>Hibernate OGM for Redis</name>
     <description>Persist objects in Redis</description>
@@ -35,7 +32,8 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-processor</artifactId>
-            <!-- "provided" is used as "compile-only" here; It's NOT needed at runtime -->
+            <!-- "provided" is used as "compile-only" here; It's NOT needed 
+                at runtime -->
             <scope>provided</scope>
         </dependency>
 
@@ -175,7 +173,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- Skip the main run here. Dialect-specific executions are defined below -->
+                    <!-- Skip the main run here. Dialect-specific executions 
+                        are defined below -->
                     <skipExec>true</skipExec>
                     <environmentVariables>
                         <REDIS_HOSTNAME>${env.REDIS_HOSTNAME}</REDIS_HOSTNAME>
@@ -225,7 +224,8 @@
     <profiles>
         <profile>
             <id>skip-redis-unit-tests</id>
-            <!-- To run the tests you need to define the environment property: REDIS_HOSTNAME -->
+            <!-- To run the tests you need to define the environment property: 
+                REDIS_HOSTNAME -->
             <activation>
                 <property>
                     <name>!env.REDIS_HOSTNAME</name>
@@ -248,14 +248,85 @@
                                 </goals>
                                 <configuration>
                                     <source>
-                                        println "[INFO] ------------------------------------------------------------------------";
-                                        println "[INFO] REDIS BUILD INFO                                                        ";
-                                        println "[INFO] ------------------------------------------------------------------------";
-                                        println "[INFO] Skipping unit tests. Specify Redis host and port via the environment    ";
-                                        println "[INFO] variables REDIS_HOSTNAME and REDIS_PORT, respectively.                  ";
-                                        println "[INFO] ------------------------------------------------------------------------";
+                                        println "[INFO]
+                                        ------------------------------------------------------------------------";
+                                        println "[INFO] REDIS BUILD INFO
+                                        ";
+                                        println "[INFO]
+                                        ------------------------------------------------------------------------";
+                                        println "[INFO] Skipping unit
+                                        tests. Specify Redis host and
+                                        port via the environment ";
+                                        println "[INFO] variables
+                                        REDIS_HOSTNAME and REDIS_PORT,
+                                        respectively. ";
+                                        println "[INFO]
+                                        ------------------------------------------------------------------------";
                                     </source>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>use-docker</id>
+            <activation>
+                <property>
+                    <name>useDocker</name>
+                </property>
+            </activation>
+            <properties>
+                <redis.port>${env.REDIS_PORT}</redis.port>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-property</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>0.20.1</version>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>redis</name>
+                                    <run>
+                                        <wait>
+                                            <time>15000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
+                        <!-- Connect start/stop to pre- and post-integration-test 
+                            phase, respectively if you want to start your docker containers during integration 
+                            tests -->
+                        <executions>
+                            <execution>
+                                <id>start</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>stop</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                    <goal>remove</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>

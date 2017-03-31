@@ -165,7 +165,6 @@
             <artifactId>jboss-transaction-api_1.2_spec</artifactId>
             <scope>provided</scope>
         </dependency>
-
     </dependencies>
 
     <profiles>
@@ -194,7 +193,7 @@
                                 </goals>
                                 <configuration>
                                     <source>
-                                        println "[INFO] ------------------------------------------------------------------------";
+                                        println "[INFO] ---couchdb---------------------------------------------------------------------";
                                         println "[INFO] CASSANDRA BUILD INFO                                                    ";
                                         println "[INFO] ------------------------------------------------------------------------";
                                         println "[INFO] Skipping unit tests. Specify Cassandra host and port via the environment";
@@ -202,6 +201,80 @@
                                         println "[INFO] ------------------------------------------------------------------------";
                                     </source>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>use-docker</id>
+            <activation>
+                <property>
+                    <name>useDocker</name>
+                </property>
+            </activation>
+            <properties>
+                <cassandra.port>${env.CASSANDRA_PORT}</cassandra.port>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-property</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>env.CASSANDRA_PORT</property>
+                                            <message>You must set a CASSASNDRA_PORT environment property!</message>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>0.20.1</version>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>cassandra:${cassandraFamilyVersion}</name>
+                                    <run>
+                                        <ports>
+                                            <port>${cassandra.port}:9042</port>
+                                        </ports>
+                                        <wait>
+                                            <time>20000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
+                        <!-- Connect start/stop to pre- and post-integration-test 
+                            phase, respectively if you want to start your docker containers during integration 
+                            tests -->
+                        <executions>
+                            <execution>
+                                <id>start</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>stop</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                    <goal>remove</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>

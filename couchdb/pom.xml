@@ -239,7 +239,7 @@
                             </execution>
                             <execution>
                                 <id>stop</id>
-                                <phase>post-integration-test</phase>
+                                <phase>package</phase>
                                 <goals>
                                     <goal>stop</goal>
                                     <goal>remove</goal>
