@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
- ~ Hibernate OGM, Domain model persistence for NoSQL datastores
- ~
- ~ License: GNU Lesser General Public License (LGPL), version 2.1 or later
- ~ See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
-  -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<!-- ~ Hibernate OGM, Domain model persistence for NoSQL datastores ~ ~ License: 
+    GNU Lesser General Public License (LGPL), version 2.1 or later ~ See the 
+    lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -24,22 +22,27 @@
     <modules>
         <module>bom</module>
         <module>core</module>
-        <!-- <module>ehcache</module> Is only enabled when not running in Java 9: see the profiles section-->
-        <!-- <module>infinispan</module> Is only enabled when not running in Java 9: see the profiles section-->
-        <!-- <module>infinispan-remote</module> Is only enabled when not running in Java 9: see the profiles section-->
+        <!-- <module>ehcache</module> Is only enabled when not running in 
+            Java 9: see the profiles section -->
+        <!-- <module>infinispan</module> Is only enabled when not running 
+            in Java 9: see the profiles section -->
+        <!-- <module>infinispan-remote</module> Is only enabled when not 
+            running in Java 9: see the profiles section -->
         <module>mongodb</module>
-        <!-- <module>neo4j</module> Is only enabled when not running in Java 9: see the profiles section-->
+        <!-- <module>neo4j</module> Is only enabled when not running in Java 
+            9: see the profiles section -->
         <module>couchdb</module>
         <module>cassandra</module>
         <module>redis</module>
         <module>jipijapa</module>
-        <!-- <module>modules</module> The modules require all of the above modules to be enabled -->
+        <!-- <module>modules</module> The modules require all of the above 
+            modules to be enabled -->
         <module>performance</module>
     </modules>
 
     <properties>
-        <!-- JDK version required to build OGM; requiring 1.8 as WildFly 10 requires JDK 1.8; We still create
-             1.7 byte code to run in other environments -->
+        <!-- JDK version required to build OGM; requiring 1.8 as WildFly 
+            10 requires JDK 1.8; We still create 1.7 byte code to run in other environments -->
         <minJdkVersion>1.8</minJdkVersion>
         <jdkTargetForProcessor>1.7</jdkTargetForProcessor>
         <!-- test / build-only dependency versions, managed below -->
@@ -50,26 +53,27 @@
         <jbossLoggingProcessorVersion>1.2.0.Final</jbossLoggingProcessorVersion>
         <bytemanVersion>3.0.6</bytemanVersion>
 
-        <!--
-             Following is the default jgroups mcast address.  If you find the testsuite runs very slowly, there
-             may be problems with multicast on the interface JGroups uses by default on your machine. You can
-             try to resolve setting 'jgroups.bind_addr' as a system-property to the jvm launching maven and
-             setting the value to an interface where you know multicast works
-          -->
+        <!-- Following is the default jgroups mcast address. If you find 
+            the testsuite runs very slowly, there may be problems with multicast on the 
+            interface JGroups uses by default on your machine. You can try to resolve 
+            setting 'jgroups.bind_addr' as a system-property to the jvm launching maven 
+            and setting the value to an interface where you know multicast works -->
         <jgroups.bind_addr>127.0.0.1</jgroups.bind_addr>
         <skipUnitTests>false</skipUnitTests>
 
-        <!-- The following properties configure the embedded MongoDB instance used for tests -->
+        <!-- The following properties configure the embedded MongoDB instance 
+            used for tests -->
         <embeddedMongoDbVersion>${mongodbVersion}</embeddedMongoDbVersion>
         <embeddedMongoDbBindIp>127.0.0.1</embeddedMongoDbBindIp>
         <embeddedMongoDbTempDir>${project.build.directory}${file.separator}embeddedMongoDb${file.separator}extracted</embeddedMongoDbTempDir>
         <embeddedMongoDbLogDir>${project.build.directory}${file.separator}embeddedMongoDb${file.separator}logs</embeddedMongoDbLogDir>
-        <!-- Not using default port to reduce chances of shutting down an external MongoDB instance -->
+        <!-- Not using default port to reduce chances of shutting down an 
+            external MongoDB instance -->
         <embeddedMongoDbPort>27018</embeddedMongoDbPort>
 
-        <!-- Since we require users to import a specific Hibernate Search module explicitly,
-         all integration tests need to know which version that shall be.
-         So the property needs to be defined in the global parent pom -->
+        <!-- Since we require users to import a specific Hibernate Search 
+            module explicitly, all integration tests need to know which version that 
+            shall be. So the property needs to be defined in the global parent pom -->
         <hibernate-search.module.slot>${hibernateSearchVersion}-orm51</hibernate-search.module.slot>
 
         <!-- Target version of WildFly (for testing and JipiJapa integration) -->
@@ -85,8 +89,8 @@
         <asciidoctorj-pdf.version>1.5.0-alpha.11</asciidoctorj-pdf.version>
     </properties>
 
-    <!-- Only for management of test-scoped dependencies; All other dependencies (which are exposed to users) are
-         managed in the BOM -->
+    <!-- Only for management of test-scoped dependencies; All other dependencies 
+        (which are exposed to users) are managed in the BOM -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -137,16 +141,16 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-              <groupId>org.jboss.naming</groupId>
-              <artifactId>jnp-client</artifactId>
-              <scope>test</scope>
-              <version>${jbossNamingVersion}</version>
+                <groupId>org.jboss.naming</groupId>
+                <artifactId>jnp-client</artifactId>
+                <scope>test</scope>
+                <version>${jbossNamingVersion}</version>
             </dependency>
             <dependency>
-              <groupId>org.jboss.naming</groupId>
-              <artifactId>jnpserver</artifactId>
-              <scope>test</scope>
-              <version>${jbossNamingVersion}</version>
+                <groupId>org.jboss.naming</groupId>
+                <artifactId>jnpserver</artifactId>
+                <scope>test</scope>
+                <version>${jbossNamingVersion}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.shrinkwrap</groupId>
@@ -299,8 +303,9 @@
                 </executions>
             </plugin>
             <plugin>
-                <!-- This defines the properties 'parsedVersion.majorVersion'
-                    and 'parsedVersion.minorVersion' to be in synch with the current project version -->
+                <!-- This defines the properties 'parsedVersion.majorVersion' 
+                    and 'parsedVersion.minorVersion' to be in synch with the current project 
+                    version -->
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
@@ -355,7 +360,9 @@
                     <executions>
                         <execution>
                             <id>attach-javadocs</id>
-                            <goals><goal>jar</goal></goals>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -364,11 +371,11 @@
                     <version>3.0.0</version>
                     <dependencies>
                         <dependency>
-                            <!-- This override is needed to fix
-                                https://issues.apache.org/jira/browse/MJAR-226
-                              We don't update the maven-jar-plugin yet as it introduces an incompatibility with Eclipse m2e:
-                                http://lists.jboss.org/pipermail/hibernate-dev/2016-August/015192.html
-                              An m2e update is expected to make this redundant, we'll then upgrade to maven-jar-plugin 3.0.2+ -->
+                            <!-- This override is needed to fix https://issues.apache.org/jira/browse/MJAR-226 
+                                We don't update the maven-jar-plugin yet as it introduces an incompatibility 
+                                with Eclipse m2e: http://lists.jboss.org/pipermail/hibernate-dev/2016-August/015192.html 
+                                An m2e update is expected to make this redundant, we'll then upgrade to maven-jar-plugin 
+                                3.0.2+ -->
                             <artifactId>maven-archiver</artifactId>
                             <groupId>org.apache.maven</groupId>
                             <version>3.1.1</version>
@@ -403,11 +410,9 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>2.17</version>
                     <dependencies>
-                        <!-- force SLF4J dependency to align
-                             Maven internals and CheckStyle's
-                             see https://github.com/jcgay/maven-color/wiki/Problems
-                             If that causes problem, that can be removed
-                             but maven-color won't work -->
+                        <!-- force SLF4J dependency to align Maven internals 
+                            and CheckStyle's see https://github.com/jcgay/maven-color/wiki/Problems If 
+                            that causes problem, that can be removed but maven-color won't work -->
                         <dependency>
                             <groupId>org.slf4j</groupId>
                             <artifactId>jcl-over-slf4j</artifactId>
@@ -458,7 +463,9 @@
                                 <processors>
                                     <processor>org.jboss.logging.processor.apt.LoggingToolsProcessor</processor>
                                 </processors>
-                                <compilerArguments>-AtranslationFilesPath=${project.basedir}/src/main/resources/ -source ${jdkTargetForProcessor} -target ${jdkTargetForProcessor}</compilerArguments>
+                                <compilerArguments>-AtranslationFilesPath=${project.basedir}/src/main/resources/
+                                    -source ${jdkTargetForProcessor}
+                                    -target ${jdkTargetForProcessor}</compilerArguments>
                             </configuration>
                         </execution>
                     </executions>
@@ -503,8 +510,8 @@
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <argLine>${additionalRuntimeArgLine}</argLine>
                         <systemPropertyVariables>
-                           <!-- See test org.hibernate.ogm.test.utils.EnvironmentTest -->
-                           <hibernate.service.allow_crawling>false</hibernate.service.allow_crawling>
+                            <!-- See test org.hibernate.ogm.test.utils.EnvironmentTest -->
+                            <hibernate.service.allow_crawling>false</hibernate.service.allow_crawling>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
@@ -519,7 +526,7 @@
                             <artifactId>jruby-complete</artifactId>
                             <version>${jruby.version}</version>
                         </dependency>
-                         <dependency>
+                        <dependency>
                             <groupId>org.asciidoctor</groupId>
                             <artifactId>asciidoctorj</artifactId>
                             <version>${asciidoctorj.version}</version>
@@ -614,7 +621,8 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>2.19.1</version>
                 </plugin>
-                <!-- Unpack test from hibernate-ogm-core to re-run them on each other module database integration -->
+                <!-- Unpack test from hibernate-ogm-core to re-run them on 
+                    each other module database integration -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
@@ -757,6 +765,11 @@
                     <version>0.5</version>
                 </plugin>
                 <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>0.20.1</version>
+                </plugin>
+                <plugin>
                     <!-- Creates a report by running "mvn clirr:clirr" -->
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>clirr-maven-plugin</artifactId>
@@ -775,17 +788,16 @@
     </build>
 
     <repositories>
-        <!--
-        To build Hibernate OGM you have to add the JBoss Maven repository to your settings.xml
-        See also http://community.jboss.org/wiki/OverviewofHibernateOGM
-        -->
+        <!-- To build Hibernate OGM you have to add the JBoss Maven repository 
+            to your settings.xml See also http://community.jboss.org/wiki/OverviewofHibernateOGM -->
     </repositories>
 
     <profiles>
         <profile>
             <id>non-jigsaw</id>
             <activation>
-                <!-- The versions we're using of Ehcache, Infinispan and Neo4J won't work on JDK9. Needs upgrading.  -->
+                <!-- The versions we're using of Ehcache, Infinispan and 
+                    Neo4J won't work on JDK9. Needs upgrading. -->
                 <jdk>1.8</jdk>
             </activation>
             <modules>
@@ -793,7 +805,8 @@
                 <module>infinispan</module>
                 <module>infinispan-remote</module>
                 <module>neo4j</module>
-                <!-- The WildFly modules require the other modules to be enabled too -->
+                <!-- The WildFly modules require the other modules to be 
+                    enabled too -->
                 <module>modules</module>
             </modules>
         </profile>
@@ -814,7 +827,8 @@
                     <name>skipITs</name>
                     <value>!true</value>
                 </property>
-                <!-- Skip on Java 9, both because of some NoSQL stores aren't ready and because of WildFly -->
+                <!-- Skip on Java 9, both because of some NoSQL stores aren't 
+                    ready and because of WildFly -->
                 <jdk>1.8</jdk>
             </activation>
             <modules>
