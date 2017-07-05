@@ -151,11 +151,11 @@ public class EmbeddedNeo4jTupleAssociationSnapshot implements TupleSnapshot {
 	}
 
 	private static Node ownerNodeFromAssociation(AssociationKey associationKey, Relationship relationship) {
-		if ( relationship.getStartNode().hasLabel( label( associationKey.getEntityKey().getTable() ) ) ) {
-			return relationship.getStartNode();
+		if ( associationKey.getMetadata().isInverse() ) {
+			return relationship.getEndNode();
 		}
 		else {
-			return relationship.getEndNode();
+			return relationship.getStartNode();
 		}
 	}
 
