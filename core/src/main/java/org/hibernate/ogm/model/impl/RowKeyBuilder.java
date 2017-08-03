@@ -18,6 +18,8 @@ import org.hibernate.ogm.model.spi.Tuple;
 public class RowKeyBuilder {
 	private final List<String> columnNames = new ArrayList<String>();
 	private final List<String> indexColumnNames = new ArrayList<String>( 3 );
+	private int duplicatesIndex = RowKey.DEFAULT_INDEX;
+
 	private Tuple tuple;
 
 	public RowKeyBuilder addColumns(String... columns) {
@@ -35,6 +37,18 @@ public class RowKeyBuilder {
 		return this;
 	}
 
+	/**
+	 * Collection of embedded can contains duplicates, because they don't differ in any aspect they will also have the same
+	 * {@link RowKey}. The goal of this property is to distinguish duplicates.
+	 *
+	 * @param duplicatesIndex
+	 * @return the instance for chaining
+	 */
+	public RowKeyBuilder duplicatesIndex(int duplicatesIndex) {
+		this.duplicatesIndex = duplicatesIndex;
+		return this;
+	}
+
 	public RowKey build() {
 		final String[] columnNamesArray = columnNames.toArray( new String[columnNames.size()] );
 		final int length = columnNamesArray.length;
@@ -44,7 +58,7 @@ public class RowKeyBuilder {
 			columnValuesArray[index] = tuple.get( columnNamesArray[index] );
 		}
 
-		return new RowKey( columnNamesArray, columnValuesArray );
+		return new RowKey( columnNamesArray, columnValuesArray, duplicatesIndex );
 	}
 
 	public RowKeyBuilder values(Tuple tuple) {

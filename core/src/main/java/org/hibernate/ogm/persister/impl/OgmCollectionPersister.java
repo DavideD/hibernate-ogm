@@ -10,7 +10,9 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.AssertionFailure;
@@ -369,8 +371,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 	 * persister.
 	 */
 	private RowKeyAndTuple createAndPutAssociationRowForInsert(Serializable key, PersistentCollection collection,
-			AssociationPersister associationPersister, SessionImplementor session, int i, Object entry) {
-		RowKeyBuilder rowKeyBuilder = initializeRowKeyBuilder();
+			AssociationPersister associationPersister, SessionImplementor session, int i, Object entry, Map<RowKey, Integer> duplicateSize) {
 		Tuple associationRow = new Tuple();
 
 		// the collection has a surrogate key (see @CollectionId)
@@ -391,13 +392,32 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 		final Object element = collection.getElement( entry );
 		getElementGridType().nullSafeSet( associationRow, element, getElementColumnNames(), session );
 
+		RowKey rowKey = generateRowKey( associationPersister, duplicateSize, associationRow );
+
 		RowKeyAndTuple result = new RowKeyAndTuple();
-		result.key = rowKeyBuilder.values( associationRow ).build();
+		result.key = rowKey;
 		result.tuple = associationRow;
 
 		associationPersister.getAssociation().put( result.key, result.tuple );
 
 		return result;
+	}
+
+	private RowKey generateRowKey(AssociationPersister associationPersister, Map<RowKey, Integer> duplicateSize, Tuple associationRow) {
+		AssociationKind associationKind = associationPersister.getAssociationKey().getMetadata().getAssociationKind();
+		RowKeyBuilder rowKeyBuilder = initializeRowKeyBuilder();
+		RowKey rowKey = rowKeyBuilder.values( associationRow ).build();
+		if ( associationKind == AssociationKind.EMBEDDED_COLLECTION ) {
+			Integer size = 0;
+			if ( duplicateSize.containsKey( rowKey ) ) {
+				size = duplicateSize.put( rowKey, size + 1 );
+			}
+			else if ( associationPersister.getAssociation().get( rowKey ) != null ) {
+				duplicateSize.put( rowKey, size + 1 );
+			}
+			rowKeyBuilder.duplicatesIndex( size );
+		}
+		return rowKey;
 	}
 
 	private static class RowKeyAndTuple {
@@ -551,13 +571,14 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 			// insert all the new entries
 			collection.preInsert( this );
 			Iterator<?> entries = collection.entries( this );
+			Map<RowKey, Integer> duplicatesSize = new HashMap<>();
 			int i = 0;
 			int count = 0;
 			while ( entries.hasNext() ) {
 				Object entry = entries.next();
 				if ( collection.needsInserting( entry, i, elementType ) ) {
 					// TODO: copy/paste from recreate()
-					RowKeyAndTuple associationRow = createAndPutAssociationRowForInsert( id, collection, associationPersister, session, i, entry );
+					RowKeyAndTuple associationRow = createAndPutAssociationRowForInsert( id, collection, associationPersister, session, i, entry, duplicatesSize );
 					updateInverseSideOfAssociationNavigation( session, entry, associationPersister.getAssociationKey(), associationRow.tuple, Action.ADD, associationRow.key );
 					collection.afterRowInsert( this, entry, i );
 					count++;
@@ -585,6 +606,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 
 			AssociationPersister associationPersister = getAssociationPersister( collection.getOwner(), id, session );
 
+			Map<RowKey, Integer> duplicatesSize = new HashMap<>();
 			// create all the new entries
 			Iterator<?> entries = collection.entries( this );
 			if ( entries.hasNext() ) {
@@ -595,7 +617,7 @@ public class OgmCollectionPersister extends AbstractCollectionPersister implemen
 					final Object entry = entries.next();
 					if ( collection.entryExists( entry, i ) ) {
 						// TODO: copy/paste from insertRows()
-						RowKeyAndTuple keyAndTuple = createAndPutAssociationRowForInsert( id, collection, associationPersister, session, i, entry );
+						RowKeyAndTuple keyAndTuple = createAndPutAssociationRowForInsert( id, collection, associationPersister, session, i, entry, duplicatesSize );
 						updateInverseSideOfAssociationNavigation( session, entry, associationPersister.getAssociationKey(), keyAndTuple.tuple, Action.ADD, keyAndTuple.key );
 						collection.afterRowInsert( this, entry, i );
 						count++;

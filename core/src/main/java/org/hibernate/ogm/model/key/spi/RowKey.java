@@ -15,16 +15,30 @@ import java.util.Arrays;
  */
 public final class RowKey {
 
+	public static final int DEFAULT_INDEX = -1;
+
 	private final String[] columnNames;
 	//column value types do have to be serializable so RowKey can be serializable
 	//should it be a Serializable[] type? It seems to be more pain than anything else
 	private final Object[] columnValues;
 	private final int hashCode;
 
+	/*
+	 * Embedded collections can contains duplicates, because they have the same values they will also have the same row key.
+	 * This property keeps track of the duplicates. This is not a column and therefor it's not stored in the db.
+	 * Defaults to #DEFAULT_INDEX
+	 */
+	private final int duplicatesIndex;
+
 	public RowKey(String[] columnNames, Object[] columnValues) {
+		this( columnNames, columnValues, DEFAULT_INDEX );
+	}
+
+	public RowKey(String[] columnNames, Object[] columnValues, int index) {
 		this.columnNames = columnNames;
 		this.columnValues = columnValues;
 		this.hashCode = generateHashCode();
+		this.duplicatesIndex = index;
 	}
 
 	/**
@@ -89,11 +103,15 @@ public final class RowKey {
 
 		RowKey that = (RowKey) o;
 
-		// Probably incorrect - comparing Object[] arrays with Arrays.equals
+		// Probably incorrect - comparing Object[] arrays with Arrays.
 		if ( !Arrays.equals( columnValues, that.columnValues ) ) {
 			return false;
 		}
 		if ( !Arrays.equals( columnNames, that.columnNames ) ) {
+			return false;
+		}
+
+		if ( this.duplicatesIndex != that.duplicatesIndex ) {
 			return false;
 		}
 
@@ -116,7 +134,11 @@ public final class RowKey {
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append( "RowKey[" );
+		sb.append( "RowKey" );
+		sb.append( "{" );
+		sb.append( duplicatesIndex );
+		sb.append( "}" );
+		sb.append( "[" );
 		int i = 0;
 		for ( String column : columnNames ) {
 			sb.append( column ).append( "=" ).append( columnValues[i] );
