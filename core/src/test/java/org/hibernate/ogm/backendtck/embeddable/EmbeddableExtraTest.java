@@ -203,6 +203,36 @@ public class EmbeddableExtraTest extends OgmTestCase {
 		session.close();
 	}
 
+	@Test
+	public void testPersistWithDuplicatesInEmbeddedList() throws Exception {
+		try ( final Session session = openSession() ) {
+			Transaction transaction = session.beginTransaction();
+			final String ALTERNATIVE_NUMBER = "+1-202-555-0333";
+			List<String> alternativePhones = Arrays.asList( ALTERNATIVE_NUMBER, ALTERNATIVE_NUMBER );
+			AccountWithPhone account = new AccountWithPhone( "222", "Mobile account 222" );
+			account.setPhoneNumber( new PhoneNumber( "+1-222-555-0111", alternativePhones ) );
+
+			session.persist( account );
+			transaction.commit();
+			session.clear();
+
+			transaction = session.beginTransaction();
+			AccountWithPhone loadedUser = (AccountWithPhone) session.get( AccountWithPhone.class, account.getId() );
+			assertThat( loadedUser ).as( "Cannot load persisted object with nested embeddables" ).isNotNull();
+			assertThat( loadedUser.getPhoneNumber() ).isNotNull();
+			assertThat( loadedUser.getPhoneNumber().getMain() ).isEqualTo( account.getPhoneNumber().getMain() );
+			assertThat( loadedUser.getPhoneNumber().getAlternatives() ).containsOnly( ALTERNATIVE_NUMBER, ALTERNATIVE_NUMBER );
+
+			session.delete( loadedUser );
+			transaction.commit();
+			session.clear();
+
+			transaction = session.beginTransaction();
+			assertThat( session.get( AccountWithPhone.class, account.getId() ) ).isNull();
+			transaction.commit();
+		}
+	}
+
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
 		return new Class<?>[] { MultiAddressAccount.class, AccountWithPhone.class, Order.class };
