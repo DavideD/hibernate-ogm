@@ -135,7 +135,12 @@ public abstract class LocalCacheManager<EK, AK, ISK> {
 	 */
 	private static Configuration injectTransactionManager(TransactionManagerLookupDelegator transactionManagerLookupDelegator, Configuration originalCfg) {
 		ConfigurationBuilder builder = new ConfigurationBuilder().read( originalCfg );
+
+		// TODO:
+		// - Add warning in case this is not enabled already
+		// - Rename this method or refactor the code to justify this code (it doesn't only inject the transaction manager anymore)
 		builder.clustering().hash().groups().enabled();
+
 		if ( originalCfg.transaction().transactionMode() == TransactionMode.TRANSACTIONAL ) {
 			builder.transaction()
 						.transactionManagerLookup( transactionManagerLookupDelegator );
