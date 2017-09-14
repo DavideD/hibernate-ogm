@@ -89,35 +89,29 @@ public abstract class LocalCacheManager<EK, AK, ISK> {
 
 				GlobalConfiguration globalConfiguration = serializationConfiguration.build();
 
-				EmbeddedCacheManager cacheManager = new DefaultCacheManager( globalConfiguration, tmpCacheManager.getDefaultCacheConfiguration(), false );
+				Configuration defaultCacheConfiguration = tmpCacheManager.getDefaultCacheConfiguration();
+				defaultCacheConfiguration = injectTransactionManager( transactionManagerLookupDelegator, defaultCacheConfiguration );
+
+				EmbeddedCacheManager cacheManager = new DefaultCacheManager( globalConfiguration, defaultCacheConfiguration, false );
+
+				String defaultCacheName = globalConfiguration.defaultCacheName().orElse( null );
 
 				// override the named cache configuration defined in the configuration file to
 				// inject the platform TransactionManager
 				for ( String cacheName : allCacheNames ) {
-					Configuration originalCfg = tmpCacheManager.getCacheConfiguration( cacheName );
-					if ( originalCfg == null ) {
-						originalCfg = tmpCacheManager.getDefaultCacheConfiguration();
+					if ( !cacheName.equals( defaultCacheName ) ) {
+						Configuration config = tmpCacheManager.getCacheConfiguration( cacheName );
+						if ( config == null ) {
+							config = defaultCacheConfiguration;
+						}
+						else {
+							config = injectTransactionManager( transactionManagerLookupDelegator, config );
+						}
+						if ( config == null ) {
+							throw LOG.missingCacheConfiguration( cacheName );
+						}
+						cacheManager.defineConfiguration( cacheName, config );
 					}
-					if ( originalCfg == null ) {
-						throw LOG.missingCacheConfiguration( cacheName );
-					}
-					Configuration newCfg;
-					if ( originalCfg.transaction().transactionMode() == TransactionMode.TRANSACTIONAL ) {
-						//Inject our TransactionManager lookup delegate for transactional caches ONLY!
-						//injecting one in a non-transactional cache will have side-effects on other configuration settings.
-						newCfg = new ConfigurationBuilder()
-								.read( originalCfg )
-									.transaction()
-										.transactionManagerLookup( transactionManagerLookupDelegator )
-								.build();
-					}
-					else {
-						//But also define all other caches:
-						newCfg = new ConfigurationBuilder()
-								.read( originalCfg )
-								.build();
-					}
-					cacheManager.defineConfiguration( cacheName, newCfg );
 				}
 
 				cacheManager.start();
@@ -132,6 +126,21 @@ public abstract class LocalCacheManager<EK, AK, ISK> {
 		catch (Exception e) {
 			throw raiseConfigurationError( e, configUrl.toString() );
 		}
+	}
+
+	/**
+	 * Inject our TransactionManager lookup delegate for transactional caches ONLY!
+	 * <p>
+	 * injecting one in a non-transactional cache will have side-effects on other configuration settings.
+	 */
+	private static Configuration injectTransactionManager(TransactionManagerLookupDelegator transactionManagerLookupDelegator, Configuration originalCfg) {
+		ConfigurationBuilder builder = new ConfigurationBuilder().read( originalCfg );
+		builder.clustering().hash().groups().enabled();
+		if ( originalCfg.transaction().transactionMode() == TransactionMode.TRANSACTIONAL ) {
+			builder.transaction()
+						.transactionManagerLookup( transactionManagerLookupDelegator );
+		}
+		return builder.build();
 	}
 
 	private static HibernateException raiseConfigurationError(Exception e, String cfgName) {
