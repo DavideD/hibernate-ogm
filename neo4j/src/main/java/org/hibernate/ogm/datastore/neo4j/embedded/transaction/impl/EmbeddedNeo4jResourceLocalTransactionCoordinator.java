@@ -39,7 +39,7 @@ import org.neo4j.graphdb.Transaction;
  */
 public class EmbeddedNeo4jResourceLocalTransactionCoordinator implements TransactionCoordinator {
 
-	private static final Log log = org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory.getLogger();
+	private static final Log log = org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory.make( MethodHandles.lookup() );
 
 	private final TransactionCoordinatorBuilder transactionCoordinatorBuilder;
 	private final TransactionCoordinatorOwner owner;
