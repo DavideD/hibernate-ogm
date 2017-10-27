@@ -7,6 +7,7 @@
 package org.hibernate.ogm.massindex.impl;
 
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.hibernate.ogm.loader.impl.OgmLoadingContext;
 import org.hibernate.ogm.loader.impl.TupleBasedEntityLoader;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
+import org.hibernate.ogm.util.impl.LoggerFactory;
 import org.hibernate.search.backend.AddLuceneWork;
 import org.hibernate.search.backend.spi.BatchBackend;
 import org.hibernate.search.batchindexing.MassIndexerProgressMonitor;
@@ -39,8 +41,6 @@ import org.hibernate.search.indexes.interceptor.EntityIndexingInterceptor;
 import org.hibernate.search.indexes.interceptor.IndexingOverride;
 import org.hibernate.search.spi.InstanceInitializer;
 import org.hibernate.search.util.logging.impl.Log;
-import org.hibernate.search.util.logging.impl.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
 /**
  * Component of batch-indexing pipeline, using chained producer-consumers.
@@ -53,7 +53,7 @@ import java.lang.invoke.MethodHandles;
  */
 public class TupleIndexer implements SessionAwareRunnable {
 
-	private static final Log log = LoggerFactory.make( MethodHandles.lookup() );
+	private static final Log log = LoggerFactory.make( Log.class, MethodHandles.lookup() );
 
 	private final SessionFactoryImplementor sessionFactory;
 	private final Map<Class<?>, EntityIndexBinding> entityIndexBindings;

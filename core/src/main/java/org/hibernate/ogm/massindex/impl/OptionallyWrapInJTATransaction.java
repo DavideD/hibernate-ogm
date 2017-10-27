@@ -19,11 +19,11 @@ import org.hibernate.ogm.dialect.spi.ModelConsumer;
 import org.hibernate.ogm.dialect.spi.TransactionContext;
 import org.hibernate.ogm.dialect.spi.TuplesSupplier;
 import org.hibernate.ogm.model.spi.Tuple;
+import org.hibernate.ogm.util.impl.LoggerFactory;
 import org.hibernate.ogm.util.impl.TransactionContextHelper;
 import org.hibernate.resource.transaction.TransactionCoordinatorBuilder;
 import org.hibernate.search.exception.ErrorHandler;
 import org.hibernate.search.util.logging.impl.Log;
-import org.hibernate.search.util.logging.impl.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
 /**
@@ -37,7 +37,7 @@ import java.lang.invoke.MethodHandles;
  */
 public class OptionallyWrapInJTATransaction implements ModelConsumer {
 
-	private static final Log log = LoggerFactory.make( MethodHandles.lookup() );
+	private static final Log log = LoggerFactory.make( Log.class, MethodHandles.lookup() );
 
 	private final SessionFactoryImplementor factory;
 	private final SessionAwareRunnable delegate;

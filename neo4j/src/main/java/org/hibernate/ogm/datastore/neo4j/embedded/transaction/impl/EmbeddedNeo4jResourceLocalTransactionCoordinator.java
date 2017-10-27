@@ -6,6 +6,7 @@
  */
 package org.hibernate.ogm.datastore.neo4j.embedded.transaction.impl;
 
+import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import org.hibernate.jdbc.WorkExecutor;
 import org.hibernate.jdbc.WorkExecutorVisitable;
 import org.hibernate.ogm.datastore.neo4j.embedded.impl.EmbeddedNeo4jDatastoreProvider;
 import org.hibernate.ogm.datastore.neo4j.logging.impl.Log;
+import org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory;
 import org.hibernate.resource.transaction.SynchronizationRegistry;
 import org.hibernate.resource.transaction.TransactionCoordinator;
 import org.hibernate.resource.transaction.TransactionCoordinatorBuilder;
@@ -39,7 +41,7 @@ import org.neo4j.graphdb.Transaction;
  */
 public class EmbeddedNeo4jResourceLocalTransactionCoordinator implements TransactionCoordinator {
 
-	private static final Log log = org.hibernate.ogm.datastore.neo4j.logging.impl.LoggerFactory.make( MethodHandles.lookup() );
+	private static final Log log = LoggerFactory.make( MethodHandles.lookup() );
 
 	private final TransactionCoordinatorBuilder transactionCoordinatorBuilder;
 	private final TransactionCoordinatorOwner owner;

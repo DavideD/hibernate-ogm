@@ -6,6 +6,7 @@
  */
 package org.hibernate.ogm.massindex.impl;
 
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -13,9 +14,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.hibernate.ogm.util.impl.LoggerFactory;
 import org.hibernate.search.util.logging.impl.Log;
-import org.hibernate.search.util.logging.impl.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
 /**
  * Helper class to create threads;
@@ -27,7 +27,7 @@ public class Executors {
 
 	public static final int QUEUE_MAX_LENGTH = 1000;
 
-	private static final Log log = LoggerFactory.make( MethodHandles.lookup() );
+	private static final Log log = LoggerFactory.make( Log.class, MethodHandles.lookup() );
 	private static final String THREAD_GROUP_PREFIX = "Hibernate OGM: ";
 
 	/**
