@@ -32,6 +32,7 @@ import org.hibernate.ogm.datastore.spi.DatastoreConfiguration;
 import org.hibernate.ogm.engine.spi.OgmSessionFactoryImplementor;
 import org.hibernate.ogm.exception.NotSupportedException;
 import org.hibernate.ogm.options.navigation.GlobalContext;
+import org.hibernate.ogm.storedprocedure.impl.NoSQLProcedureCallImpl;
 import org.hibernate.ogm.util.impl.Log;
 import org.hibernate.ogm.util.impl.LoggerFactory;
 import org.hibernate.procedure.ProcedureCall;
@@ -129,22 +130,22 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 
 	@Override
 	public ProcedureCall getNamedProcedureCall(String name) {
-		throw new NotSupportedException( "OGM-359", "Stored procedures are not supported yet" );
+		return new NoSQLProcedureCallImpl( this, name );
 	}
 
 	@Override
 	public ProcedureCall createStoredProcedureCall(String procedureName) {
-		throw new NotSupportedException( "OGM-359", "Stored procedures are not supported yet" );
+		return new NoSQLProcedureCallImpl( this, procedureName );
 	}
 
 	@Override
 	public ProcedureCall createStoredProcedureCall(String procedureName, Class... resultClasses) {
-		throw new NotSupportedException( "OGM-359", "Stored procedures are not supported yet" );
+		return new NoSQLProcedureCallImpl( this,procedureName,resultClasses );
 	}
 
 	@Override
 	public ProcedureCall createStoredProcedureCall(String procedureName, String... resultSetMappings) {
-		throw new NotSupportedException( "OGM-359", "Stored procedures are not supported yet" );
+		return new NoSQLProcedureCallImpl( this,procedureName,resultSetMappings );
 	}
 
 	@SuppressWarnings("rawtypes")
