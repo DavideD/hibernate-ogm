@@ -32,10 +32,12 @@ import org.hibernate.ogm.datastore.spi.DatastoreConfiguration;
 import org.hibernate.ogm.engine.spi.OgmSessionFactoryImplementor;
 import org.hibernate.ogm.exception.NotSupportedException;
 import org.hibernate.ogm.options.navigation.GlobalContext;
-import org.hibernate.ogm.storedprocedure.impl.NoSQLProcedureCallImpl;
+import org.hibernate.ogm.storedprocedure.impl.NoSQLProcedureCallMemento;
 import org.hibernate.ogm.util.impl.Log;
 import org.hibernate.ogm.util.impl.LoggerFactory;
 import org.hibernate.procedure.ProcedureCall;
+import org.hibernate.procedure.ProcedureCallMemento;
+import org.hibernate.procedure.internal.NoSQLProcedureCallImpl;
 import org.hibernate.query.Query;
 import org.hibernate.query.spi.ScrollableResultsImplementor;
 
@@ -130,7 +132,13 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 
 	@Override
 	public ProcedureCall getNamedProcedureCall(String name) {
-		return new NoSQLProcedureCallImpl( this, name );
+		final ProcedureCallMemento memento = factory.getNamedQueryRepository().getNamedProcedureCallMemento( name );
+		if ( memento == null ) {
+			throw new IllegalArgumentException(
+					"Could not find named stored procedure call with that registration name : " + name
+			);
+		}
+		return new NoSQLProcedureCallImpl( this, new NoSQLProcedureCallMemento( memento ) );
 	}
 
 	@Override
@@ -140,12 +148,12 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 
 	@Override
 	public ProcedureCall createStoredProcedureCall(String procedureName, Class... resultClasses) {
-		return new NoSQLProcedureCallImpl( this,procedureName,resultClasses );
+		return new NoSQLProcedureCallImpl( this, procedureName, resultClasses );
 	}
 
 	@Override
 	public ProcedureCall createStoredProcedureCall(String procedureName, String... resultSetMappings) {
-		return new NoSQLProcedureCallImpl( this,procedureName,resultSetMappings );
+		return new NoSQLProcedureCallImpl( this, procedureName, resultSetMappings );
 	}
 
 	@SuppressWarnings("rawtypes")
