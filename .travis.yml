@@ -1,6 +1,10 @@
 sudo: required
 dist: trusty
 language: java
+
+services:
+  - docker
+
 addons:
   apt:
     packages:
@@ -18,27 +22,22 @@ cache:
 env:
   global:
     - NEO4J_VERSION=$(xmlstarlet sel -N maven=http://maven.apache.org/POM/4.0.0 -t -m '/maven:project/maven:properties' -v maven:neo4jVersion bom/pom.xml)
-    - NEO4J_HOSTNAME=127.0.0.1 NEO4J_PORT=7474 NEO4J_USERNAME=neo4j NEO4J_PASSWORD=hibernate NEO4J_HOME=neo4j-community-$NEO4J_VERSION
+    - NEO4J_HOSTNAME=127.0.0.1 NEO4J_PORT=7474 NEO4J_USERNAME=neo4j NEO4J_PASSWORD=hibernate
 before_install:
-  - curl http://dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz | tar xz
+  - docker run --rm -d --name Neo4j -e NEO4J_AUTH=$NEO4J_USERNAME:$NEO4J_PASSWORD  -p $NEO4J_PORT:7474 -p 7687 neo4j:$NEO4J_VERSION
+  - docker ps -a
   - BUILD_OPTIONS='-s settings-example.xml'
 install:
-  - $NEO4J_HOME/bin/neo4j start
   # The Maven install provided by Travis is outdated, use Maven wrapper to get the latest version
   - mvn -N io.takari:maven:wrapper
   - ./mvnw -v
   # first run to download all the Maven dependencies without logging
   - travis_wait ./mvnw $BUILD_OPTIONS -B -q -Ptest -Dcheckstyle.skip -DskipTests=true -Dmaven.javadoc.skip=true -DskipDistro=true install
-before_script:
-  # When Neo4j is started the first time, it requires the change of the default password
-  - curl -vX POST http://neo4j:neo4j@$NEO4J_HOSTNAME:$NEO4J_PORT/user/neo4j/password -d"password=$NEO4J_PASSWORD"
 script:
   # we run checkstyle first to fail fast if there is a styling error
-  - ./mvnw $BUILD_OPTIONS -DskipDistro=true checkstyle:check
-    && BUILD_OPTIONS+=' -Dcheckstyle.skip'
-    && ./mvnw $BUILD_OPTIONS clean install
-    && ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-http clean install
-    && NEO4J_PORT=7687 ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-bolt clean install
+  - ./mvnw $BUILD_OPTIONS -DskipTests -DskipDocs -DskipDistro checkstyle:check
+    && ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-http help:active-profiles clean install
+    && NEO4J_PORT=7687 ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-bolt help:active-profiles clean install
 before_cache:
   # Do not put Hibernate OGM artifacts into the cache
   - rm -r $HOME/.m2/repository/org/hibernate/ogm/
