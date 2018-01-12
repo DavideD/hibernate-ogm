@@ -21,7 +21,8 @@ env:
     - NEO4J_HOSTNAME=127.0.0.1 NEO4J_PORT=7474 NEO4J_USERNAME=neo4j NEO4J_PASSWORD=hibernate NEO4J_HOME=neo4j-community-$NEO4J_VERSION
 before_install:
   - echo "Neo4j version $NEO4J_VERSION"
-  - curl --progress-bar http://dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz | tar xz
+  - wget http://dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz --progress=bar
+  - tar xz neo4j-community-$NEO4J_VERSION-unix.tar.gz
   - BUILD_OPTIONS='-s settings-example.xml'
 install:
   - $NEO4J_HOME/bin/neo4j start
