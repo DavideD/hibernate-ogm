@@ -1,6 +1,7 @@
 package org.hibernate.ogm.datastore.mongodb.test.query.nativequery;
 
-import static org.fest.assertions.Assertions.*;
+import static org.fest.assertions.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 	private Service parasitology = new Service( "Parasitology" );
 	private Service serology = new Service( "Serology" );
 	private Service virology = new Service( "Microbiology and Virology" );
+
 	private Lab labA = new Lab( "Alpha" );
 	private Lab labB = new Lab( "Beta" );
 
@@ -54,19 +56,11 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 
 	@Test
 	public void test() {
-		String query = "db.Service.find({} , {'name': '" + virology.getName() + "'})";
-		@SuppressWarnings("unchecked")
-		List<Service> findResults = em.createNativeQuery( query, Service.class ).getResultList();
+		String query = "db.Lab.aggregate([{'$project': { 'numberOfServices': { '$size': '$listOfServices'}}}, {'$match': {'_id': ObjectId('" + labA.getId() + "')}}, {'$project':{ '_id': 0}}])";
 
-		String anotherQuery = " { '$query' : { 'name': '" + virology.getName() + "'}}";
-		@SuppressWarnings("unchecked")
-		List<Service> queryResults = em.createNativeQuery( anotherQuery, Service.class ).getResultList();
+		Integer size = (Integer) em.createNativeQuery( query ).getSingleResult();
 
-		assertThat( findResults ).containsOnly( virology );
-		assertThat( findResults ).onProperty( "lab" ).containsOnly( labA );
-
-		assertThat( queryResults ).containsOnly( virology );
-		assertThat( queryResults ).onProperty( "lab" ).containsOnly( labA );
+		assertThat( size ).isEqualTo( 3 );
 	}
 
 	@Override
@@ -110,7 +104,7 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 		return getFactory().createEntityManager();
 	}
 
-	@Entity
+	@Entity(name = "Service")
 	@Table(name = "Service")
 	public static class Service {
 
@@ -151,7 +145,6 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + ( ( lab == null ) ? 0 : lab.hashCode() );
 			result = prime * result + ( ( name == null ) ? 0 : name.hashCode() );
 			return result;
 		}
@@ -168,14 +161,6 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 				return false;
 			}
 			Service other = (Service) obj;
-			if ( lab == null ) {
-				if ( other.lab != null ) {
-					return false;
-				}
-			}
-			else if ( !lab.equals( other.lab ) ) {
-				return false;
-			}
 			if ( name == null ) {
 				if ( other.name != null ) {
 					return false;
@@ -193,7 +178,7 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 		}
 	}
 
-	@Entity
+	@Entity(name = "Lab")
 	@Table(name = "Lab")
 	public static class Lab {
 
@@ -206,6 +191,8 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 
 		@OneToMany(mappedBy = "lab")
 		public List<Service> listOfServices;
+
+		public Integer numberOfServices;
 
 		public Lab() {
 		}
@@ -236,6 +223,14 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 
 		public void setName(String name) {
 			this.name = name;
+		}
+
+		public Integer getNumberOfServices() {
+			return numberOfServices;
+		}
+
+		public void setNumberOfServices(Integer numberOfServices) {
+			this.numberOfServices = numberOfServices;
 		}
 
 		public List<Service> getListOfServices() {
@@ -285,7 +280,7 @@ public class MongoDBNativeQueryTest extends OgmJpaTestCase {
 				return false;
 			}
 			if ( name == null ) {
-				if ( other.name != null )  {
+				if ( other.name != null ) {
 					return false;
 				}
 			}
