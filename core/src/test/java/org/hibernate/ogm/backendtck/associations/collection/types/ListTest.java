@@ -64,39 +64,39 @@ public class ListTest extends OgmTestCase {
 
 	@Test
 	public void testUpdateToElementOfOrderedListIsApplied() throws Exception {
-		//insert entity with embedded collection
-		Session session = openSession();
-		Transaction tx = session.beginTransaction();
-		GrandChild luke = new GrandChild();
-		luke.setName( "Luke" );
-		GrandChild leia = new GrandChild();
-		leia.setName( "Leia" );
 		GrandMother grandMother = new GrandMother();
-		grandMother.getGrandChildren().add( luke );
-		grandMother.getGrandChildren().add( leia );
-		session.persist( grandMother );
-		tx.commit();
 
-		session.clear();
+		// insert entity with embedded collection
+		try ( Session session = openSession() ) {
+			Transaction tx = session.beginTransaction();
+			GrandChild luke = new GrandChild();
+			luke.setName( "Luke" );
+			GrandChild leia = new GrandChild();
+			leia.setName( "Leia" );
+			grandMother.getGrandChildren().add( luke );
+			grandMother.getGrandChildren().add( leia );
+			session.persist( grandMother );
+			tx.commit();
 
-		//do an update to one of the elements
-		tx = session.beginTransaction();
-		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
-		assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Luke", "Leia" );
-		grandMother.getGrandChildren().get( 0 ).setName( "Lisa" );
+			session.clear();
 
-		tx.commit();
-		session.clear();
+			// do an update to one of the elements
+			tx = session.beginTransaction();
+			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Luke", "Leia" );
+			grandMother.getGrandChildren().get( 0 ).setName( "Lisa" );
 
-		//assert update has been propagated
-		tx = session.beginTransaction();
-		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
-		assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Lisa", "Leia" );
+			tx.commit();
+		}
 
-		session.delete( grandMother );
-		tx.commit();
-
-		session.close();
+		try ( Session session = openSession() ) {
+			Transaction tx = session.beginTransaction();
+			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			// assert update has been propagated
+			assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Lisa", "Leia" );
+			session.delete( grandMother );
+			tx.commit();
+		}
 
 		checkCleanCache();
 	}
