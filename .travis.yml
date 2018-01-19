@@ -43,6 +43,6 @@ script:
 before_cache:
   # Do not put Hibernate OGM artifacts into the cache
   - rm -r $HOME/.m2/repository/org/hibernate/ogm/
-after_script
+after_script:
   - $NEO4J_HOME/bin/neo4j stop
   - rm -rf $NEO4J_HOME
