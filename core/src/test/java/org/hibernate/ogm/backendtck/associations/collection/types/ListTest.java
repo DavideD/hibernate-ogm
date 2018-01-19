@@ -8,6 +8,8 @@ package org.hibernate.ogm.backendtck.associations.collection.types;
 
 import static org.fest.assertions.Assertions.assertThat;
 
+import java.util.Optional;
+
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.ogm.utils.OgmTestCase;
@@ -89,9 +91,17 @@ public class ListTest extends OgmTestCase {
 			tx.commit();
 		}
 
+		int failedAttempt = 0;
 		try ( Session session = openSession() ) {
 			Transaction tx = session.beginTransaction();
-			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			do {
+				grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+				Optional<GrandChild> luke = grandMother.getGrandChildren().stream().filter( grandChild -> grandChild.getName().equals( "Luke" ) ).findFirst();
+				if ( !luke.isPresent() ) {
+					failedAttempt++;
+					Thread.sleep( 30 );
+				}
+			} while ( failedAttempt <= 2 );
 			// assert update has been propagated
 			assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Lisa", "Leia" );
 			session.delete( grandMother );
