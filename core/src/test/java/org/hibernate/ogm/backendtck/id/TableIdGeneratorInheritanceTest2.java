@@ -27,7 +27,7 @@ import org.junit.Test;
 /**
  * Test that @Inheritance(strategy = TABLE_PER_CLASS) with generated id work correct
  */
-public class TableIdGeneratorInheritanceTest extends OgmJpaTestCase {
+public class TableIdGeneratorInheritanceTest2 extends OgmJpaTestCase {
 
 	private EntityManager em;
 
@@ -62,20 +62,13 @@ public class TableIdGeneratorInheritanceTest extends OgmJpaTestCase {
 	@Override
 	public Class<?>[] getAnnotatedClasses() {
 		return new Class<?>[] {
-				BaseCar.class,
 				Truck.class
 		};
 	}
 
 	@Entity
 	@Table(name = "TRUCK")
-	private static class Truck extends BaseCar {
-	}
-
-	@Entity
-	@Table(name = "BASE_CAR")
-	@Inheritance(strategy = TABLE_PER_CLASS)
-	private static class BaseCar {
+	private static class Truck {
 
 		protected UUID id;
 
