@@ -18,8 +18,8 @@ import org.hibernate.procedure.internal.NoSQLProcedureCallImpl;
 import org.junit.Test;
 
 /**
- * This class is supposed to run the tests in {@link NamedParametersStoredProcedureCallTest} on a mock dialect to make sure that the right
- * parameters are passed.
+ * This class is supposed to run the tests in {@link NamedParametersStoredProcedureCallTest} on a mock dialect to make
+ * sure that the right parameters are passed.
  *
  * @see MockStoredProcedureDialect
  * @author Davide D'Alto

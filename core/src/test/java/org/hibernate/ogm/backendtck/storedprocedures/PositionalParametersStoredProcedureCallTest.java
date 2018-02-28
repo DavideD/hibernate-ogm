@@ -83,23 +83,8 @@ public class PositionalParametersStoredProcedureCallTest extends OgmJpaTestCase 
 		storedProcedureQuery.registerStoredProcedureParameter( 1, Integer.class, ParameterMode.IN );
 		storedProcedureQuery.registerStoredProcedureParameter( 2, String.class, ParameterMode.IN );
 		storedProcedureQuery.setParameter( 1, 1 );
-		storedProcedureQuery.setParameter( new Parameter<String>() {
-
-			@Override
-			public String getName() {
-				return null;
-			}
-
-			@Override
-			public Integer getPosition() {
-				return 2;
-			}
-
-			@Override
-			public Class<String> getParameterType() {
-				return String.class;
-			}
-		}, "title'1" );
+		Parameter<String> p2 = storedProcedureQuery.getParameter( 2,String.class );
+		storedProcedureQuery.setParameter( p2, "title'1" );
 
 		@SuppressWarnings("unchecked")
 		List<Car> listResult = storedProcedureQuery.getResultList();
