@@ -14,12 +14,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import javax.persistence.ParameterMode;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.dialect.spi.TupleContext;
 import org.hibernate.ogm.dialect.storedprocedure.spi.StoredProcedureAwareGridDialect;
@@ -72,7 +74,9 @@ public class NoSQLProcedureOutputsImpl implements ProcedureOutputs {
 
 		List<Object> positionalParameters = new ArrayList<>();
 		Map<String, Object> namedParameters = new HashMap<>();
-		for ( ParameterRegistration nosqlParameterRegistration : procedureCall.getRegisteredParameters() ) {
+		Iterator it = procedureCall.getRegisteredParameters().iterator();
+		while ( it.hasNext() ) {
+			ParameterRegistration nosqlParameterRegistration = (ParameterRegistration) it.next();
 			if ( nosqlParameterRegistration.getMode() != ParameterMode.REF_CURSOR ) {
 				Object value = nosqlParameterRegistration.getBind().getValue();
 				if ( nosqlParameterRegistration.getName() != null ) {
@@ -94,9 +98,10 @@ public class NoSQLProcedureOutputsImpl implements ProcedureOutputs {
 		String entityName = null;
 
 		if ( !procedureCall.getSynchronizedQuerySpaces().isEmpty() ) {
-			String querySpace = procedureCall.getSynchronizedQuerySpaces().iterator().next();
+			String querySpace = (String) procedureCall.getSynchronizedQuerySpaces().iterator().next();
+			MetamodelImplementor metamodelImplementor = procedureCall.getSession().getFactory().getMetamodel();
 
-			for ( Map.Entry<String, EntityPersister> entry : procedureCall.getSession().getFactory().getEntityPersisters().entrySet() ) {
+			for ( Map.Entry<String, EntityPersister> entry : metamodelImplementor.entityPersisters().entrySet() ) {
 				List<Serializable> querySpaces = Arrays.asList( entry.getValue().getQuerySpaces() );
 				if ( querySpaces.contains( querySpace ) ) {
 					entityPersister = (OgmEntityPersister) entry.getValue();
