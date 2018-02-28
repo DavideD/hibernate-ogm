@@ -6,7 +6,7 @@
  */
 package org.hibernate.procedure.internal;
 
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.ogm.storedprocedure.impl.NoSQLProcedureCallMemento;
 import org.hibernate.ogm.storedprocedure.impl.NoSQLProcedureOutputsImpl;
 import org.hibernate.procedure.ProcedureOutputs;
@@ -18,22 +18,22 @@ public class NoSQLProcedureCallImpl extends ProcedureCallImpl {
 
 	private final NoSQLProcedureCallMemento memento;
 
-	public NoSQLProcedureCallImpl(SessionImplementor session, String procedureName) {
+	public NoSQLProcedureCallImpl(SharedSessionContractImplementor session, String procedureName) {
 		super( session, procedureName );
 		this.memento = null;
 	}
 
-	public NoSQLProcedureCallImpl(SessionImplementor session, String procedureName, Class<?>... resultClasses) {
+	public NoSQLProcedureCallImpl(SharedSessionContractImplementor session, String procedureName, Class<?>... resultClasses) {
 		super( session, procedureName, resultClasses );
 		this.memento = null;
 	}
 
-	public NoSQLProcedureCallImpl(SessionImplementor session, String procedureName, String... resultSetMappings) {
+	public NoSQLProcedureCallImpl(SharedSessionContractImplementor session, String procedureName, String... resultSetMappings) {
 		super( session, procedureName, resultSetMappings );
 		this.memento = null;
 	}
 
-	public NoSQLProcedureCallImpl(SessionImplementor session, NoSQLProcedureCallMemento memento) {
+	public NoSQLProcedureCallImpl(SharedSessionContractImplementor session, NoSQLProcedureCallMemento memento) {
 		super( session, memento.unwrap( ProcedureCallMementoImpl.class ) );
 		this.memento = memento;
 	}

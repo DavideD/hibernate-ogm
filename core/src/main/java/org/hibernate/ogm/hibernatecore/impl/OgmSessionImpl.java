@@ -10,6 +10,7 @@ import java.lang.invoke.MethodHandles;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
+import javax.persistence.StoredProcedureQuery;
 
 import org.hibernate.Criteria;
 import org.hibernate.Filter;
@@ -39,6 +40,7 @@ import org.hibernate.procedure.ProcedureCall;
 import org.hibernate.procedure.ProcedureCallMemento;
 import org.hibernate.procedure.internal.NoSQLProcedureCallImpl;
 import org.hibernate.query.Query;
+import org.hibernate.query.spi.NamedQueryRepository;
 import org.hibernate.query.spi.ScrollableResultsImplementor;
 
 /**
@@ -154,6 +156,24 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 	@Override
 	public ProcedureCall createStoredProcedureCall(String procedureName, String... resultSetMappings) {
 		return new NoSQLProcedureCallImpl( this, procedureName, resultSetMappings );
+	}
+
+	@Override
+	public StoredProcedureQuery createStoredProcedureQuery(String procedureName) {
+		checkOpen();
+		return createStoredProcedureCall( procedureName );
+	}
+
+	@Override
+	public StoredProcedureQuery createStoredProcedureQuery(String procedureName, Class... resultClasses) {
+		checkOpen();
+		return createStoredProcedureCall( procedureName, resultClasses );
+	}
+
+	@Override
+	public StoredProcedureQuery createStoredProcedureQuery(String procedureName, String... resultSetMappings) {
+		checkOpen();
+		return createStoredProcedureCall( procedureName, resultSetMappings );
 	}
 
 	@SuppressWarnings("rawtypes")
