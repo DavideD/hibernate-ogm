@@ -41,7 +41,7 @@ public class CustomLoaderHelper {
 		return loader.loadEntitiesFromTuples( session, LockOptions.NONE, ogmLoadingContext );
 	}
 
-	public static List<Tuple> getTuplesAsList(ClosableIterator<Tuple> tuples) {
+	private static List<Tuple> getTuplesAsList(ClosableIterator<Tuple> tuples) {
 		List<Tuple> tuplesAsList = new ArrayList<>();
 		while ( tuples.hasNext() ) {
 			tuplesAsList.add( tuples.next() );

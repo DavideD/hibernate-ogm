@@ -30,6 +30,7 @@ public class NoSQLProcedureCallMemento implements ProcedureCallMemento {
 		return delegate.getHintsMap();
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T> T unwrap(Class<T> cls) {
 		if ( cls.isInstance( delegate ) ) {
 			return (T) delegate;

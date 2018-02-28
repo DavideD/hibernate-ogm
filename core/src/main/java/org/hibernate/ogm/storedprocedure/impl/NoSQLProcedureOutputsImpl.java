@@ -6,7 +6,6 @@
  */
 package org.hibernate.ogm.storedprocedure.impl;
 
-import static org.hibernate.ogm.util.impl.CustomLoaderHelper.getTuplesAsList;
 import static org.hibernate.ogm.util.impl.CustomLoaderHelper.listOfEntities;
 import static org.hibernate.ogm.util.impl.TupleContextHelper.tupleContext;
 
@@ -64,37 +63,14 @@ public class NoSQLProcedureOutputsImpl implements ProcedureOutputs {
 		throw new UnsupportedOperationException( "Out parameters not supported yet!" );
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public Output getCurrent() {
-		// the result can be entity or single value result
-		boolean isResultRefCursor = false;
 		List<?> entityList = null;
-
-		List<Object> positionalParameters = new ArrayList<>();
-		Map<String, Object> namedParameters = new HashMap<>();
-		for ( ParameterRegistration nosqlParameterRegistration : (List<ParameterRegistration>) procedureCall.getRegisteredParameters() ) {
-			if ( nosqlParameterRegistration.getMode() != ParameterMode.REF_CURSOR ) {
-				Object value = nosqlParameterRegistration.getBind().getValue();
-				if ( nosqlParameterRegistration.getName() != null ) {
-					namedParameters.put( nosqlParameterRegistration.getName(), value );
-				}
-				else if ( nosqlParameterRegistration.getPosition() != null ) {
-					positionalParameters.add( value );
-				}
-			}
-			else {
-				isResultRefCursor = true;
-			}
-		}
-
-		ProcedureQueryParameters queryParameters = new ProcedureQueryParameters( namedParameters, positionalParameters );
-
-		TupleContext tupleContext = null;
-		OgmEntityPersister entityPersister = null;
-		String entityName = null;
+		ProcedureQueryParameters queryParameters = createProcedureQueryParameters( (List<ParameterRegistration<?>>) procedureCall.getRegisteredParameters() );
 
 		if ( !procedureCall.getSynchronizedQuerySpaces().isEmpty() ) {
+			OgmEntityPersister entityPersister = null;
+			String entityName = null;
 			String querySpace = (String) procedureCall.getSynchronizedQuerySpaces().iterator().next();
 			MetamodelImplementor metamodelImplementor = procedureCall.getSession().getFactory().getMetamodel();
 
@@ -105,24 +81,52 @@ public class NoSQLProcedureOutputsImpl implements ProcedureOutputs {
 					entityName = entry.getKey();
 				}
 			}
-			tupleContext = tupleContext( procedureCall.getSession(), new EntityMetadataInformation( entityPersister.getEntityKeyMetadata(), entityName ) );
-		}
 
-		ClosableIterator<Tuple> result = gridDialect.callStoredProcedure( procedureCall.getProcedureName(), queryParameters, tupleContext );
-
-		if ( !procedureCall.getSynchronizedQuerySpaces().isEmpty() ) {
+			TupleContext tupleContext = tupleContext( procedureCall.getSession(), new EntityMetadataInformation( entityPersister.getEntityKeyMetadata(), entityName ) );
+			ClosableIterator<Tuple> result = gridDialect.callStoredProcedure( procedureCall.getProcedureName(), queryParameters, tupleContext );
 			entityList = listOfEntities( procedureCall.getSession(), entityPersister.getMappedClass(), result );
 		}
-		else if ( result == null ) {
-			// call a procedure without result
-			return null;
-		}
 		else {
-			entityList = getTuplesAsList( result );
+			TupleContext tupleContext = tupleContext( procedureCall.getSession(), null );
+			ClosableIterator<Tuple> result = gridDialect.callStoredProcedure( procedureCall.getProcedureName(), queryParameters, tupleContext );
+			if ( result == null ) {
+				// call a procedure without result
+				return null;
+			}
+			else {
+				// we just return the values
+				entityList = listOfObjects( result );
+			}
+		}
+		return new NoSQLProcedureResultSetOutputImpl( entityList );
+	}
+
+	private ProcedureQueryParameters createProcedureQueryParameters(List<ParameterRegistration<?>> list) {
+		List<Object> positionalParameters = new ArrayList<>();
+		Map<String, Object> namedParameters = new HashMap<>();
+		for ( ParameterRegistration<?> nosqlParameterRegistration : list ) {
+			if ( nosqlParameterRegistration.getMode() != ParameterMode.REF_CURSOR ) {
+				Object value = nosqlParameterRegistration.getBind().getValue();
+				if ( nosqlParameterRegistration.getName() != null ) {
+					namedParameters.put( nosqlParameterRegistration.getName(), value );
+				}
+				else if ( nosqlParameterRegistration.getPosition() != null ) {
+					positionalParameters.add( value );
+				}
+			}
 		}
 
-		//copy data from iterator
-		return new NoSQLProcedureResultSetOutputImpl( entityList, isResultRefCursor );
+		return new ProcedureQueryParameters( namedParameters, positionalParameters );
+	}
+
+	private static List<Object> listOfObjects(ClosableIterator<Tuple> tuples) {
+		List<Object> tuplesAsList = new ArrayList<>();
+		while ( tuples.hasNext() ) {
+			Tuple next = tuples.next();
+			String columnName = next.getColumnNames().iterator().next();
+			tuplesAsList.add( next.get( columnName ) );
+		}
+		return tuplesAsList;
 	}
 
 	@Override

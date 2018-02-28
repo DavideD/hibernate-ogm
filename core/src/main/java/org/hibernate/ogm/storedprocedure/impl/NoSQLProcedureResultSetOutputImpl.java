@@ -6,47 +6,49 @@
  */
 package org.hibernate.ogm.storedprocedure.impl;
 
-import java.lang.invoke.MethodHandles;
 import java.util.List;
+import java.util.function.Supplier;
 
-import org.hibernate.ogm.model.spi.Tuple;
-import org.hibernate.ogm.util.impl.Log;
-import org.hibernate.ogm.util.impl.LoggerFactory;
 import org.hibernate.result.ResultSetOutput;
 
 /**
- * Models a return that is a result set for NoSQL stored procedure.
- * @author Sergey Chernolyas &amp;sergey_chernolyas@gmail.com&amp;
+ * Implementation of {@link ResultSetOutput} for OGM.
+ * <p>
+ * This is a copy of the implementation in ORM that is package private and therefore we cannot use.
+ *
+ * @see org.hibernate.result.internal.ResultSetOutputImpl
+ * @author Davide D'Alto
  */
-public class NoSQLProcedureResultSetOutputImpl implements ResultSetOutput {
-	private static final Log log = LoggerFactory.make( MethodHandles.lookup() );
-	private final List<?> resultList;
-	private final boolean isResultRefCursor;
+class NoSQLProcedureResultSetOutputImpl implements ResultSetOutput {
 
-	public NoSQLProcedureResultSetOutputImpl(List<?> resultList, boolean isResultRefCursor) {
-		this.resultList = resultList;
-		this.isResultRefCursor = isResultRefCursor;
+	private final Supplier<List<?>> resultSetSupplier;
+
+	public NoSQLProcedureResultSetOutputImpl(List<?> results) {
+		this.resultSetSupplier = () -> results;
+	}
+
+	public NoSQLProcedureResultSetOutputImpl(Supplier<List<?>> resultSetSupplier) {
+		this.resultSetSupplier = resultSetSupplier;
 	}
 
 	@Override
 	public boolean isResultSet() {
-		return isResultRefCursor;
+		return true;
 	}
 
 	@Override
-	public List getResultList() {
-		if ( isResultSet() ) {
-			return resultList;
-		}
-		return null;
+	public List<?> getResultList() {
+		return resultSetSupplier.get();
 	}
 
 	@Override
 	public Object getSingleResult() {
-		//it is primitive result
-		//@todo check for empty.
-		Tuple firstTuple = (Tuple) resultList.get( 0 );
-		String firstFieldName = firstTuple.getColumnNames().iterator().next();
-		return  firstTuple.get( firstFieldName );
+		final List<?> results = getResultList();
+		if ( results == null || results.isEmpty() ) {
+			return null;
+		}
+		else {
+			return results.get( 0 );
+		}
 	}
 }

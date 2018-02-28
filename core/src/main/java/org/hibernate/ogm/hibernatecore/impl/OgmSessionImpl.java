@@ -159,6 +159,20 @@ public class OgmSessionImpl extends SessionDelegatorBaseImpl implements OgmSessi
 	}
 
 	@Override
+	public StoredProcedureQuery createNamedStoredProcedureQuery(String name) {
+		checkOpen();
+		NamedQueryRepository namedQueryRepository = getSessionFactory().getNamedQueryRepository();
+		ProcedureCallMemento memento =  namedQueryRepository.getNamedProcedureCallMemento( name );
+
+		if ( memento == null ) {
+			throw new IllegalArgumentException( "No @NamedStoredProcedureQuery was found with that name : " + name );
+		}
+
+		NoSQLProcedureCallMemento nosqlMemento = new NoSQLProcedureCallMemento( memento );
+		return nosqlMemento.makeProcedureCall( this );
+	}
+
+	@Override
 	public StoredProcedureQuery createStoredProcedureQuery(String procedureName) {
 		checkOpen();
 		return createStoredProcedureCall( procedureName );
