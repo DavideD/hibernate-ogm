@@ -10,9 +10,11 @@ import static org.hibernate.ogm.util.impl.CustomLoaderHelper.listOfEntities;
 import static org.hibernate.ogm.util.impl.TupleContextHelper.tupleContext;
 
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -23,10 +25,13 @@ import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.ogm.dialect.query.spi.ClosableIterator;
 import org.hibernate.ogm.dialect.spi.TupleContext;
 import org.hibernate.ogm.dialect.storedprocedure.spi.StoredProcedureAwareGridDialect;
+import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.model.spi.EntityMetadataInformation;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
 import org.hibernate.ogm.storedprocedure.ProcedureQueryParameters;
+import org.hibernate.ogm.util.impl.Log;
+import org.hibernate.ogm.util.impl.LoggerFactory;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.procedure.ParameterRegistration;
 import org.hibernate.procedure.ProcedureOutputs;
@@ -34,9 +39,12 @@ import org.hibernate.procedure.internal.NoSQLProcedureCallImpl;
 import org.hibernate.result.Output;
 
 /**
+ * @author Davide D'Alto
  * @author Sergey Chernolyas &amp;sergey_chernolyas@gmail.com&amp;
  */
 public class NoSQLProcedureOutputsImpl implements ProcedureOutputs {
+
+	private static final Log log = LoggerFactory.make( MethodHandles.lookup() );
 
 	private final NoSQLProcedureCallImpl procedureCall;
 	private final SessionFactoryImplementor sessionFactory;
@@ -65,26 +73,10 @@ public class NoSQLProcedureOutputsImpl implements ProcedureOutputs {
 
 	@Override
 	public Output getCurrent() {
-		List<?> entityList = null;
 		ProcedureQueryParameters queryParameters = createProcedureQueryParameters( (List<ParameterRegistration<?>>) procedureCall.getRegisteredParameters() );
 
 		if ( !procedureCall.getSynchronizedQuerySpaces().isEmpty() ) {
-			OgmEntityPersister entityPersister = null;
-			String entityName = null;
-			String querySpace = (String) procedureCall.getSynchronizedQuerySpaces().iterator().next();
-			MetamodelImplementor metamodelImplementor = procedureCall.getSession().getFactory().getMetamodel();
-
-			for ( Map.Entry<String, EntityPersister> entry : metamodelImplementor.entityPersisters().entrySet() ) {
-				List<Serializable> querySpaces = Arrays.asList( entry.getValue().getQuerySpaces() );
-				if ( querySpaces.contains( querySpace ) ) {
-					entityPersister = (OgmEntityPersister) entry.getValue();
-					entityName = entry.getKey();
-				}
-			}
-
-			TupleContext tupleContext = tupleContext( procedureCall.getSession(), new EntityMetadataInformation( entityPersister.getEntityKeyMetadata(), entityName ) );
-			ClosableIterator<Tuple> result = gridDialect.callStoredProcedure( procedureCall.getProcedureName(), queryParameters, tupleContext );
-			entityList = listOfEntities( procedureCall.getSession(), entityPersister.getMappedClass(), result );
+			return entitiesOutput( procedureCall, queryParameters );
 		}
 		else {
 			TupleContext tupleContext = tupleContext( procedureCall.getSession(), null );
@@ -95,10 +87,49 @@ public class NoSQLProcedureOutputsImpl implements ProcedureOutputs {
 			}
 			else {
 				// we just return the values
-				entityList = listOfObjects( result );
+				return objectsOuput( result );
 			}
 		}
+	}
+
+	private Output entitiesOutput(NoSQLProcedureCallImpl procedureCall, ProcedureQueryParameters queryParameters) {
+		if ( procedureCall.getSynchronizedQuerySpaces().size() > 1 ) {
+			log.multipleEntitiesOutpuNotSupported( procedureCall.getSynchronizedQuerySpaces() );
+		}
+		@SuppressWarnings("unchecked")
+		Iterator<String> iterator = procedureCall.getSynchronizedQuerySpaces().iterator();
+		String querySpace = iterator.next();
+		MetamodelImplementor metamodelImplementor = procedureCall.getSession().getFactory().getMetamodel();
+		OgmEntityPersister entityPersister = entityPersister( querySpace, metamodelImplementor );
+		EntityMetadataInformation entityMetadata = entityMetadataInfo( querySpace, metamodelImplementor, entityPersister );
+		TupleContext tupleContext = tupleContext( procedureCall.getSession(), entityMetadata );
+		ClosableIterator<Tuple> result = gridDialect.callStoredProcedure( procedureCall.getProcedureName(), queryParameters, tupleContext );
+		List<?> entityList = listOfEntities( procedureCall.getSession(), entityPersister.getMappedClass(), result );
 		return new NoSQLProcedureResultSetOutputImpl( entityList );
+	}
+
+	private EntityMetadataInformation entityMetadataInfo(String querySpace, MetamodelImplementor metamodelImplementor, OgmEntityPersister entityPersister) {
+		String entityName = null;
+		for ( Map.Entry<String, EntityPersister> entry : metamodelImplementor.entityPersisters().entrySet() ) {
+			List<Serializable> querySpaces = Arrays.asList( entry.getValue().getQuerySpaces() );
+			if ( querySpaces.contains( querySpace ) ) {
+				entityName = entry.getKey();
+			}
+		}
+
+		EntityKeyMetadata entityKeyMetadata = entityPersister.getEntityKeyMetadata();
+		EntityMetadataInformation entityMetadata = new EntityMetadataInformation( entityKeyMetadata, entityName );
+		return entityMetadata;
+	}
+
+	private OgmEntityPersister entityPersister(String querySpace, MetamodelImplementor metamodelImplementor) {
+		for ( Map.Entry<String, EntityPersister> entry : metamodelImplementor.entityPersisters().entrySet() ) {
+			List<Serializable> querySpaces = Arrays.asList( entry.getValue().getQuerySpaces() );
+			if ( querySpaces.contains( querySpace ) ) {
+				return (OgmEntityPersister) entry.getValue();
+			}
+		}
+		return null;
 	}
 
 	private ProcedureQueryParameters createProcedureQueryParameters(List<ParameterRegistration<?>> list) {
@@ -119,14 +150,14 @@ public class NoSQLProcedureOutputsImpl implements ProcedureOutputs {
 		return new ProcedureQueryParameters( namedParameters, positionalParameters );
 	}
 
-	private static List<Object> listOfObjects(ClosableIterator<Tuple> tuples) {
+	private static Output objectsOuput(ClosableIterator<Tuple> tuples) {
 		List<Object> tuplesAsList = new ArrayList<>();
 		while ( tuples.hasNext() ) {
 			Tuple next = tuples.next();
 			String columnName = next.getColumnNames().iterator().next();
 			tuplesAsList.add( next.get( columnName ) );
 		}
-		return tuplesAsList;
+		return new NoSQLProcedureResultSetOutputImpl( tuplesAsList );
 	}
 
 	@Override

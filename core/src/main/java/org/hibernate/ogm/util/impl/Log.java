@@ -305,6 +305,9 @@ public interface Log extends BasicLogger {
 	@Message(id = 89, value = "%1$s does not support queries on polymorphic entities using TABLE_PER_CLASS inheritance strategy. You should try using SINGLE_TABLE instead. Entities: %2$s")
 	HibernateException queriesOnPolymorphicEntitiesAreNotSupportedWithTablePerClass( String datastore, Collection<String> subclassEntityNames );
 
-	@Message(id = 90, value = "Invalid type! Declared \"%s\"  but set %s")
-	HibernateException invalidValueType(Class<?> parmeterValueType, Class<?> realValueType);
+	@Message(id = 90, value = "Invalid type! Declared \"%1$s\"  but set %2$s")
+	HibernateException invalidValueType(@FormatWith(ClassObjectFormatter.class) Class<?> parmeterValueType, @FormatWith(ClassObjectFormatter.class) Class<?> realValueType);
+
+	@Message(id = 91, value = "It's not possible to return multiple entities: %1$s")
+	HibernateException multipleEntitiesOutpuNotSupported(Collection<?> synchronizedQuerySpaces);
 }

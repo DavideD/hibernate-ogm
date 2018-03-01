@@ -34,7 +34,7 @@ public class CustomLoaderHelper {
 		return loader.loadEntitiesFromTuples( session, LockOptions.NONE, ogmLoadingContext );
 	}
 
-	public static  List<Object> listOfEntities(SharedSessionContractImplementor session, Class<?> returnedClass, ClosableIterator<Tuple> tuples) {
+	public static List<Object> listOfEntities(SharedSessionContractImplementor session, Class<?> returnedClass, ClosableIterator<Tuple> tuples) {
 		TupleBasedEntityLoader loader = getLoader( session, returnedClass );
 		OgmLoadingContext ogmLoadingContext = new OgmLoadingContext();
 		ogmLoadingContext.setTuples( getTuplesAsList( tuples ) );
