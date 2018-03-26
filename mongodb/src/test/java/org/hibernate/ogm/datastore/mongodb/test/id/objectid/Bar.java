@@ -18,6 +18,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 import org.bson.types.ObjectId;
+import org.jboss.logging.processor.util.Objects;
 
 /**
  * @author Gunnar Morling
@@ -71,5 +72,32 @@ public class Bar {
 
 	public void setDoorMen(Set<DoorMan> doorMen) {
 		this.doorMen = doorMen;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ( ( doorMen == null ) ? 0 : doorMen.hashCode() );
+		result = prime * result + ( ( musicGenre == null ) ? 0 : musicGenre.hashCode() );
+		result = prime * result + ( ( name == null ) ? 0 : name.hashCode() );
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null ) {
+			return false;
+		}
+		if ( getClass() != obj.getClass() ) {
+			return false;
+		}
+		Bar other = (Bar) obj;
+		return Objects.areEqual( doorMen, other.doorMen )
+				&& Objects.areEqual( musicGenre, other.musicGenre )
+				&& Objects.areEqual( name, other.name );
 	}
 }
