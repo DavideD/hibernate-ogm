@@ -129,6 +129,7 @@ public class ListTest extends OgmTestCase {
 		inTransaction( ( session ) -> {
 			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 			grandMother.getGrandChildren().remove( 0 );
+			assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Leia" );
 		} );
 
 		// assert removal has been propagated
