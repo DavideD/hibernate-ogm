@@ -133,7 +133,6 @@ prior to running the tests:
     export MONGODB_HOSTNAME=mongodb-machine
     export MONGODB_PORT=1234
     export MONGODB_USERNAME=someUsername
-another build
     export MONGODB_PASSWORD=someP@ssw0rd
     mvn clean install -s settings-example.xml -DmongodbProvider=external
 
