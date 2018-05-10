@@ -9,8 +9,8 @@ package org.hibernate.ogm.backendtck.associations.collection.types;
 import static org.fest.assertions.Assertions.assertThat;
 
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -19,157 +19,144 @@ import org.junit.Test;
  */
 public class ListTest extends OgmTestCase {
 
+	private Father father;
+	private Child luke, leia;
+	private GrandMother grandMother;
+	private Runner emmanuel, pere;
+	private Race race;
+
+	@After
+	public void cleanUp() {
+		inTransaction( ( session ) -> {
+			delete( session, father, luke, leia );
+			delete( session, grandMother );
+			delete( session, race, emmanuel, pere );
+		} );
+		checkCleanCache();
+	}
+
+	private void delete(Session session, Object... entities) {
+		for ( Object entity : entities ) {
+			if ( entity != null ) {
+				session.refresh( entity );
+				session.delete( entity );
+			}
+		}
+	}
+
 	@Test
 	public void testOrderedList() throws Exception {
-		Session session = openSession();
-		Transaction tx = session.beginTransaction();
-		Child luke = new Child();
-		luke.setName( "Luke" );
-		Child leia = new Child();
-		leia.setName( "Leia" );
-		session.persist( luke );
-		session.persist( leia );
-		Father father = new Father();
-		father.getOrderedChildren().add( luke );
-		father.getOrderedChildren().add( null );
-		father.getOrderedChildren().add( leia );
-		session.persist( father );
-		tx.commit();
+		inTransaction( ( session ) -> {
+			luke = new Child();
+			luke.setName( "Luke" );
+			session.persist( luke );
 
-		session.clear();
+			leia = new Child();
+			leia.setName( "Leia" );
+			session.persist( leia );
 
-		tx = session.beginTransaction();
-		father = (Father) session.get( Father.class, father.getId() );
-		assertThat( father.getOrderedChildren() )
-				.as( "List should have 3 elements" )
-				.hasSize( 3 );
-		assertThat( father.getOrderedChildren().get( 0 ).getName() )
-				.as( "Luke should be first" )
-				.isEqualTo( luke.getName() );
-		assertThat( father.getOrderedChildren().get( 1 ) )
-				.as( "Second born should be null" )
-				.isNull();
-		assertThat( father.getOrderedChildren().get( 2 ).getName() )
-				.as( "Leia should be third" )
-				.isEqualTo( leia.getName() );
-		session.delete( father );
-		session.delete( session.load( Child.class, luke.getId() ) );
-		session.delete( session.load( Child.class, leia.getId() ) );
-		tx.commit();
+			father = new Father();
+			father.getOrderedChildren().add( luke );
+			father.getOrderedChildren().add( null );
+			father.getOrderedChildren().add( leia );
+			session.persist( father );
+		} );
 
-		session.close();
-
-		checkCleanCache();
+		inTransaction( ( session ) -> {
+			father = (Father) session.get( Father.class, father.getId() );
+			assertThat( father.getOrderedChildren() )
+					.as( "List should have 3 elements" )
+					.hasSize( 3 );
+			assertThat( father.getOrderedChildren().get( 0 ).getName() )
+					.as( "Luke should be first" )
+					.isEqualTo( "Luke" );
+			assertThat( father.getOrderedChildren().get( 1 ) )
+					.as( "Second born should be null" )
+					.isNull();
+			assertThat( father.getOrderedChildren().get( 2 ).getName() )
+					.as( "Leia should be third" )
+					.isEqualTo( "Leia" );
+		} );
 	}
 
 	@Test
 	public void testUpdateToElementOfOrderedListIsApplied() throws Exception {
-		//insert entity with embedded collection
-		Session session = openSession();
-		Transaction tx = session.beginTransaction();
-		GrandChild luke = new GrandChild();
-		luke.setName( "Luke" );
-		GrandChild leia = new GrandChild();
-		leia.setName( "Leia" );
-		GrandMother grandMother = new GrandMother();
-		grandMother.getGrandChildren().add( luke );
-		grandMother.getGrandChildren().add( leia );
-		session.persist( grandMother );
-		tx.commit();
+		GrandChild luke = new GrandChild( "Luke" );
+		GrandChild leia = new GrandChild( "Leia" );
+		GrandChild lisa = new GrandChild( "Lisa" );
 
-		session.clear();
+		// insert entity with embedded collection
+		inTransaction( ( session ) -> {
+			grandMother = new GrandMother();
+			grandMother.getGrandChildren().add( luke );
+			grandMother.getGrandChildren().add( leia );
+			session.persist( grandMother );
+		} );
 
-		//do an update to one of the elements
-		tx = session.beginTransaction();
-		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
-		assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Luke", "Leia" );
-		grandMother.getGrandChildren().get( 0 ).setName( "Lisa" );
+		// Update one of the elements
+		inTransaction( ( session ) -> {
+			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			assertThat( grandMother.getGrandChildren() ).containsExactly( luke, leia );
+			grandMother.getGrandChildren().get( 0 ).setName( lisa.getName() );
+		} );
 
-		tx.commit();
-		session.clear();
-
-		//assert update has been propagated
-		tx = session.beginTransaction();
-		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
-		assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Lisa", "Leia" );
-
-		session.delete( grandMother );
-		tx.commit();
-
-		session.close();
-
-		checkCleanCache();
+		// assert update has been propagated
+		inTransaction( ( session ) -> {
+			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			assertThat( grandMother.getGrandChildren() ).containsExactly( lisa, leia );
+		} );
 	}
 
 	@Test
 	public void testRemovalOfElementFromOrderedListIsApplied() throws Exception {
-		//insert entity with embedded collection
-		Session session = openSession();
-		Transaction tx = session.beginTransaction();
-		GrandChild luke = new GrandChild();
-		luke.setName( "Luke" );
-		GrandChild leia = new GrandChild();
-		leia.setName( "Leia" );
-		GrandMother grandMother = new GrandMother();
-		grandMother.getGrandChildren().add( luke );
-		grandMother.getGrandChildren().add( leia );
-		session.persist( grandMother );
-		tx.commit();
+		final GrandChild luke = new GrandChild( "Luke" );
+		final GrandChild leia = new GrandChild( "Leia" );
+		// insert entity with embedded collection
+		inTransaction( ( session ) -> {
+			grandMother = new GrandMother();
+			grandMother.getGrandChildren().add( luke );
+			grandMother.getGrandChildren().add( leia );
+			session.persist( grandMother );
+		} );
 
-		session.clear();
+		// remove one of the elements
+		inTransaction( ( session ) -> {
+			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			GrandChild removed = grandMother.getGrandChildren().remove( 0 );
+			assertThat( removed ).isEqualTo( luke ); 
+		} );
 
-		//remove one of the elements
-		tx = session.beginTransaction();
-		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
-		grandMother.getGrandChildren().remove( 0 );
-		tx.commit();
-		session.clear();
-
-		//assert removal has been propagated
-		tx = session.beginTransaction();
-		grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
-		assertThat( grandMother.getGrandChildren() ).onProperty( "name" ).containsExactly( "Leia" );
-
-		session.delete( grandMother );
-		tx.commit();
-
-		session.close();
-
-		checkCleanCache();
+		// assert removal has been propagated
+		inTransaction( ( session ) -> {
+			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			assertThat( grandMother.getGrandChildren() ).containsExactly( leia );
+		} );
 	}
 
 	@Test
 	public void testOrderedListAndCompositeId() throws Exception {
-		Session session = openSession();
-		Transaction transaction = session.beginTransaction();
-		Race race = new Race();
-		race.setRaceId( new Race.RaceId( 23, 75 ) );
-		Runner runner = new Runner();
-		runner.setAge( 37 );
-		runner.setRunnerId( new Runner.RunnerId( "Emmanuel", "Bernard" ) );
-		Runner runner2 = new Runner();
-		runner2.setAge( 105 );
-		runner2.setRunnerId( new Runner.RunnerId( "Pere", "Noel" ) );
-		race.getRunnersByArrival().add( runner );
-		race.getRunnersByArrival().add( runner2 );
-		session.persist( race );
-		session.persist( runner );
-		session.persist( runner2 );
-		transaction.commit();
+		inTransaction( ( session ) -> {
+			emmanuel = new Runner();
+			emmanuel.setAge( 37 );
+			emmanuel.setRunnerId( new Runner.RunnerId( "Emmanuel", "Bernard" ) );
+			session.persist( emmanuel );
 
-		session.clear();
+			pere = new Runner();
+			pere.setAge( 105 );
+			pere.setRunnerId( new Runner.RunnerId( "Pere", "Noel" ) );
+			session.persist( pere );
 
-		transaction = session.beginTransaction();
-		race = (Race) session.get( Race.class, race.getRaceId() );
-		assertThat( race.getRunnersByArrival() ).hasSize( 2 );
-		assertThat( race.getRunnersByArrival().get( 0 ).getRunnerId().getFirstname() ).isEqualTo( "Emmanuel" );
-		session.delete( race.getRunnersByArrival().get( 0 ) );
-		session.delete( race.getRunnersByArrival().get( 1 ) );
-		session.delete( race );
-		transaction.commit();
+			race = new Race();
+			race.setRaceId( new Race.RaceId( 23, 75 ) );
+			race.getRunnersByArrival().add( emmanuel );
+			race.getRunnersByArrival().add( pere );
+			session.persist( race );
+		} );
 
-		session.close();
-		checkCleanCache();
+		inTransaction( ( session ) -> {
+			race = (Race) session.get( Race.class, race.getRaceId() );
+			assertThat( race.getRunnersByArrival() ).containsExactly( emmanuel, pere );
+		} );
 	}
 
 	@Override
