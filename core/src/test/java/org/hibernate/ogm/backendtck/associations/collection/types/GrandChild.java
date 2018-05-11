@@ -6,6 +6,8 @@
  */
 package org.hibernate.ogm.backendtck.associations.collection.types;
 
+import java.util.Objects;
+
 import javax.persistence.Embeddable;
 
 /**
@@ -13,7 +15,14 @@ import javax.persistence.Embeddable;
  */
 @Embeddable
 public class GrandChild {
+
 	private String name;
+
+	public GrandChild() {
+	}
+
+	public GrandChild(String string) {
+	}
 
 	public String getName() {
 		return name;
@@ -23,4 +32,28 @@ public class GrandChild {
 		this.name = name;
 	}
 
+	@Override
+	public String toString() {
+		return name;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash( name );
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null ) {
+			return false;
+		}
+		if ( getClass() != obj.getClass() ) {
+			return false;
+		}
+		GrandChild other = (GrandChild) obj;
+		return Objects.equals( other.name, name );
+	}
 }
