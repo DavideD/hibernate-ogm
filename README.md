@@ -144,6 +144,12 @@ embedded Neo4j configuration is used.
 
 Hibernate OGM can connect to a Neo4j server remotely via the Bolt protocol or via HTTP.
 These tests are not executed by default, you can run them using the following commands:
+alskjdlasjda
+as
+fas
+faf
+sa
+
 
     mvn clean install -s settings-example.xml -Pneo4j-http
 
