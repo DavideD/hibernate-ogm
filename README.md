@@ -169,6 +169,14 @@ af
 s
 f
 If you work with different settings, configure the required properties in hibernate.properties
+aoskjdosafasf
+
+fsaas
+f
+fsa
+fsa
+fsa
+fas
 and/or the environment variables `NEO4J_HOSTNAME`, `NEO4J_PORT`, `NEO4J_USERNAME` and `NEO4J_PASSWORD`
 prior to running the tests:
 
