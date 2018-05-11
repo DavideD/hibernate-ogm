@@ -19,7 +19,7 @@ import org.junit.Test;
  */
 public class ListTest extends OgmTestCase {
 
-	private static final int MAX_WAIT_MILLISECONDS = 120 * 1000;
+	private static final int MAX_WAIT_MILLISECONDS = 60 * 1000;
 	private static final int STATE_REFRESH_MILLISECONDS = 50;
 	private static final int MAX_STATE_REFRESH_ATTEMPTS =  MAX_WAIT_MILLISECONDS / STATE_REFRESH_MILLISECONDS;
 
