@@ -139,6 +139,7 @@ prior to running the tests:
 ### Neo4j
 
 For running the tests in the _neo4j_ and _integrationtest/neo4j_ modules, by default the
+
 embedded Neo4j configuration is used.
 
 Hibernate OGM can connect to a Neo4j server remotely via the Bolt protocol or via HTTP.
