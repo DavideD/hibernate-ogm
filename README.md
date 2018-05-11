@@ -183,6 +183,14 @@ prior to running the tests:
     export NEO4J_HOSTNAME=neo4j-machine
     export NEO4J_PORT=1234
     export NEO4J_USERNAME=someUsername
+alksafa
+sf
+saf
+af
+sa
+fa
+af
+
     export NEO4J_PASSWORD=someP@ssw0rd
 
 ## Notes
