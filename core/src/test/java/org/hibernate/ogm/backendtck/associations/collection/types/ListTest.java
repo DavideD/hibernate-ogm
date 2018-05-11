@@ -19,6 +19,10 @@ import org.junit.Test;
  */
 public class ListTest extends OgmTestCase {
 
+	private static final int MAX_WAIT_MILLISECONDS = 180 * 1000;
+	private static final int STATE_REFRESH_MILLISECONDS = 50;
+	private static final int MAX_STATE_REFRESH_ATTEMPTS =  MAX_WAIT_MILLISECONDS / STATE_REFRESH_MILLISECONDS;
+
 	private Father father;
 	private Child luke, leia;
 	private GrandMother grandMother;
@@ -100,17 +104,28 @@ public class ListTest extends OgmTestCase {
 			grandMother.getGrandChildren().get( 0 ).setName( lisa.getName() );
 		} );
 
-		// assert update has been propagated
+		// Assert update has been propagated
 		inTransaction( ( session ) -> {
 			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			// The update of an embedded collection is an heavy operation in some datastores
+			for ( int i = 0; i < MAX_STATE_REFRESH_ATTEMPTS; i++ ) {
+				grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+				if ( grandMother.getGrandChildren().contains( lisa ) ) {
+					break;
+				}
+				waitOrAbort();
+			}
+
 			assertThat( grandMother.getGrandChildren() ).containsExactly( lisa, leia );
 		} );
 	}
+
 
 	@Test
 	public void testRemovalOfElementFromOrderedListIsApplied() throws Exception {
 		final GrandChild luke = new GrandChild( "Luke" );
 		final GrandChild leia = new GrandChild( "Leia" );
+
 		// insert entity with embedded collection
 		inTransaction( ( session ) -> {
 			grandMother = new GrandMother();
@@ -168,5 +183,14 @@ public class ListTest extends OgmTestCase {
 				Race.class,
 				Runner.class
 		};
+	}
+
+	private void waitOrAbort() {
+		try {
+			Thread.sleep( STATE_REFRESH_MILLISECONDS );
+		}
+		catch (InterruptedException e) {
+			throw new RuntimeException( "Interrupted while waiting for changes to be propagated" );
+		}
 	}
 }
