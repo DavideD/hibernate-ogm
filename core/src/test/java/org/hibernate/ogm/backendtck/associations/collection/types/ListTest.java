@@ -19,7 +19,7 @@ import org.junit.Test;
  */
 public class ListTest extends OgmTestCase {
 
-	private static final int MAX_WAIT_MILLISECONDS = 60 * 1000;
+	private static final int MAX_WAIT_MILLISECONDS = 0 * 1000;
 	private static final int STATE_REFRESH_MILLISECONDS = 50;
 	private static final int MAX_STATE_REFRESH_ATTEMPTS =  MAX_WAIT_MILLISECONDS / STATE_REFRESH_MILLISECONDS;
 
@@ -107,7 +107,7 @@ public class ListTest extends OgmTestCase {
 		} );
 
 		// Assert update has been propagated
-		inTransaction( (session) -> {
+		inTransaction( ( session ) -> {
 			// The update of an embedded collection is an heavy operation in some datastores
 			for ( int i = 0; i < MAX_STATE_REFRESH_ATTEMPTS; i++ ) {
 				grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
