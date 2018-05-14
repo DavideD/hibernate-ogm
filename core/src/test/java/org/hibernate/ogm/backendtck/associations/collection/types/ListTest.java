@@ -19,8 +19,8 @@ import org.junit.Test;
  */
 public class ListTest extends OgmTestCase {
 
-	private static final int MAX_WAIT_MILLISECONDS = 1800 * 1000;
-	private static final int STATE_REFRESH_MILLISECONDS = 50;
+	private static final int MAX_WAIT_MILLISECONDS = 180 * 1000;
+	private static final int STATE_REFRESH_MILLISECONDS = 1000;
 	private static final int MAX_STATE_REFRESH_ATTEMPTS =  MAX_WAIT_MILLISECONDS / STATE_REFRESH_MILLISECONDS;
 
 	private Father father;
@@ -102,24 +102,21 @@ public class ListTest extends OgmTestCase {
 			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 			assertThat( grandMother.getGrandChildren() ).containsExactly( luke, leia );
 			grandMother.getGrandChildren().get( 0 ).setName( lisa.getName() );
-			session.flush();
-			session.clear();
 		} );
 
 		// Assert update has been propagated
 		inTransaction( ( session ) -> {
-			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
-			// The update of an embedded collection is an heavy operation in some datastores
-			for ( int i = 0; i < MAX_STATE_REFRESH_ATTEMPTS; i++ ) {
-				grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
-				if ( grandMother.getGrandChildren().contains( lisa ) ) {
-					break;
-				}
+			int i = 0;
+			do {
+				session.clear();
+				// The update of an embedded collection is an heavy operation in some datastores
+				grandMother = (GrandMother) session.load( GrandMother.class, grandMother.getId() );
 				waitOrAbort();
-			}
+				i++;
+			} while ( i < MAX_STATE_REFRESH_ATTEMPTS && !grandMother.getGrandChildren().contains( lisa ) );
 
 			assertThat( grandMother.getGrandChildren() ).containsExactly( lisa, leia );
-		} );
+		});
 	}
 
 
@@ -141,13 +138,11 @@ public class ListTest extends OgmTestCase {
 			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 			GrandChild removed = grandMother.getGrandChildren().remove( 0 );
 			assertThat( removed ).isEqualTo( luke );
-			session.flush();
-			session.clear();
 		} );
 
 		// assert removal has been propagated
 		inTransaction( ( session ) -> {
-			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
+			grandMother = (GrandMother) session.load( GrandMother.class, grandMother.getId() );
 			assertThat( grandMother.getGrandChildren() ).containsExactly( leia );
 		} );
 	}
