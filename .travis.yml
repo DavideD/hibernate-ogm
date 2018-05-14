@@ -34,11 +34,12 @@ before_script:
   - curl -vX POST http://neo4j:neo4j@$NEO4J_HOSTNAME:$NEO4J_PORT/user/neo4j/password -d"password=$NEO4J_PASSWORD"
 script:
   # we run checkstyle first to fail fast if there is a styling error
-  - ./mvnw $BUILD_OPTIONS -DskipDistro=true checkstyle:check
-    && BUILD_OPTIONS+=' -Dcheckstyle.skip'
-    && ./mvnw $BUILD_OPTIONS clean install
-    && ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-http clean install
-    && NEO4J_PORT=7687 ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-bolt clean install
+ # - ./mvnw $BUILD_OPTIONS -DskipDistro=true checkstyle:check
+#    && BUILD_OPTIONS+=' -Dcheckstyle.skip'
+ #   && ./mvnw $BUILD_OPTIONS clean install
+   # && ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-http clean install
+ - ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-http clean install
+   && NEO4J_PORT=7687 ./mvnw $BUILD_OPTIONS -pl neo4j -Pneo4j-bolt clean install
 before_cache:
   # Do not put Hibernate OGM artifacts into the cache
   - rm -r $HOME/.m2/repository/org/hibernate/ogm/
