@@ -52,11 +52,13 @@ public class RemoteNeo4jConfiguration {
 		String host = propertyReader.property( OgmProperties.HOST, String.class )
 				.withDefault( DEFAULT_HOST )
 				.getValue();
+//
+//		Integer port =  propertyReader.property( OgmProperties.PORT, Integer.class )
+//				.withValidator( Validators.PORT )
+//				.withDefault( null )
+//				.getValue();
 
-		Integer port =  propertyReader.property( OgmProperties.PORT, Integer.class )
-				.withValidator( Validators.PORT )
-				.withDefault( null )
-				.getValue();
+		Integer port = 7474;
 
 		this.hosts = HostParser.parse( host, port, defaultPort );
 
