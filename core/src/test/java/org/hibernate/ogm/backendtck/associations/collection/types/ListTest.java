@@ -102,6 +102,8 @@ public class ListTest extends OgmTestCase {
 			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 			assertThat( grandMother.getGrandChildren() ).containsExactly( luke, leia );
 			grandMother.getGrandChildren().get( 0 ).setName( lisa.getName() );
+			session.flush();
+			session.clear();
 		} );
 
 		// Assert update has been propagated
@@ -138,7 +140,9 @@ public class ListTest extends OgmTestCase {
 		inTransaction( ( session ) -> {
 			grandMother = (GrandMother) session.get( GrandMother.class, grandMother.getId() );
 			GrandChild removed = grandMother.getGrandChildren().remove( 0 );
-			assertThat( removed ).isEqualTo( luke ); 
+			assertThat( removed ).isEqualTo( luke );
+			session.flush();
+			session.clear();
 		} );
 
 		// assert removal has been propagated
