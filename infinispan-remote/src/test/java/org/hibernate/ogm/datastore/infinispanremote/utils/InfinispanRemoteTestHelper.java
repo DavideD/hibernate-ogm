@@ -74,6 +74,9 @@ public class InfinispanRemoteTestHelper extends BaseGridDialectTestHelper implem
 	private static final String SERVER_TASK_SIMPLE_VALUE_PROCEDURE_JAR = INFINISPAN_DEPLOYMENTS_DIRECTORY + "/simple-value-procedure.jar";
 	private static final int MAX_TEST_COUNT = 20;
 
+	private static final int DEPLOYMENTS_MAX_RETRIES = 20;
+	private static final int DEPLOYMENTS_WAITING_TIME_IN_SEC = 1;
+
 	@Override
 	public long getNumberOfAssociations(SessionFactory sessionFactory) {
 		final InfinispanRemoteDatastoreProvider datastoreProvider = getProvider( sessionFactory );
@@ -193,28 +196,34 @@ public class InfinispanRemoteTestHelper extends BaseGridDialectTestHelper implem
 				.addAsResource( asResource( SERVER_TASK_SIMPLE_VALUE_PROCEDURE_META_INF ), SERVER_TASK_META_INF_TARGET_FILE )
 				.as( ZipExporter.class )
 				.exportTo( new File( SERVER_TASK_SIMPLE_VALUE_PROCEDURE_JAR ), true );
+
 		ShrinkWrap.create( JavaArchive.class, "result-set-procedure.jar" )
 				.addClass( Car.class )
 				.addClass( ResultSetProcedure.class )
 				.addAsResource( asResource( SERVER_TASK_RESULT_SET_PROCEDURE_META_INF ), SERVER_TASK_META_INF_TARGET_FILE )
 				.as( ZipExporter.class )
 				.exportTo( new File( SERVER_TASK_RESULT_SET_PROCEDURE_JAR ), true );
+
 		ShrinkWrap.create( JavaArchive.class, "exceptional-procedure.jar" )
 				.addClass( ExceptionalProcedure.class )
 				.addAsResource( asResource( SERVER_TASK_EXCEPTIONAL_PROCEDURE_META_INF ), SERVER_TASK_META_INF_TARGET_FILE )
 				.as( ZipExporter.class )
 				.exportTo( new File( SERVER_TASK_EXCEPTIONAL_PROCEDURE_JAR ), true );
 
-		for ( int testNumber = 0; testNumber < MAX_TEST_COUNT; testNumber++ ) {
+		waitForDeployment();
+	}
+
+	private static void waitForDeployment() throws InterruptedException {
+		for ( int i = 0; i < DEPLOYMENTS_MAX_RETRIES; i++ ) {
 			if ( !javaStoredProceduresDeployed() ) {
-				TimeUnit.SECONDS.sleep( 1 );
+				TimeUnit.SECONDS.sleep( DEPLOYMENTS_WAITING_TIME_IN_SEC );
 			}
 			else {
 				break;
 			}
 		}
 		if ( !javaStoredProceduresDeployed() ) {
-			throw new HibernateException( "Can not upload procedures during 20 seconds!" );
+			throw new HibernateException( "Stored procedures not deployed!" );
 		}
 
 	}
