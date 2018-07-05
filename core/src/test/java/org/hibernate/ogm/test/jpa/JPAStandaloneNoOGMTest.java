@@ -13,11 +13,11 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceException;
 
+import org.hibernate.HibernateException;
 import org.hibernate.ogm.utils.PackagingRule;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.google.common.base.Throwables;
 /**
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
  * @author Sanne Grinovero &lt;sanne@hibernate.org&gt;
@@ -38,12 +38,15 @@ public class JPAStandaloneNoOGMTest {
 			emf = Persistence.createEntityManagerFactory( "noogm" );
 			fail( "Expected exception was not raised" );
 		}
-		catch ( PersistenceException pe ) {
-			assertThat( Throwables.getRootCause( pe ).getMessage() ).contains( "No Persistence provider for EntityManager named noogm" );
+		catch (PersistenceException pe) {
+			assertThat( pe.getCause() ).isInstanceOf( HibernateException.class );
+			assertThat( pe.getCause().getMessage() ).isEqualTo( "Access to DialectResolutionInfo cannot be null when 'hibernate.dialect' not set" );
 		}
-
-		if ( emf != null ) {
-			emf.close(); // should not be reached, but cleanup in case the test fails.
+		finally {
+			if ( emf != null ) {
+				// should not be reached, but cleanup in case the test fails.
+				emf.close();
+			}
 		}
 	}
 }
