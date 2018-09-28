@@ -6,8 +6,10 @@
  */
 package org.hibernate.ogm.datastore.mongodb.type.impl;
 
-import org.bson.BsonBinary;
+import java.io.InputStream;
+
 import org.bson.types.Binary;
+import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.type.descriptor.impl.BasicGridBinder;
 import org.hibernate.ogm.type.descriptor.impl.GridTypeDescriptor;
@@ -16,24 +18,18 @@ import org.hibernate.ogm.type.descriptor.impl.GridValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 
-/**
- * A {@link GridTypeDescriptor} which stores/retrieves values from the grid unwrapping/wrapping them as {@link Binary}, delegating to a
- * given {@link JavaTypeDescriptor}.
- *
- * @author Davide D'Alto
- */
-public class BinaryMappedGridTypeDescriptor implements GridTypeDescriptor {
+public class GridFSGridTypeDescriptor implements GridTypeDescriptor {
 
-	public static final BinaryMappedGridTypeDescriptor INSTANCE = new BinaryMappedGridTypeDescriptor();
+	public static final GridFSGridTypeDescriptor INSTANCE = new GridFSGridTypeDescriptor();
 
 	@Override
-	public <X> GridValueBinder<X> getBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
+	public <X> GridValueBinder<X> getBinder(JavaTypeDescriptor<X> javaTypeDescriptor) {
 		return new BasicGridBinder<X>( javaTypeDescriptor, this ) {
 
 			@Override
 			protected void doBind(Tuple resultset, X value, String[] names, WrapperOptions options) {
-				byte[] data = javaTypeDescriptor.unwrap( value, byte[].class, options );
-				resultset.put( names[0], new BsonBinary( data ) );
+				InputStream inputstream = javaTypeDescriptor.unwrap( value, InputStream.class, options );
+				resultset.put( names[0], new GridFS( inputstream ) );
 			}
 		};
 	}
@@ -43,15 +39,20 @@ public class BinaryMappedGridTypeDescriptor implements GridTypeDescriptor {
 		return new GridValueExtractor<X>() {
 
 			@Override
-			public X extract(Tuple resultset, String name) {
+			public X extract(Tuple resultset, String name, WrapperOptions options) {
 				final Binary result = (Binary) resultset.get( name );
 				if ( result == null ) {
 					return null;
 				}
 				else {
 					byte[] data = result.getData();
-					return javaTypeDescriptor.wrap( data, null );
+					return javaTypeDescriptor.wrap( data, options );
 				}
+			}
+
+			@Override
+			public X extract(Tuple resultset, String name) {
+				throw new UnsupportedOperationException( "" );
 			}
 		};
 	}

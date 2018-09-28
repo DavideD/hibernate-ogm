@@ -6,28 +6,29 @@
  */
 package org.hibernate.ogm.datastore.mongodb.type.impl;
 
-import org.bson.types.Binary;
+import org.bson.types.ObjectId;
 import org.hibernate.MappingException;
 import org.hibernate.engine.spi.Mapping;
+import org.hibernate.ogm.datastore.mongodb.type.GridFS;
+import org.hibernate.ogm.type.descriptor.impl.PassThroughGridTypeDescriptor;
 import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
-import org.hibernate.type.descriptor.java.PrimitiveByteArrayTypeDescriptor;
 
 /**
- * Persists {@link Binary}s as is in MongoDB.
+ * Persists {@link ObjectId}s as is in MongoDB.
  *
- * @author Sergey Chernolyas &amp;sergey.chernolyas@gmail.com&amp;
+ * @author Gunnar Morling
  */
-public class BinaryAsBsonBinaryGridType extends AbstractGenericBasicType<byte[]> {
+public class GridFSGridType extends AbstractGenericBasicType<GridFS> {
 
-	public static final BinaryAsBsonBinaryGridType INSTANCE = new BinaryAsBsonBinaryGridType();
+	public static final GridFSGridType INSTANCE = new GridFSGridType();
 
-	public BinaryAsBsonBinaryGridType() {
-		super( BinaryAsBsonBinaryGridTypeDescriptor.INSTANCE, PrimitiveByteArrayTypeDescriptor.INSTANCE );
+	public GridFSGridType() {
+		super( PassThroughGridTypeDescriptor.INSTANCE, GridFSJavaTypeDescriptor.INSTANCE );
 	}
 
 	@Override
 	public String getName() {
-		return "bytes_as_bson_binary";
+		return "gridfs";
 	}
 
 	@Override

@@ -22,6 +22,7 @@ import org.hibernate.ogm.type.descriptor.impl.GridTypeDescriptor;
 import org.hibernate.ogm.type.impl.AttributeConverterGridTypeAdaptor;
 import org.hibernate.ogm.type.impl.BigDecimalType;
 import org.hibernate.ogm.type.impl.BigIntegerType;
+import org.hibernate.ogm.type.impl.BlobGridType;
 import org.hibernate.ogm.type.impl.BooleanType;
 import org.hibernate.ogm.type.impl.ByteType;
 import org.hibernate.ogm.type.impl.CalendarDateType;
@@ -50,7 +51,6 @@ import org.hibernate.ogm.type.impl.UrlType;
 import org.hibernate.ogm.type.impl.YesNoType;
 import org.hibernate.ogm.type.spi.GridType;
 import org.hibernate.type.Type;
-
 import org.infinispan.protostream.descriptors.Descriptor;
 import org.infinispan.protostream.descriptors.FieldDescriptor;
 
@@ -146,6 +146,9 @@ public class ProtofieldAccessorSet {
 		}
 		else if ( gridType instanceof LocalTimeType ) {
 			add( new TimeProtofieldAccessor( uniqueTagAssigningCounter, name, nullable, ormMappedName ) );
+		}
+		else if ( gridType instanceof BlobGridType ) {
+			add( new BlobProtofieldAccessor( uniqueTagAssigningCounter, name, nullable, ormMappedName ) );
 		}
 		else if ( gridType instanceof EnumType ) {
 			EnumType etype = (EnumType) gridType;

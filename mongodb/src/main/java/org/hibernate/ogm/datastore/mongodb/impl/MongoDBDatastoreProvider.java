@@ -6,26 +6,20 @@
  */
 package org.hibernate.ogm.datastore.mongodb.impl;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoCredential;
-import com.mongodb.MongoException;
-import com.mongodb.ServerAddress;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
 
 import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.engine.jndi.spi.JndiService;
 import org.hibernate.ogm.cfg.spi.Hosts;
 import org.hibernate.ogm.datastore.mongodb.MongoDBDialect;
+import org.hibernate.ogm.datastore.mongodb.binarystorage.GridFSStorageManager;
+import org.hibernate.ogm.datastore.mongodb.binarystorage.GridFSFields;
 import org.hibernate.ogm.datastore.mongodb.configuration.impl.MongoDBConfiguration;
 import org.hibernate.ogm.datastore.mongodb.logging.impl.Log;
 import org.hibernate.ogm.datastore.mongodb.logging.impl.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 import org.hibernate.ogm.datastore.mongodb.query.parsing.impl.MongoDBBasedQueryParserService;
 import org.hibernate.ogm.datastore.spi.BaseDatastoreProvider;
 import org.hibernate.ogm.datastore.spi.SchemaDefiner;
@@ -38,6 +32,14 @@ import org.hibernate.service.spi.ServiceRegistryAwareService;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Startable;
 import org.hibernate.service.spi.Stoppable;
+
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoCredential;
+import com.mongodb.MongoException;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
 
 /**
  * Provides access to a MongoDB instance
@@ -55,6 +57,8 @@ public class MongoDBDatastoreProvider extends BaseDatastoreProvider implements S
 	private MongoDatabase mongoDb;
 	private MongoDBConfiguration config;
 	private JndiService jndiService;
+
+	private GridFSStorageManager binaryStorageManager;
 
 	public MongoDBDatastoreProvider() {
 	}
@@ -225,5 +229,13 @@ public class MongoDBDatastoreProvider extends BaseDatastoreProvider implements S
 			// we don't have enough privileges, ignore the database creation
 			return null;
 		}
+	}
+
+	public void initializeBinaryStorageManager(OptionsService optionsService, Map<String, GridFSFields> map) {
+		this.binaryStorageManager = new GridFSStorageManager( this, optionsService, map );
+	}
+
+	public GridFSStorageManager getBinaryStorageManager() {
+		return binaryStorageManager;
 	}
 }

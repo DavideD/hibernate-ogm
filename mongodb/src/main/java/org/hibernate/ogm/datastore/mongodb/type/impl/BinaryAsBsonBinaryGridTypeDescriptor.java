@@ -4,21 +4,27 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.ogm.type.descriptor.impl;
+package org.hibernate.ogm.datastore.mongodb.type.impl;
 
+import org.bson.BsonBinary;
+import org.bson.types.Binary;
 import org.hibernate.ogm.model.spi.Tuple;
+import org.hibernate.ogm.type.descriptor.impl.BasicGridBinder;
+import org.hibernate.ogm.type.descriptor.impl.GridTypeDescriptor;
+import org.hibernate.ogm.type.descriptor.impl.GridValueBinder;
+import org.hibernate.ogm.type.descriptor.impl.GridValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 
 /**
- * A {@link GridTypeDescriptor} which stores/retrieves values from the grid unwrapping/wrapping them as byte arrays, delegating to a
+ * A {@link GridTypeDescriptor} which stores/retrieves values from the grid unwrapping/wrapping them as {@link Binary}, delegating to a
  * given {@link JavaTypeDescriptor}.
  *
  * @author Davide D'Alto
  */
-public class ByteArrayMappedGridTypeDescriptor implements GridTypeDescriptor {
+public class BinaryAsBsonBinaryGridTypeDescriptor implements GridTypeDescriptor {
 
-	public static final ByteArrayMappedGridTypeDescriptor INSTANCE = new ByteArrayMappedGridTypeDescriptor();
+	public static final BinaryAsBsonBinaryGridTypeDescriptor INSTANCE = new BinaryAsBsonBinaryGridTypeDescriptor();
 
 	@Override
 	public <X> GridValueBinder<X> getBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
@@ -26,7 +32,8 @@ public class ByteArrayMappedGridTypeDescriptor implements GridTypeDescriptor {
 
 			@Override
 			protected void doBind(Tuple resultset, X value, String[] names, WrapperOptions options) {
-				resultset.put( names[0], javaTypeDescriptor.unwrap( value, byte[].class, options ) );
+				byte[] data = javaTypeDescriptor.unwrap( value, byte[].class, options );
+				resultset.put( names[0], new BsonBinary( data ) );
 			}
 		};
 	}
@@ -37,19 +44,19 @@ public class ByteArrayMappedGridTypeDescriptor implements GridTypeDescriptor {
 
 			@Override
 			public X extract(Tuple resultset, String name, WrapperOptions options) {
-				final byte[] result = (byte[]) resultset.get( name );
+				final Binary result = (Binary) resultset.get( name );
 				if ( result == null ) {
 					return null;
 				}
 				else {
-					return javaTypeDescriptor.wrap( result, options );
+					byte[] data = result.getData();
+					return javaTypeDescriptor.wrap( data, options );
 				}
 			}
 
 			@Override
 			public X extract(Tuple resultset, String name) {
-				// TODO Auto-generated method stub
-				return null;
+				throw new UnsupportedOperationException( "" );
 			}
 		};
 	}
