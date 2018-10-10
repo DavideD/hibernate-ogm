@@ -16,14 +16,13 @@ import org.hibernate.type.descriptor.java.PrimitiveByteArrayTypeDescriptor;
  * Persists {@link Binary}s as is in MongoDB.
  *
  * @author Sergey Chernolyas &amp;sergey.chernolyas@gmail.com&amp;
- *
  */
 public class BinaryAsBsonBinaryGridType extends AbstractGenericBasicType<byte[]> {
 
 	public static final BinaryAsBsonBinaryGridType INSTANCE = new BinaryAsBsonBinaryGridType();
 
 	public BinaryAsBsonBinaryGridType() {
-		super( BinaryMappedGridTypeDescriptor.INSTANCE, PrimitiveByteArrayTypeDescriptor.INSTANCE );
+		super( BinaryAsBsonBinaryGridTypeDescriptor.INSTANCE, PrimitiveByteArrayTypeDescriptor.INSTANCE );
 	}
 
 	@Override

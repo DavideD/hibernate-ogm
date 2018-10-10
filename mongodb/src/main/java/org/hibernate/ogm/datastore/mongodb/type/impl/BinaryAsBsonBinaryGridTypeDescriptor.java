@@ -22,9 +22,9 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
  *
  * @author Davide D'Alto
  */
-public class BinaryMappedGridTypeDescriptor implements GridTypeDescriptor {
+public class BinaryAsBsonBinaryGridTypeDescriptor implements GridTypeDescriptor {
 
-	public static final BinaryMappedGridTypeDescriptor INSTANCE = new BinaryMappedGridTypeDescriptor();
+	public static final BinaryAsBsonBinaryGridTypeDescriptor INSTANCE = new BinaryAsBsonBinaryGridTypeDescriptor();
 
 	@Override
 	public <X> GridValueBinder<X> getBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
@@ -43,15 +43,20 @@ public class BinaryMappedGridTypeDescriptor implements GridTypeDescriptor {
 		return new GridValueExtractor<X>() {
 
 			@Override
-			public X extract(Tuple resultset, String name) {
+			public X extract(Tuple resultset, String name, WrapperOptions options) {
 				final Binary result = (Binary) resultset.get( name );
 				if ( result == null ) {
 					return null;
 				}
 				else {
 					byte[] data = result.getData();
-					return javaTypeDescriptor.wrap( data, null );
+					return javaTypeDescriptor.wrap( data, options );
 				}
+			}
+
+			@Override
+			public X extract(Tuple resultset, String name) {
+				throw new UnsupportedOperationException( "" );
 			}
 		};
 	}

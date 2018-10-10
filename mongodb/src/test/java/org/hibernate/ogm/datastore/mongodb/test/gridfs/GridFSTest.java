@@ -7,6 +7,7 @@
 package org.hibernate.ogm.datastore.mongodb.test.gridfs;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static org.hibernate.ogm.datastore.mongodb.test.gridfs.Photo.BUCKET_NAME;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -23,6 +24,7 @@ import javax.persistence.EntityManager;
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.ogm.datastore.mongodb.impl.MongoDBDatastoreProvider;
+import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
 import org.hibernate.ogm.hibernatecore.impl.OgmSessionFactoryImpl;
 import org.hibernate.ogm.utils.TestForIssue;
@@ -44,16 +46,14 @@ import com.mongodb.client.gridfs.model.GridFSFile;
 @TestForIssue(jiraKey = "OGM-786")
 public class GridFSTest extends OgmJpaTestCase {
 
-	static final String BUCKET_NAME = "photos";
-
 	// GridFS is usually for file of size bigger than 16 MB
-	private static final int BLOB_SIZE = 30 * 1024 * 1024; // 30 MB
+	private static final int BLOB_SIZE = 30; // * 1024 * 1024; // 30 MB
 
 	private static final byte[] BLOB_CONTENT_1 = createString( 'b', BLOB_SIZE ).getBytes();
 	private static final byte[] BLOB_CONTENT_2 = createString( '8', BLOB_SIZE ).getBytes();
 
-	private static final String STRING_CONTENT_1 = createString( 'a', 100 );
-	private static final String STRING_CONTENT_2 = createString( 'x', 100 );
+	private static final String STRING_CONTENT_1 = createString( 'a', 1 );
+	private static final String STRING_CONTENT_2 = createString( 'x', 1 );
 
 	private static final byte[] BYTE_ARRAY_CONTENT_1 = STRING_CONTENT_1.getBytes();
 	private static final byte[] BYTE_ARRAY_CONTENT_2 = STRING_CONTENT_2.getBytes();
@@ -73,13 +73,29 @@ public class GridFSTest extends OgmJpaTestCase {
 	}
 
 	@Test
-	public void testGridFSCreationForString() {
+	public void testGridFSField() {
 		inTransaction( em -> {
-			Photo photo = new Photo( ENTITY_ID_1, STRING_CONTENT_1);
+			Photo photo = new Photo( ENTITY_ID_1 );
+			photo.setGridfs( new GridFS( STRING_CONTENT_1.getBytes() ) );
 			em.persist( photo );
 		} );
 
-		Function<ByteArrayOutputStream, String> function = ( ByteArrayOutputStream outputStream ) -> {
+		Function<ByteArrayOutputStream, String> function = (ByteArrayOutputStream outputStream) -> {
+			return new String( outputStream.toByteArray(), StandardCharsets.UTF_8 );
+		};
+		List<String> bucketContent = bucketContent( BUCKET_NAME, function );
+
+		assertThat( bucketContent ).containsExactly( STRING_CONTENT_1 );
+	}
+
+	@Test
+	public void testGridFSCreationForString() {
+		inTransaction( em -> {
+			Photo photo = new Photo( ENTITY_ID_1, STRING_CONTENT_1 );
+			em.persist( photo );
+		} );
+
+		Function<ByteArrayOutputStream, String> function = (ByteArrayOutputStream outputStream) -> {
 			return new String( outputStream.toByteArray(), StandardCharsets.UTF_8 );
 		};
 		List<String> bucketContent = bucketContent( BUCKET_NAME, function );
@@ -97,31 +113,65 @@ public class GridFSTest extends OgmJpaTestCase {
 		Function<ByteArrayOutputStream, byte[]> function = ( ByteArrayOutputStream outputStream ) -> {
 			return outputStream.toByteArray();
 		};
-		List<byte[]> bucketContent = bucketContent( BUCKET_NAME, function );
+		List<?> bucketContent = bucketContent( BUCKET_NAME, function );
 
-		assertThat( bucketContent ).containsExactly( BYTE_ARRAY_CONTENT_1 );
+		// Normally I would use containsExactly, but it fails for some reason
+		assertThat( bucketContent ).hasSize( 1 );
+		assertThat( bucketContent.get( 0 ) ).isEqualTo( BYTE_ARRAY_CONTENT_1 );
 	}
 
 	@Test
 	public void testGridFSCreationForBlob() {
 		inTransaction( em -> {
 			Blob blob = createBlob( em, BLOB_CONTENT_1 );
-			Photo photo = new Photo( ENTITY_ID_1, blob);
+			Photo photo = new Photo( ENTITY_ID_1, blob );
 			em.persist( photo );
 		} );
 
-		Function<ByteArrayOutputStream, byte[]> function = ( ByteArrayOutputStream outputStream ) -> {
+		Function<ByteArrayOutputStream, byte[]> function = (ByteArrayOutputStream outputStream) -> {
 			return outputStream.toByteArray();
 		};
 		List<byte[]> bucketContent = bucketContent( BUCKET_NAME, function );
 
-		assertThat( bucketContent ).containsExactly( BLOB_CONTENT_1 );
+		// Normally I would use containsExactly, but it fails for some reason
+		assertThat( bucketContent ).hasSize( 1 );
+		assertThat( bucketContent.get( 0 ) ).isEqualTo( BLOB_CONTENT_1 );
+	}
+
+	@Test
+	public void testSavingDifferentFields() {
+		inTransaction( em -> {
+			Photo photo1 = new Photo( ENTITY_ID_1 );
+			photo1.setContentAsBlob( createBlob( em, BLOB_CONTENT_1 ) );
+			photo1.setContentAsByteArray( BYTE_ARRAY_CONTENT_1 );
+			photo1.setContentAsString( STRING_CONTENT_1 );
+
+			Photo photo2 = new Photo( ENTITY_ID_2 );
+			photo2.setContentAsBlob( createBlob( em, BLOB_CONTENT_2 ) );
+			photo2.setContentAsByteArray( BYTE_ARRAY_CONTENT_2 );
+			photo2.setContentAsString( STRING_CONTENT_2 );
+			em.persist( photo2 );
+		} );
+
+		inTransaction( em -> {
+			Photo photo1 = em.find( Photo.class, ENTITY_ID_1 );
+			assertThat( photo1 ).isNotNull();
+			assertThat( photo1.getContentAsString() ).isEqualTo( STRING_CONTENT_1 );
+			assertThat( photo1.getContentAsByteArray() ).isEqualTo( BYTE_ARRAY_CONTENT_1 );
+			assertThatBlobsAreEqual( photo1.getContentAsBlob(), BLOB_CONTENT_1 );
+
+			Photo photo2 = em.find( Photo.class, ENTITY_ID_2 );
+			assertThat( photo2 ).isNotNull();
+			assertThat( photo2.getContentAsString() ).isEqualTo( STRING_CONTENT_2 );
+			assertThat( photo2.getContentAsByteArray() ).isEqualTo( BYTE_ARRAY_CONTENT_2 );
+			assertThatBlobsAreEqual( photo2.getContentAsBlob(), BLOB_CONTENT_2 );
+		} );
 	}
 
 	@Test
 	public void testStringEntityFieldIsSaved() {
 		inTransaction( em -> {
-			Photo photo = new Photo( ENTITY_ID_1, STRING_CONTENT_1);
+			Photo photo = new Photo( ENTITY_ID_1, STRING_CONTENT_1 );
 			em.persist( photo );
 		} );
 
@@ -165,73 +215,64 @@ public class GridFSTest extends OgmJpaTestCase {
 		return Hibernate.getLobCreator( em.unwrap( Session.class ) ).createBlob( BLOB_CONTENT_1 );
 	}
 
-//	@Test
-//	public void canReplaceBlobInEntity() {
-//		inTransaction( em -> {
-//			Photo photo = em.find( Photo.class, ENTITY_ID_1 );
-//			assertThat( photo ).isNotNull();
-//			assertThat( photo.getContentAsBlob() ).isNotNull();
-//			assertBlobAreEqual( photo.getContentAsBlob(), BLOB_CONTENT_1 );
-//
-//			Blob blob2 = Hibernate.getLobCreator( em.unwrap( Session.class ) ).createBlob( BLOB_CONTENT_2 );
-//			photo.setContentAsBlob( blob2 );
-//			photo.setContentAsByteArray( BLOB_CONTENT_2 );
-//			photo.setContentAsString( BLOB_STRING_CONTENT_2 );
-//		} );
-//
-//		inTransaction( em -> {
-//			Photo photo = em.find( Photo.class, ENTITY_ID_1 );
-//			assertThat( photo ).isNotNull();
-//			assertBlobAreEqual( photo.getContentAsBlob(), BLOB_CONTENT_2 );
-//			assertThat( photo.getContentAsByteArray() ).isEqualTo( BLOB_CONTENT_2 );
-//			assertThat( photo.getContentAsString() ).isEqualTo( BLOB_STRING_CONTENT_2 );
-//		} );
-//
-//		inTransaction( em -> {
-//			GridFSBucket gridFSFilesBucket = GridFSBuckets.create( getCurrentDB( em ), BUCKET_NAME );
-//			MongoCursor<GridFSFile> cursor = gridFSFilesBucket.find().iterator();
-//			List<GridFSFile> files = new LinkedList<>();
-//			for ( ; cursor.hasNext(); ) {
-//				files.add( cursor.next() );
-//			}
-//			assertThat( files.size() ).isEqualTo( 3 );
-//		} );
-//	}
-//
-//	@Test
-//	public void canRemoveEntityWithBlob() {
-//
-//		inTransaction( em -> {
-//			Photo photo = new Photo();
-//			photo.setId( ENTITY_ID_2 );
-//			photo.setDescription( "photo2" );
-//
-//			Blob blob = Hibernate.getLobCreator( em.unwrap( Session.class ) ).createBlob( BLOB_CONTENT_1 );
-//			photo.setContentAsBlob( blob );
-//			photo.setContentAsByteArray( BLOB_CONTENT_1 );
-//			photo.setContentAsString( BLOB_STRING_CONTENT_1 );
-//			em.persist( photo );
-//		} );
-//
-//		inTransaction( em -> {
-//			Photo photo = em.find( Photo.class, ENTITY_ID_2 );
-//			assertThat( photo ).isNotNull();
-//			assertBlobAreEqual( photo.getContentAsBlob(), BLOB_CONTENT_1 );
-//			assertThat( photo.getContentAsByteArray() ).isEqualTo( BLOB_CONTENT_1 );
-//			assertThat( photo.getContentAsString() ).isEqualTo( BLOB_STRING_CONTENT_1 );
-//			em.remove( photo );
-//		} );
-//
-//		inTransaction( em -> {
-//			GridFSBucket gridFSFilesBucket = GridFSBuckets.create( getCurrentDB( em ), BUCKET_NAME );
-//			MongoCursor<GridFSFile> cursor = gridFSFilesBucket.find().iterator();
-//			List<GridFSFile> files = new LinkedList<>();
-//			while ( cursor.hasNext() ) {
-//				files.add( cursor.next() );
-//			}
-//			assertThat( files.size() ).isEqualTo( 3 ); // files for ENTITY_ID_1
-//		} );
-//	}
+	// Fails
+	@Test
+	public void canUpdateBlobInEntityAndBucket() {
+		inTransaction( em -> {
+			Blob blob = createBlob( em, BLOB_CONTENT_1 );
+			Photo photo = new Photo( ENTITY_ID_1, blob );
+			em.persist( photo );
+		} );
+
+		inTransaction( em -> {
+			Blob blob2 = Hibernate.getLobCreator( em.unwrap( Session.class ) ).createBlob( BLOB_CONTENT_2 );
+
+			Photo photo = em.find( Photo.class, ENTITY_ID_1 );
+			photo.setContentAsBlob( blob2 );
+		} );
+
+		// Check change has been saved
+		inTransaction( em -> {
+			Photo photo = em.find( Photo.class, ENTITY_ID_1 );
+
+			assertThat( photo ).isNotNull();
+			assertThatBlobsAreEqual( photo.getContentAsBlob(), BLOB_CONTENT_2 );
+		} );
+
+		// Check GridFS has been updated
+		Function<ByteArrayOutputStream, byte[]> function = (ByteArrayOutputStream outputStream) -> {
+			return outputStream.toByteArray();
+		};
+		List<byte[]> bucketContent = bucketContent( BUCKET_NAME, function );
+
+		// Normally I would use containsExactly, but it fails for some reason
+		assertThat( bucketContent ).hasSize( 1 );
+		assertThat( bucketContent.get( 0 ) ).isEqualTo( BLOB_CONTENT_2 );
+	}
+
+	@Test
+	public void canRemoveEntityWithBlob() {
+		inTransaction( em -> {
+			Photo photo = new Photo();
+			photo.setId( ENTITY_ID_2 );
+
+			Blob blob = Hibernate.getLobCreator( em.unwrap( Session.class ) ).createBlob( BLOB_CONTENT_1 );
+			photo.setContentAsBlob( blob );
+			em.persist( photo );
+		} );
+
+		inTransaction( em -> {
+			Photo photo = em.find( Photo.class, ENTITY_ID_2 );
+			em.remove( photo );
+		} );
+
+		Function<ByteArrayOutputStream, byte[]> function = (ByteArrayOutputStream outputStream) -> {
+			return outputStream.toByteArray();
+		};
+		List<byte[]> bucketContent = bucketContent( BUCKET_NAME, function );
+
+		assertThat( bucketContent.isEmpty() );
+	}
 
 	private <T> List<T> bucketContent(String bucketName, Function<ByteArrayOutputStream, T> function) {
 		List<T> bucketContent = new ArrayList<>();
@@ -259,6 +300,9 @@ public class GridFSTest extends OgmJpaTestCase {
 	}
 
 	private void assertThatBlobsAreEqual(Blob actual, byte[] expected) {
+		if ( expected != null ) {
+			assertThat( actual ).as( "Expected " + expected + " but value is null" ).isNotNull();
+		}
 		try ( InputStream binaryStream = actual.getBinaryStream() ) {
 			byte[] actualAsByte = new byte[expected.length];
 			DataInputStream stream = new DataInputStream( binaryStream );

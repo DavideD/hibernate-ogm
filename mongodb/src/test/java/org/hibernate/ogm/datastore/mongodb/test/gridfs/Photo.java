@@ -7,7 +7,6 @@
 package org.hibernate.ogm.datastore.mongodb.test.gridfs;
 
 import static org.hibernate.ogm.datastore.mongodb.options.BinaryStorageType.GRID_FS;
-import static org.hibernate.ogm.datastore.mongodb.test.gridfs.GridFSTest.BUCKET_NAME;
 
 import java.sql.Blob;
 import java.util.Objects;
@@ -16,9 +15,9 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 
-import org.apache.lucene.queryparser.flexible.standard.processors.PhraseSlopQueryNodeProcessor;
 import org.hibernate.ogm.datastore.mongodb.options.BinaryStorage;
 import org.hibernate.ogm.datastore.mongodb.options.GridFSBucket;
+import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 
 /**
  * @author Sergey Chernolyas &amp;sergey_chernolyas@gmail.com&amp;
@@ -27,22 +26,26 @@ import org.hibernate.ogm.datastore.mongodb.options.GridFSBucket;
 @Entity
 public class Photo {
 
+	public static final String BUCKET_NAME = "photos";
+
 	@Id
 	private String id;
 
+	private GridFS gridfs;
+
 	@Lob
 	@GridFSBucket(BUCKET_NAME)
-	@BinaryStorage( GRID_FS )
+	@BinaryStorage(GRID_FS)
 	private Blob contentAsBlob;
 
 	@Lob
 	@GridFSBucket(BUCKET_NAME)
-	@BinaryStorage( GRID_FS )
+	@BinaryStorage(GRID_FS)
 	private byte[] contentAsByteArray;
 
 	@Lob
 	@GridFSBucket(BUCKET_NAME)
-	@BinaryStorage( GRID_FS )
+	@BinaryStorage(GRID_FS)
 	private String contentAsString;
 
 	public Photo() {
@@ -99,6 +102,14 @@ public class Photo {
 		this.contentAsString = contentAsString;
 	}
 
+	public GridFS getGridfs() {
+		return gridfs;
+	}
+
+	public void setGridfs(GridFS gridfs) {
+		this.gridfs = gridfs;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if ( this == o ) {
@@ -114,5 +125,10 @@ public class Photo {
 	@Override
 	public int hashCode() {
 		return Objects.hash( id );
+	}
+
+	@Override
+	public String toString() {
+		return "Photo [id=" + id + ", contentAsString=" + contentAsString + "]";
 	}
 }

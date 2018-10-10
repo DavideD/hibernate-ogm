@@ -6,26 +6,24 @@
  */
 package org.hibernate.ogm.datastore.mongodb.type.impl;
 
-import java.sql.Blob;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
-import org.hibernate.engine.jdbc.BinaryStream;
-import org.hibernate.engine.jdbc.BlobProxy;
+import org.hibernate.HibernateException;
 import org.hibernate.ogm.model.spi.Tuple;
 import org.hibernate.ogm.type.descriptor.impl.BasicGridBinder;
 import org.hibernate.ogm.type.descriptor.impl.GridTypeDescriptor;
 import org.hibernate.ogm.type.descriptor.impl.GridValueBinder;
-import org.hibernate.ogm.type.descriptor.impl.GridValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 
 import com.mongodb.client.gridfs.GridFSDownloadStream;
 
 /**
- * @author Sergey Chernolyas &amp;sergey_chernolyas@gmail.com&amp;
+ * @author Davide D'Alto
  */
-public class BlobMappedGridTypeDescriptor implements GridTypeDescriptor {
-
-	public static final BlobMappedGridTypeDescriptor INSTANCE = new BlobMappedGridTypeDescriptor();
+public abstract class AbstractGridFSGridTypeDescriptor implements GridTypeDescriptor {
 
 	@Override
 	public <X> GridValueBinder<X> getBinder(final JavaTypeDescriptor<X> javaTypeDescriptor) {
@@ -33,25 +31,22 @@ public class BlobMappedGridTypeDescriptor implements GridTypeDescriptor {
 
 			@Override
 			protected void doBind(Tuple resultset, X value, String[] names, WrapperOptions options) {
-				BinaryStream stream = javaTypeDescriptor.unwrap( value, BinaryStream.class, options );
+				InputStream stream = javaTypeDescriptor.unwrap( value, InputStream.class, options );
 				resultset.put( names[0], stream );
 			}
 		};
 	}
 
-	@Override
-	public <X> GridValueExtractor<X> getExtractor(final JavaTypeDescriptor<X> javaTypeDescriptor) {
-		return new GridValueExtractor<X>() {
-			@Override
-			public X extract(Tuple tuple, String name) {
-				final GridFSDownloadStream binaryStream = (GridFSDownloadStream) tuple.get( name );
-				if ( binaryStream != null ) {
-					long fileSize  = binaryStream.getGridFSFile().getLength();
-					Blob blob = BlobProxy.generateProxy( binaryStream, fileSize );
-					return (X) blob;
-				}
-				return null;
-			}
-		};
+	byte[] toByteArray(final GridFSDownloadStream gridfsStream) {
+		try ( DataInputStream stream = new DataInputStream( gridfsStream ) ) {
+			int size = Long.valueOf( gridfsStream.getGridFSFile().getLength() ).intValue();
+			byte[] stringAsBytes = new byte[size];
+			stream.readFully( stringAsBytes );
+			return stringAsBytes;
+		}
+		catch (IOException e) {
+			throw new HibernateException( e );
+		}
 	}
+
 }

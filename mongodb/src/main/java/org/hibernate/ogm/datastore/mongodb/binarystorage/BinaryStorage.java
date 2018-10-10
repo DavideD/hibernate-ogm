@@ -6,20 +6,17 @@
  */
 package org.hibernate.ogm.datastore.mongodb.binarystorage;
 
-import org.hibernate.ogm.model.spi.Tuple;
+import org.bson.Document;
 import org.hibernate.ogm.options.spi.OptionsContext;
 
-import org.bson.Document;
-
 /**
- * The delegator provides access to binary storage.
- *
  * @author Sergey Chernolyas &amp;sergey_chernolyas@gmail.com&amp;
  */
 public interface BinaryStorage {
-	void storeContentToBinaryStorage(OptionsContext optionsContext, Document currentDocument, String fieldName, Tuple tuple);
+
+	void storeContentToBinaryStorage(OptionsContext optionsContext, Document currentDocument, String fieldName);
 
 	void removeContentFromBinaryStore(OptionsContext optionsContext, Document deletedDocument, String fieldName);
 
-	void loadContentFromBinaryStorageToField( OptionsContext optionsContext, Document currentDocument, String fieldName, Class<?> fieldType);
+	void loadContentFromBinaryStorageToField(OptionsContext optionsContext, Document currentDocument, String fieldName);
 }

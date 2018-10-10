@@ -6,22 +6,29 @@
  */
 package org.hibernate.ogm.backendtck.type;
 
+import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.io.DataInputStream;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
+import java.sql.Blob;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.ogm.backendtck.type.Bookmark.Classifier;
+import org.hibernate.ogm.utils.GridDialectType;
 import org.hibernate.ogm.utils.OgmTestCase;
+import org.hibernate.ogm.utils.SkipByGridDialect;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -276,6 +283,36 @@ public class BuiltInTypeTest extends OgmTestCase {
 				"Ordinal mapped enum value does not match", bookmark.getClassifierAsOrdinal(),
 				loadedBookmark.getClassifierAsOrdinal()
 		);
+	}
+
+	// Blob
+	@Test
+	@SkipByGridDialect(GridDialectType.INFINISPAN_REMOTE)
+	public void testBlobSupport() {
+		String blobContent = "We are here on the planet only once and might as well get a feel for the place. We might as well get a feel for the fringes and hollows in which life is lived.";
+		final Bookmark bookmark = new Bookmark();
+		inTransaction( session -> {
+			Blob blob = Hibernate.getLobCreator( session ).createBlob( blobContent.getBytes() );
+			bookmark.setBlob( blob );
+			session.persist( bookmark );
+		} );
+		inTransaction( session -> {
+			Bookmark actualBookmark = session.find( Bookmark.class, bookmark.getId() );
+			assertBlobsAreEqual( actualBookmark.getBlob(), blobContent.getBytes() );
+		} );
+	}
+
+	private void assertBlobsAreEqual(Blob actualBlob, byte[] expected) {
+		try ( InputStream binaryStream = actualBlob.getBinaryStream() ) {
+			byte[] actualAsByte = new byte[expected.length];
+			DataInputStream stream = new DataInputStream( binaryStream );
+			stream.readFully( actualAsByte );
+			stream.close();
+			assertThat( actualAsByte ).isEqualTo( expected );
+		}
+		catch (Exception e) {
+			throw new RuntimeException( e );
+		}
 	}
 
 	// Date/time types

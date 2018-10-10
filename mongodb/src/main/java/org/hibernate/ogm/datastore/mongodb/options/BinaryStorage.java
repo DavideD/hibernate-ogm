@@ -6,15 +6,15 @@
  */
 package org.hibernate.ogm.datastore.mongodb.options;
 
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import org.hibernate.ogm.datastore.mongodb.options.impl.BinaryStorageConverter;
 import org.hibernate.ogm.options.spi.MappingOption;
-
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * @author Sergey Chernolyas &amp;sergey_chernolyas@gmail.com&amp;
@@ -23,5 +23,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @MappingOption(BinaryStorageConverter.class)
 public @interface BinaryStorage {
+
 	BinaryStorageType value();
 }

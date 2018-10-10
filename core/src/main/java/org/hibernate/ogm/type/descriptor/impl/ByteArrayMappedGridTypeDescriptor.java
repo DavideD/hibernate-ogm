@@ -36,14 +36,20 @@ public class ByteArrayMappedGridTypeDescriptor implements GridTypeDescriptor {
 		return new GridValueExtractor<X>() {
 
 			@Override
-			public X extract(Tuple resultset, String name) {
+			public X extract(Tuple resultset, String name, WrapperOptions options) {
 				final byte[] result = (byte[]) resultset.get( name );
 				if ( result == null ) {
 					return null;
 				}
 				else {
-					return javaTypeDescriptor.wrap( result, null );
+					return javaTypeDescriptor.wrap( result, options );
 				}
+			}
+
+			@Override
+			public X extract(Tuple resultset, String name) {
+				// TODO Auto-generated method stub
+				return null;
 			}
 		};
 	}

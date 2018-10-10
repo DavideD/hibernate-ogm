@@ -4,27 +4,29 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.ogm.datastore.mongodb.type.impl;
+package org.hibernate.ogm.type.impl;
 
 import java.io.Serializable;
 
 import org.hibernate.MappingException;
 import org.hibernate.engine.spi.Mapping;
-import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
+import org.hibernate.ogm.type.descriptor.impl.ByteArrayMappedGridTypeDescriptor;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 
 /**
+ * Wrap/Unwrap the serialiable type into a byte array using the chosen {@link JavaTypeDescriptor}
+ *
  * @author Davide D'Alto
  */
-public class SerializableAsBinaryGridType<T extends Serializable> extends AbstractGenericBasicType<T> {
+public class SerializableAsGridFSType<T extends Serializable> extends AbstractGenericBasicType<T> {
 
-	public SerializableAsBinaryGridType(JavaTypeDescriptor<T> javaTypeDescriptor) {
-		super( BinaryAsBsonBinaryGridTypeDescriptor.INSTANCE, javaTypeDescriptor );
+	public SerializableAsGridFSType(JavaTypeDescriptor<T> javaTypeDescriptor) {
+		super( ByteArrayMappedGridTypeDescriptor.INSTANCE, javaTypeDescriptor );
 	}
 
 	@Override
 	public String getName() {
-		return "serializable_as_binary";
+		return "serializable_as_gridfs";
 	}
 
 	@Override

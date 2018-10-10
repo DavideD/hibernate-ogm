@@ -9,6 +9,7 @@ package org.hibernate.ogm.backendtck.type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
+import java.sql.Blob;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
@@ -73,6 +74,10 @@ public class Bookmark {
 
 	@Lob
 	private Long lobWithLong;
+
+	// Blob
+	@Lob
+	private Blob blob;
 
 	// byte arrays
 	private byte[] data;
@@ -348,5 +353,13 @@ public class Bookmark {
 
 	public void setDestructionSqlTimestamp(Timestamp destructionJdbcTimestamp) {
 		this.destructionJdbcTimestamp = destructionJdbcTimestamp;
+	}
+
+	public Blob getBlob() {
+		return blob;
+	}
+
+	public void setBlob(Blob blob) {
+		this.blob = blob;
 	}
 }

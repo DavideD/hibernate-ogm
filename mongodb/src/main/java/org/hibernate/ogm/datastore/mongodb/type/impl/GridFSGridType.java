@@ -9,6 +9,7 @@ package org.hibernate.ogm.datastore.mongodb.type.impl;
 import org.bson.types.ObjectId;
 import org.hibernate.MappingException;
 import org.hibernate.engine.spi.Mapping;
+import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 import org.hibernate.ogm.type.descriptor.impl.PassThroughGridTypeDescriptor;
 import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
 
@@ -16,19 +17,18 @@ import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
  * Persists {@link ObjectId}s as is in MongoDB.
  *
  * @author Gunnar Morling
- *
  */
-public class ObjectIdGridType extends AbstractGenericBasicType<ObjectId>  {
+public class GridFSGridType extends AbstractGenericBasicType<GridFS> {
 
-	public static final ObjectIdGridType INSTANCE = new ObjectIdGridType();
+	public static final GridFSGridType INSTANCE = new GridFSGridType();
 
-	public ObjectIdGridType() {
-		super( PassThroughGridTypeDescriptor.INSTANCE, ObjectIdTypeDescriptor.INSTANCE );
+	public GridFSGridType() {
+		super( PassThroughGridTypeDescriptor.INSTANCE, GridFSJavaTypeDescriptor.INSTANCE );
 	}
 
 	@Override
 	public String getName() {
-		return "objectid";
+		return "gridfs";
 	}
 
 	@Override

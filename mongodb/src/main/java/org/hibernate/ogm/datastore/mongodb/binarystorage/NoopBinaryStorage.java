@@ -6,28 +6,25 @@
  */
 package org.hibernate.ogm.datastore.mongodb.binarystorage;
 
-import org.hibernate.ogm.model.spi.Tuple;
+import org.bson.Document;
 import org.hibernate.ogm.options.spi.OptionsContext;
 
-import org.bson.Document;
-
 /**
- * It is empty implementation of BinaryStorageDelegator
+ * It is empty implementation of {@link BinaryStorage}
+ *
  * @author Sergey Chernolyas &amp;sergey_chernolyas@gmail.com&amp;
  */
-public class NoopBinaryStore implements BinaryStorage {
-	@Override
-	public void storeContentToBinaryStorage( OptionsContext optionsContext, Document currentDocument, String fieldName, Tuple tuple) {
+public class NoopBinaryStorage implements BinaryStorage {
 
+	@Override
+	public void storeContentToBinaryStorage(OptionsContext optionsContext, Document currentDocument, String fieldName) {
 	}
 
 	@Override
 	public void removeContentFromBinaryStore(OptionsContext optionsContext, Document deletedDocument, String fieldName) {
-
 	}
 
 	@Override
-	public void loadContentFromBinaryStorageToField( OptionsContext optionsContext, Document currentDocument, String fieldName, Class<?> fieldType) {
-
+	public void loadContentFromBinaryStorageToField(OptionsContext optionsContext, Document currentDocument, String fieldName) {
 	}
 }

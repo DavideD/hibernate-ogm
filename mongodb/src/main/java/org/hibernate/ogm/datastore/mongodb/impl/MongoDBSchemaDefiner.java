@@ -6,7 +6,10 @@
  */
 package org.hibernate.ogm.datastore.mongodb.impl;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -15,6 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.bson.Document;
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.model.naming.NamingHelper;
 import org.hibernate.boot.model.relational.Database;
@@ -26,11 +30,13 @@ import org.hibernate.mapping.Index;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.UniqueKey;
 import org.hibernate.ogm.datastore.mongodb.MongoDBDialect;
+import org.hibernate.ogm.datastore.mongodb.binarystorage.FieldsWithBinaryStorageOption;
 import org.hibernate.ogm.datastore.mongodb.index.impl.MongoDBIndexSpec;
 import org.hibernate.ogm.datastore.mongodb.index.impl.MongoDBIndexType;
 import org.hibernate.ogm.datastore.mongodb.logging.impl.Log;
 import org.hibernate.ogm.datastore.mongodb.logging.impl.LoggerFactory;
-import java.lang.invoke.MethodHandles;
+import org.hibernate.ogm.datastore.mongodb.options.BinaryStorageType;
+import org.hibernate.ogm.datastore.mongodb.options.impl.BinaryStorageOption;
 import org.hibernate.ogm.datastore.spi.BaseSchemaDefiner;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
 import org.hibernate.ogm.model.key.spi.AssociationKeyMetadata;
@@ -39,6 +45,7 @@ import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata;
 import org.hibernate.ogm.options.shared.impl.IndexOptionsOption;
 import org.hibernate.ogm.options.shared.spi.IndexOption;
 import org.hibernate.ogm.options.shared.spi.IndexOptions;
+import org.hibernate.ogm.options.spi.OptionsContext;
 import org.hibernate.ogm.options.spi.OptionsService;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
 import org.hibernate.ogm.util.impl.Contracts;
@@ -51,7 +58,6 @@ import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
-import org.bson.Document;
 
 /**
  * Performs sanity checks of the mapped objects.
@@ -80,16 +86,37 @@ public class MongoDBSchemaDefiner extends BaseSchemaDefiner {
 
 	@Override
 	public void initializeSchema( SchemaDefinitionContext context) {
-		ServiceRegistryImplementor serviceRegistry = context.getSessionFactory().getServiceRegistry();
-		MongoDBDatastoreProvider datastoreProvider = (MongoDBDatastoreProvider) serviceRegistry.getService( DatastoreProvider.class );
-		datastoreProvider.setTableEntityTypeMapping( context.getTableEntityTypeMapping() );
 		SessionFactoryImplementor sessionFactoryImplementor = context.getSessionFactory();
 		ServiceRegistryImplementor registry = sessionFactoryImplementor.getServiceRegistry();
+		OptionsService optionsService = registry.getService( OptionsService.class );
+
 		MongoDBDatastoreProvider provider = (MongoDBDatastoreProvider) registry.getService( DatastoreProvider.class );
+		provider.initializeBinaryStorageManager( optionsService, findBinaryStorageTypeEntities( context.getTableEntityTypeMapping(), optionsService ) );
 
 		for ( MongoDBIndexSpec indexSpec : indexSpecs ) {
 			createIndex( provider.getDatabase(), indexSpec );
 		}
+	}
+
+	private Map<String, FieldsWithBinaryStorageOption> findBinaryStorageTypeEntities(Map<String, Class<?>> tableEntityTypeMapping,
+			OptionsService optionsService) {
+		Map<String, FieldsWithBinaryStorageOption> map = new HashMap<>();
+		for ( Entry<String, Class<?>> entries : tableEntityTypeMapping.entrySet() ) {
+			boolean storageTypeDefined = false;
+			FieldsWithBinaryStorageOption storages = new FieldsWithBinaryStorageOption( entries.getValue() );
+			for ( Field currentField : entries.getValue().getDeclaredFields() ) {
+				OptionsContext optionsContext = optionsService.context().getPropertyOptions( entries.getValue(), currentField.getName() );
+				BinaryStorageType binaryStorageType = optionsContext.getUnique( BinaryStorageOption.class );
+				if ( binaryStorageType != null ) {
+					storageTypeDefined = true;
+					storages.add( currentField, binaryStorageType );
+				}
+			}
+			if ( storageTypeDefined ) {
+				map.put( entries.getKey(), storages );
+			}
+		}
+		return Collections.unmodifiableMap( map );
 	}
 
 	private void validateAllPersisters(Iterable<EntityPersister> persisters) {
