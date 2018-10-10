@@ -16,6 +16,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 
+import org.apache.lucene.queryparser.flexible.standard.processors.PhraseSlopQueryNodeProcessor;
 import org.hibernate.ogm.datastore.mongodb.options.BinaryStorage;
 import org.hibernate.ogm.datastore.mongodb.options.GridFSBucket;
 
@@ -25,10 +26,9 @@ import org.hibernate.ogm.datastore.mongodb.options.GridFSBucket;
 
 @Entity
 public class Photo {
+
 	@Id
 	private String id;
-
-	private String description;
 
 	@Lob
 	@GridFSBucket(BUCKET_NAME)
@@ -45,6 +45,27 @@ public class Photo {
 	@BinaryStorage( GRID_FS )
 	private String contentAsString;
 
+	public Photo() {
+	}
+
+	public Photo(String id) {
+		this.id = id;
+	}
+
+	public Photo(String id, Blob contentAsBlob) {
+		this.id = id;
+		this.contentAsBlob = contentAsBlob;
+	}
+
+	public Photo(String id, String contentAsString) {
+		this.id = id;
+		this.contentAsString = contentAsString;
+	}
+
+	public Photo(String id, byte[] contentAsByteArray) {
+		this.id = id;
+		this.contentAsByteArray = contentAsByteArray;
+	}
 
 	public String getId() {
 		return id;
@@ -52,14 +73,6 @@ public class Photo {
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
 	}
 
 	public Blob getContentAsBlob() {
