@@ -73,6 +73,7 @@ public class TypeTranslatorImpl implements TypeTranslator {
 		tmpMap.put( org.hibernate.type.CalendarDateType.INSTANCE, CalendarDateType.INSTANCE );
 		tmpMap.put( org.hibernate.type.CalendarType.INSTANCE, CalendarType.INSTANCE );
 		tmpMap.put( org.hibernate.type.BinaryType.INSTANCE, PrimitiveByteArrayType.INSTANCE );
+		tmpMap.put( org.hibernate.type.BlobType.INSTANCE, BlobGridType.INSTANCE );
 		tmpMap.put( org.hibernate.type.MaterializedBlobType.INSTANCE, PrimitiveByteArrayType.INSTANCE );
 		tmpMap.put( org.hibernate.type.MaterializedClobType.INSTANCE, StringType.INSTANCE );
 		tmpMap.put( org.hibernate.type.ImageType.INSTANCE, PrimitiveByteArrayType.INSTANCE );

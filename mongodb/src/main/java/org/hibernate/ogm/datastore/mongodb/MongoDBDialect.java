@@ -64,6 +64,7 @@ import org.hibernate.ogm.datastore.mongodb.type.GeoMultiPolygon;
 import org.hibernate.ogm.datastore.mongodb.type.GeoPoint;
 import org.hibernate.ogm.datastore.mongodb.type.GeoPolygon;
 import org.hibernate.ogm.datastore.mongodb.type.impl.BinaryAsBsonBinaryGridType;
+import org.hibernate.ogm.datastore.mongodb.type.impl.BlobAsBsonBinaryGridType;
 import org.hibernate.ogm.datastore.mongodb.type.impl.GeoCollectionGridType;
 import org.hibernate.ogm.datastore.mongodb.type.impl.GeoLineStringGridType;
 import org.hibernate.ogm.datastore.mongodb.type.impl.GeoMultiLineStringGridType;
@@ -850,6 +851,9 @@ public class MongoDBDialect extends BaseGridDialect implements QueryableGridDial
 		}
 		else if ( type instanceof StringAsObjectIdType ) {
 			return StringAsObjectIdGridType.INSTANCE;
+		}
+		else if ( type == StandardBasicTypes.BLOB ) {
+			return BlobAsBsonBinaryGridType.INSTANCE;
 		}
 		else if ( type instanceof SerializableToBlobType ) {
 			SerializableToBlobType<?> exposedType = (SerializableToBlobType<?>) type;

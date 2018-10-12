@@ -19,7 +19,7 @@ import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 public class SerializableAsBinaryGridType<T extends Serializable> extends AbstractGenericBasicType<T> {
 
 	public SerializableAsBinaryGridType(JavaTypeDescriptor<T> javaTypeDescriptor) {
-		super( BinaryMappedGridTypeDescriptor.INSTANCE, javaTypeDescriptor );
+		super( BinaryAsBsonBinaryGridTypeDescriptor.INSTANCE, javaTypeDescriptor );
 	}
 
 	@Override

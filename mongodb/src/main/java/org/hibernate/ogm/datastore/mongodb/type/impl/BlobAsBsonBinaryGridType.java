@@ -6,28 +6,31 @@
  */
 package org.hibernate.ogm.datastore.mongodb.type.impl;
 
+import java.sql.Blob;
+
 import org.bson.types.Binary;
 import org.hibernate.MappingException;
 import org.hibernate.engine.spi.Mapping;
 import org.hibernate.ogm.type.impl.AbstractGenericBasicType;
-import org.hibernate.type.descriptor.java.PrimitiveByteArrayTypeDescriptor;
+import org.hibernate.type.descriptor.java.BlobTypeDescriptor;
 
 /**
  * Persists {@link Binary}s as is in MongoDB.
  *
  * @author Sergey Chernolyas &amp;sergey.chernolyas@gmail.com&amp;
+ *
  */
-public class BinaryAsBsonBinaryGridType extends AbstractGenericBasicType<byte[]> {
+public class BlobAsBsonBinaryGridType extends AbstractGenericBasicType<Blob> {
 
-	public static final BinaryAsBsonBinaryGridType INSTANCE = new BinaryAsBsonBinaryGridType();
+	public static final BlobAsBsonBinaryGridType INSTANCE = new BlobAsBsonBinaryGridType();
 
-	public BinaryAsBsonBinaryGridType() {
-		super( BinaryAsBsonBinaryGridTypeDescriptor.INSTANCE, PrimitiveByteArrayTypeDescriptor.INSTANCE );
+	public BlobAsBsonBinaryGridType() {
+		super( BinaryAsBsonBinaryGridTypeDescriptor.INSTANCE, BlobTypeDescriptor.INSTANCE );
 	}
 
 	@Override
 	public String getName() {
-		return "bytes_as_bson_binary";
+		return "bytes_as_binary";
 	}
 
 	@Override
