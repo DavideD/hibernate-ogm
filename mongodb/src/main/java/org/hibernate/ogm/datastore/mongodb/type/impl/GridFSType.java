@@ -17,11 +17,11 @@ import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 
 public class GridFSType extends AbstractSingleColumnStandardBasicType<GridFS> {
 
+	public static final GridFSType INSTANCE = new GridFSType();
+
 	public GridFSType() {
 		super( SqlDescriptor.INSTANCE, JavaDescriptor.INSTANCE );
 	}
-
-	public static final GridFSType INSTANCE = new GridFSType();
 
 	@Override
 	public String getName() {
@@ -79,7 +79,7 @@ public class GridFSType extends AbstractSingleColumnStandardBasicType<GridFS> {
 
 		@Override
 		public <X> GridFS wrap(X value, WrapperOptions options) {
-			return null; 
+			return null;
 		}
 	}
 }

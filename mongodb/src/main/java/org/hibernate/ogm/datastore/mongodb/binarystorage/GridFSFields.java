@@ -7,6 +7,7 @@
 package org.hibernate.ogm.datastore.mongodb.binarystorage;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,6 +28,9 @@ public class GridFSFields {
 	}
 
 	public Set<Field> getFields() {
+		if ( bucketNames.isEmpty() ) {
+			return Collections.emptySet();
+		}
 		return bucketNames.keySet();
 	}
 

@@ -7,6 +7,7 @@
 package org.hibernate.ogm.datastore.mongodb.binarystorage;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,6 +20,7 @@ import org.hibernate.ogm.model.key.spi.EntityKeyMetadata;
 import org.hibernate.ogm.options.spi.OptionsContext;
 import org.hibernate.ogm.options.spi.OptionsService;
 
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
@@ -42,38 +44,31 @@ public class GridFSStorageManager {
 			OptionsService optionsService,
 			Map<String, GridFSFields> tableEntityTypeMapping) {
 		this.optionsService = optionsService;
-		this.tableEntityTypeMapping = tableEntityTypeMapping;
+		this.tableEntityTypeMapping = tableEntityTypeMapping == null ? (Map<String, GridFSFields>) Collections.emptyList() : tableEntityTypeMapping;
 		this.mongoDatabase = provider.getDatabase();
 	}
 
-	public void storeContentToBinaryStorage(Document currentDocument, EntityKeyMetadata metadata, Object documentId ) {
+	public void storeContentToBinaryStorage(Document currentDocument, EntityKeyMetadata metadata, Object documentId) {
 		if ( currentDocument != null && metadata != null ) {
-			tableEntityTypeMapping.get( metadata.getTable() )
-			for ( String fieldName : currentDocument.keySet() ) {
-				if ( fieldName.equals( "$set" ) ) {
-					// it is part of request. it is not document
-					Document queryFields = (Document) currentDocument.get( fieldName );
-					for ( String queryField : queryFields.keySet() ) {
-						storeContentFromFieldToBinaryStorage( queryFields, metadata, queryField, documentId );
-					}
-				}
-				else {
-					// it is not document
-					storeContentFromFieldToBinaryStorage( currentDocument, metadata, fieldName, documentId );
+			GridFSFields gridFSFields = tableEntityTypeMapping.get( metadata.getTable() );
+			if ( gridFSFields != null ) {
+				for ( Field field : gridFSFields.getFields() ) {
+					String bucketName = bucketName( metadata, field.getName() );
+					storeContentFromFieldToBinaryStorage( bucketName, currentDocument, field.getName(), documentId );
 				}
 			}
 		}
 	}
 
-	private void storeContentFromFieldToBinaryStorage(Document documentToInsert, EntityKeyMetadata metadata, String fieldName, Object documentId) {
-		Object binaryContentObject = documentToInsert.get( fieldName );
-		if ( binaryContentObject instanceof GridFS ) {
-			GridFS grdfsObject = (GridFS) binaryContentObject;
-			String gridfsBucketName = bucketName( metadata, fieldName );
-			GridFSBucket gridFSFilesBucket = getGridFSFilesBucket( mongoDatabase, gridfsBucketName );
+	private void storeContentFromFieldToBinaryStorage(String bucketName, Document documentToInsert, String fieldName, Object documentId) {
+		if ( documentToInsert.containsKey( fieldName ) ) {
+			GridFSBucket gridFSFilesBucket = getGridFSFilesBucket( mongoDatabase, bucketName );
 			deleteExistingContent( fieldName, documentId, gridFSFilesBucket );
-			ObjectId uploadId = gridFSFilesBucket.uploadFromStream( fileName( fieldName, documentId ), grdfsObject.getInputStream() );
-			documentToInsert.put( fieldName, uploadId );
+			GridFS gridfsObject = documentToInsert.get( fieldName, GridFS.class );
+			if ( gridfsObject != null ) {
+				ObjectId uploadId = gridFSFilesBucket.uploadFromStream( fileName( fieldName, documentId ), gridfsObject.getInputStream() );
+				documentToInsert.put( fieldName, uploadId );
+			}
 		}
 	}
 
@@ -82,24 +77,33 @@ public class GridFSStorageManager {
 	 */
 	private void deleteExistingContent(String fieldName, Object documentId, GridFSBucket gridFSFilesBucket) {
 		GridFSFindIterable results = gridFSFilesBucket.find( Filters.and( Filters.eq( "filename", fileName( fieldName, documentId ) ) ) );
-		results.forEach( (GridFSFile file) -> {
-			gridFSFilesBucket.delete( file.getId() );
-		} );
+		try ( MongoCursor<GridFSFile> iterator = results.iterator() ) {
+			while ( iterator.hasNext() ) {
+				GridFSFile next = iterator.next();
+				gridFSFilesBucket.delete( next.getId() );
+			}
+		}
 	}
 
 	private String fileName(String fieldName, Object documentId) {
 		return fieldName + "_" + String.valueOf( documentId );
 	}
 
-	public void removeFromBinaryStorageByEntity(Document deletedDocument, EntityKeyMetadata entityKeyMetadata) {
-		if ( entityKeyMetadata != null ) {
+	public void removeEntityFromBinaryStorage(Document deletedDocument, EntityKeyMetadata entityKeyMetadata) {
+		removeFieldsFromBinaryStorage( deletedDocument, entityKeyMetadata, deletedDocument.get( "_id" ) );
+	}
+
+	public void removeFieldsFromBinaryStorage(Document fieldsToDelete, EntityKeyMetadata entityKeyMetadata, Object documentId) {
+		if ( fieldsToDelete != null && entityKeyMetadata != null ) {
 			GridFSFields storageFields = tableEntityTypeMapping.get( entityKeyMetadata.getTable() );
 			if ( storageFields != null ) {
 				Set<Field> fields = storageFields.getFields();
 				for ( Field gridfsField : fields ) {
-					String gridfsBucketName = bucketName( entityKeyMetadata, gridfsField.getName() );
-					GridFSBucket gridFSFilesBucket = getGridFSFilesBucket( mongoDatabase, gridfsBucketName );
-					deleteExistingContent( gridfsField.getName(), deletedDocument.get( "_id" ), gridFSFilesBucket );
+					if ( fieldsToDelete.containsKey( gridfsField.getName() ) ) {
+						String gridfsBucketName = bucketName( entityKeyMetadata, gridfsField.getName() );
+						GridFSBucket gridFSFilesBucket = getGridFSFilesBucket( mongoDatabase, gridfsBucketName );
+						deleteExistingContent( gridfsField.getName(), documentId, gridFSFilesBucket );
+					}
 				}
 			}
 		}
@@ -121,17 +125,15 @@ public class GridFSStorageManager {
 			GridFSFields fields = tableEntityTypeMapping.get( metadata.getTable() );
 			if ( currentDocument != null && fields != null ) {
 				for ( Field field : fields.getFields() ) {
-					OptionsContext optionsContext = propertyOptions( fields.getEntityClass(), field.getName() );
-					loadContentFromBinaryStorageToField( optionsContext, currentDocument, field.getName() );
+					String bucketName = bucketName( metadata, field.getName() );
+					loadContentFromBinaryStorageToField( bucketName, currentDocument, field.getName() );
 				}
 			}
 		}
 	}
 
-	public void loadContentFromBinaryStorageToField(OptionsContext optionsContext, Document currentDocument, String fieldName) {
-		String gridfsBucketName = optionsContext.getUnique( GridFSBucketOption.class );
-
-		GridFSBucket gridFSFilesBucket = getGridFSFilesBucket( mongoDatabase, gridfsBucketName );
+	private void loadContentFromBinaryStorageToField(String bucketName, Document currentDocument, String fieldName) {
+		GridFSBucket gridFSFilesBucket = getGridFSFilesBucket( mongoDatabase, bucketName );
 		Object uploadId = currentDocument.get( fieldName );
 		if ( uploadId != null ) {
 			GridFSDownloadStream gridFSDownloadStream = gridFSFilesBucket.openDownloadStream( (ObjectId) uploadId );

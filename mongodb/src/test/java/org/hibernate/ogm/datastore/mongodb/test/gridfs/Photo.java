@@ -29,7 +29,7 @@ public class Photo {
 	@GridFSBucket(BUCKET_NAME)
 	private GridFS gridfs;
 
-	private GridFS gridfsWithDefault;
+	private GridFS gridfsWithDefaultBucket;
 
 	public Photo() {
 	}
@@ -54,12 +54,12 @@ public class Photo {
 		this.gridfs = gridfs;
 	}
 
-	public GridFS getGridfsWithDefault() {
-		return gridfsWithDefault;
+	public GridFS getGridfsWithDefaultBucket() {
+		return gridfsWithDefaultBucket;
 	}
 
-	public void setGridfsWithDefault(GridFS gridfsWithDefault) {
-		this.gridfsWithDefault = gridfsWithDefault;
+	public void setGridfsWithDefaultBucket(GridFS gridfsWithDefault) {
+		this.gridfsWithDefaultBucket = gridfsWithDefault;
 	}
 
 	@Override

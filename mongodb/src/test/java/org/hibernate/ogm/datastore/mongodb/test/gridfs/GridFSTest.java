@@ -43,6 +43,8 @@ import com.mongodb.client.gridfs.model.GridFSFile;
 @TestForIssue(jiraKey = "OGM-786")
 public class GridFSTest extends OgmJpaTestCase {
 
+	private static final String DEFAULT_BUCKET_NAME = Photo.class.getSimpleName() + "_bucket";
+
 	/*
 	 * WARNING: GridFS makes sense for big files (over 16 MB). In case of error
 	 * the test might try to print the result and it will take some time.
@@ -50,7 +52,7 @@ public class GridFSTest extends OgmJpaTestCase {
 	 * I will keep this to a high value to make sure that there are no problems but,
 	 * for development, it makes sense to use something smaller.
 	 */
-	private static final int CONTENT_SIZE = 30 * 1024 * 1024;  // 30 MB
+	private static final int CONTENT_SIZE = 30_000_000; // ~30 MB
 
 	private static final String STRING_CONTENT_1 = createString( 'a', CONTENT_SIZE );
 	private static final String STRING_CONTENT_2 = createString( 'x', CONTENT_SIZE );
@@ -70,8 +72,8 @@ public class GridFSTest extends OgmJpaTestCase {
 	}
 
 	@Test
-	public void testGridFSField() throws Exception {
-		final String photoId  = "testGridFSField";
+	public void testGridFSFieldWithBucketAnnotation() throws Exception {
+		final String photoId  = "testGridFSFieldWithBucketAnnotation";
 		inTransaction( em -> {
 			Photo photo = new Photo( photoId );
 			photo.setGridFS( new GridFS( BYTE_ARRAY_CONTENT_1 ) );
@@ -86,6 +88,86 @@ public class GridFSTest extends OgmJpaTestCase {
 	}
 
 	@Test
+	public void testGridFSFieldWithDefaultBucket() throws Exception {
+		final String photoId  = "testGridFSFieldWithDefaultBucket";
+		inTransaction( em -> {
+			Photo photo = new Photo( photoId );
+			photo.setGridfsWithDefaultBucket( new GridFS( BYTE_ARRAY_CONTENT_1 ) );
+			em.persist( photo );
+		} );
+
+		// Check GridFS has been updated
+		List<GridFS> bucketContent = bucketContent( DEFAULT_BUCKET_NAME );
+
+		assertThat( bucketContent ).hasSize( 1 );
+		assertThatGridFSAreEqual( bucketContent.get( 0 ), BYTE_ARRAY_CONTENT_1 );
+	}
+
+	@Test
+	public void testSettingDifferentBuckets() throws Exception {
+		final String photoId  = "testGridFSFieldWithDefaultBucket";
+		inTransaction( em -> {
+			Photo photo = new Photo( photoId );
+			photo.setGridfsWithDefaultBucket( new GridFS( BYTE_ARRAY_CONTENT_1 ) );
+			photo.setGridFS( new GridFS( BYTE_ARRAY_CONTENT_2 ) );
+			em.persist( photo );
+		} );
+
+		List<GridFS> defaultBucketName = bucketContent( DEFAULT_BUCKET_NAME );
+		assertThat( defaultBucketName ).hasSize( 1 );
+		assertThatGridFSAreEqual( defaultBucketName.get( 0 ), BYTE_ARRAY_CONTENT_1 );
+
+		List<GridFS> customBucketName = bucketContent( BUCKET_NAME );
+		assertThat( customBucketName ).hasSize( 1 );
+		assertThatGridFSAreEqual( customBucketName.get( 0 ), BYTE_ARRAY_CONTENT_2 );
+	}
+
+	@Test
+	public void testUpdateFieldToNull() throws Exception {
+		final String photoId  = "testUpdateFieldToNull";
+		inTransaction( em -> {
+			Photo photo = new Photo( photoId );
+			photo.setGridFS( new GridFS( BYTE_ARRAY_CONTENT_2 ) );
+			em.persist( photo );
+		} );
+
+		inTransaction( em -> {
+			Photo photo1 = em.find( Photo.class, photoId );
+			photo1.setGridFS( null );
+		} );
+
+		List<GridFS> bucketName = bucketContent( BUCKET_NAME );
+
+		// Normally I would use containsExactly, but it fails for some reason
+		assertThat( bucketName ).hasSize( 0 );
+	}
+
+	@Test
+	public void testMultipleUpdates() throws Exception {
+		final String photoId  = "testMultipleUpdates";
+		inTransaction( em -> {
+			Photo photo = new Photo( photoId );
+			photo.setGridfsWithDefaultBucket( new GridFS( BYTE_ARRAY_CONTENT_1 ) );
+			photo.setGridFS( new GridFS( BYTE_ARRAY_CONTENT_2 ) );
+			em.persist( photo );
+		} );
+
+		inTransaction( em -> {
+			Photo photo1 = em.find( Photo.class, photoId );
+			photo1.setGridfsWithDefaultBucket( new GridFS( BYTE_ARRAY_CONTENT_2 ) );
+			photo1.setGridFS( null );
+		} );
+
+		List<GridFS> bucketName = bucketContent( BUCKET_NAME );
+		List<GridFS> defaultBucketName = bucketContent( DEFAULT_BUCKET_NAME );
+
+		assertThat( bucketName ).hasSize( 0 );
+
+		assertThat( defaultBucketName ).hasSize( 1 );
+		assertThatGridFSAreEqual( defaultBucketName.get( 0 ), BYTE_ARRAY_CONTENT_2 );
+	}
+
+	@Test
 	public void testSaveMultipleEntities() {
 		final String photoId1  = "testSaveMultipleEntities1";
 		final String photoId2  = "testSaveMultipleEntities2";
@@ -94,7 +176,7 @@ public class GridFSTest extends OgmJpaTestCase {
 			photo1.setGridFS( new GridFS( BYTE_ARRAY_CONTENT_1 ) );
 			em.persist( photo1 );
 
-			Photo photo2 = new Photo( photoId2);
+			Photo photo2 = new Photo( photoId2 );
 			photo2.setGridFS( new GridFS( BYTE_ARRAY_CONTENT_2 ) );
 			em.persist( photo2 );
 		} );
@@ -134,7 +216,6 @@ public class GridFSTest extends OgmJpaTestCase {
 		// Check GridFS has been updated
 		List<GridFS> bucketContent = bucketContent( BUCKET_NAME );
 
-		// Normally I would use containsExactly, but it fails for some reason
 		assertThat( bucketContent ).hasSize( 1 );
 		assertThatGridFSAreEqual( bucketContent.get( 0 ), BYTE_ARRAY_CONTENT_1 );
 	}

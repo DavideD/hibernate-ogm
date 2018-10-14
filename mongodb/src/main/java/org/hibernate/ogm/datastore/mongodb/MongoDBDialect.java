@@ -64,7 +64,6 @@ import org.hibernate.ogm.datastore.mongodb.type.GeoMultiPoint;
 import org.hibernate.ogm.datastore.mongodb.type.GeoMultiPolygon;
 import org.hibernate.ogm.datastore.mongodb.type.GeoPoint;
 import org.hibernate.ogm.datastore.mongodb.type.GeoPolygon;
-import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 import org.hibernate.ogm.datastore.mongodb.type.impl.BinaryAsBsonBinaryGridType;
 import org.hibernate.ogm.datastore.mongodb.type.impl.BlobAsBsonBinaryGridType;
 import org.hibernate.ogm.datastore.mongodb.type.impl.GeoCollectionGridType;
@@ -619,7 +618,7 @@ public class MongoDBDialect extends BaseGridDialect implements QueryableGridDial
 		MongoCollection<Document> collection = getCollection( key ).withWriteConcern( writeConcern );
 		Document deleted = collection.findOneAndDelete( toDelete );
 		if ( deleted != null ) {
-			provider.getBinaryStorageManager().removeFromBinaryStorageByEntity( deleted, key.getMetadata() );
+			provider.getBinaryStorageManager().removeEntityFromBinaryStorage( deleted, key.getMetadata() );
 		}
 	}
 
@@ -1711,8 +1710,14 @@ public class MongoDBDialect extends BaseGridDialect implements QueryableGridDial
 
 		if ( updateStatement != null && !updateStatement.isEmpty() ) {
 			Document documentId = prepareIdObject( entityKey );
-			provider.getBinaryStorageManager().storeContentToBinaryStorage( updateStatement, entityKey.getMetadata(), documentId.get( "_id" ) );
-			collection. withWriteConcern( writeConcern ).updateOne( documentId, updateStatement , updateOptions );
+
+			Document fieldsToUpdate = updateStatement.get( "$set", Document.class );
+			provider.getBinaryStorageManager().storeContentToBinaryStorage( fieldsToUpdate, entityKey.getMetadata(), documentId.get( "_id" ) );
+
+			Document fieldsToDelete = updateStatement.get( "$unset", Document.class );
+			provider.getBinaryStorageManager().removeFieldsFromBinaryStorage( fieldsToDelete, entityKey.getMetadata(), documentId.get( "_id" ) );
+
+			collection. withWriteConcern( writeConcern ).updateOne( documentId, updateStatement, updateOptions );
 		}
 	}
 
