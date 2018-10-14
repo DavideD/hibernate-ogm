@@ -40,7 +40,7 @@ import org.hibernate.ogm.datastore.document.options.AssociationStorageType;
 import org.hibernate.ogm.datastore.document.options.MapStorageType;
 import org.hibernate.ogm.datastore.document.options.spi.AssociationStorageOption;
 import org.hibernate.ogm.datastore.map.impl.MapTupleSnapshot;
-import org.hibernate.ogm.datastore.mongodb.binarystorage.BinaryStorageManager;
+import org.hibernate.ogm.datastore.mongodb.binarystorage.GridFSStorageManager;
 import org.hibernate.ogm.datastore.mongodb.configuration.impl.MongoDBConfiguration;
 import org.hibernate.ogm.datastore.mongodb.dialect.impl.AssociationStorageStrategy;
 import org.hibernate.ogm.datastore.mongodb.dialect.impl.MongoDBAssociationSnapshot;
@@ -64,6 +64,7 @@ import org.hibernate.ogm.datastore.mongodb.type.GeoMultiPoint;
 import org.hibernate.ogm.datastore.mongodb.type.GeoMultiPolygon;
 import org.hibernate.ogm.datastore.mongodb.type.GeoPoint;
 import org.hibernate.ogm.datastore.mongodb.type.GeoPolygon;
+import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 import org.hibernate.ogm.datastore.mongodb.type.impl.BinaryAsBsonBinaryGridType;
 import org.hibernate.ogm.datastore.mongodb.type.impl.BlobAsBsonBinaryGridType;
 import org.hibernate.ogm.datastore.mongodb.type.impl.GeoCollectionGridType;
@@ -1632,7 +1633,6 @@ public class MongoDBDialect extends BaseGridDialect implements QueryableGridDial
 				}
 				else {
 					updateStatement = objectForUpdate( tuple, tupleOperation.getTupleContext(), updateStatement );
-					provider.getBinaryStorageManager().storeContentToBinaryStorage( updateStatement, entityKey.getMetadata() );
 				}
 			}
 			else if ( operation instanceof InsertOrUpdateAssociationOperation ) {
@@ -1710,8 +1710,9 @@ public class MongoDBDialect extends BaseGridDialect implements QueryableGridDial
 		}
 
 		if ( updateStatement != null && !updateStatement.isEmpty() ) {
-			provider.getBinaryStorageManager().storeContentToBinaryStorage( updateStatement, entityKey.getMetadata() );
-			collection. withWriteConcern( writeConcern ).updateOne( prepareIdObject( entityKey ), updateStatement , updateOptions );
+			Document documentId = prepareIdObject( entityKey );
+			provider.getBinaryStorageManager().storeContentToBinaryStorage( updateStatement, entityKey.getMetadata(), documentId.get( "_id" ) );
+			collection. withWriteConcern( writeConcern ).updateOne( documentId, updateStatement , updateOptions );
 		}
 	}
 
@@ -1756,7 +1757,8 @@ public class MongoDBDialect extends BaseGridDialect implements QueryableGridDial
 
 			try {
 				for ( Document documentToInsert : entry.getValue().getAll() ) {
-					provider.getBinaryStorageManager().storeContentToBinaryStorage( documentToInsert, entry.getValue().entityKeyMetadata );
+					Object documentId = documentToInsert.get( "_id" );
+					provider.getBinaryStorageManager().storeContentToBinaryStorage( documentToInsert, entry.getValue().entityKeyMetadata, documentId );
 				}
 				collection.insertMany( entry.getValue().getAll() );
 			}
@@ -1981,9 +1983,9 @@ public class MongoDBDialect extends BaseGridDialect implements QueryableGridDial
 
 		private final MongoCollection<Document> collection;
 		private final EntityKeyMetadata entityKeyMetadata;
-		private final BinaryStorageManager binaryStorageManager;
+		private final GridFSStorageManager binaryStorageManager;
 
-		public MongoDBTuplesSupplier(MongoCollection<Document> collection, EntityKeyMetadata entityKeyMetadata, BinaryStorageManager binaryStorageManager) {
+		public MongoDBTuplesSupplier(MongoCollection<Document> collection, EntityKeyMetadata entityKeyMetadata, GridFSStorageManager binaryStorageManager) {
 			this.collection = collection;
 			this.entityKeyMetadata = entityKeyMetadata;
 			this.binaryStorageManager = binaryStorageManager;
@@ -1999,9 +2001,9 @@ public class MongoDBDialect extends BaseGridDialect implements QueryableGridDial
 
 		private final MongoCursor<Document> cursor;
 		private final EntityKeyMetadata metadata;
-		private final BinaryStorageManager binaryStorageManager;
+		private final GridFSStorageManager binaryStorageManager;
 
-		public MongoDBResultsCursor(MongoCursor<Document> cursor, EntityKeyMetadata metadata, BinaryStorageManager binaryStorageManager) {
+		public MongoDBResultsCursor(MongoCursor<Document> cursor, EntityKeyMetadata metadata, GridFSStorageManager binaryStorageManager) {
 			this.cursor = cursor;
 			this.metadata = metadata;
 			this.binaryStorageManager = binaryStorageManager;

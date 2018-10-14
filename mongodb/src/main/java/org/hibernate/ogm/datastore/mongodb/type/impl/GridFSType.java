@@ -14,6 +14,7 @@ import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 
+
 public class GridFSType extends AbstractSingleColumnStandardBasicType<GridFS> {
 
 	public GridFSType() {
@@ -29,7 +30,7 @@ public class GridFSType extends AbstractSingleColumnStandardBasicType<GridFS> {
 
 	@Override
 	public String[] getRegistrationKeys() {
-		return new String[]{ getName(), GridFS.class.getName() };
+		return new String[]{ "gridfs", GridFS.class.getName() };
 	}
 
 	private static class SqlDescriptor implements SqlTypeDescriptor {
@@ -73,12 +74,12 @@ public class GridFSType extends AbstractSingleColumnStandardBasicType<GridFS> {
 
 		@Override
 		public <X> X unwrap(GridFS value, Class<X> type, WrapperOptions options) {
-			return value.unwrap( type );
+			return null;
 		}
 
 		@Override
 		public <X> GridFS wrap(X value, WrapperOptions options) {
-			return GridFS.valueOf(value);
+			return null; 
 		}
 	}
 }

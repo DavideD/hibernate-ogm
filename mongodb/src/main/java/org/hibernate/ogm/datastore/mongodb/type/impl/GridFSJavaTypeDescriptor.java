@@ -5,16 +5,10 @@
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
 package org.hibernate.ogm.datastore.mongodb.type.impl;
-import org.bson.types.ObjectId;
 import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 
-/**
- * Descriptor for persisting {@link ObjectId}s as is in MongoDB.
- *
- * @author Gunnar Morling
- */
 public class GridFSJavaTypeDescriptor extends AbstractTypeDescriptor<GridFS> {
 
 	public static final GridFSJavaTypeDescriptor INSTANCE = new GridFSJavaTypeDescriptor();

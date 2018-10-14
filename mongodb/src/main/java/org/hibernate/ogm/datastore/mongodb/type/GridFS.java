@@ -12,31 +12,16 @@ import java.io.InputStream;
 public class GridFS {
 
 	private final InputStream inputStream;
-	private final String bucketName;
 
-	public GridFS(String bucketName, InputStream inputStream) {
-		this.bucketName = bucketName;
+	public GridFS(InputStream inputStream) {
 		this.inputStream = inputStream;
 	}
 
-	public GridFS(String bucketName, byte[] bytes) {
-		this.bucketName = bucketName;
+	public GridFS(byte[] bytes) {
 		this.inputStream = new ByteArrayInputStream( bytes );
 	}
 
 	public InputStream getInputStream() {
 		return inputStream;
-	}
-
-	public <X> X unwrap(Class<X> type) {
-		return null;
-	}
-
-	public static GridFS valueOf(Object value) {
-		return null;
-	}
-
-	public String getBucketName() {
-		return bucketName;
 	}
 }

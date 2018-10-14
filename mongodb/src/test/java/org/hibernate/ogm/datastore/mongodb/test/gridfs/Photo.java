@@ -6,16 +6,11 @@
  */
 package org.hibernate.ogm.datastore.mongodb.test.gridfs;
 
-import static org.hibernate.ogm.datastore.mongodb.options.BinaryStorageType.GRID_FS;
-
-import java.sql.Blob;
 import java.util.Objects;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.Lob;
 
-import org.hibernate.ogm.datastore.mongodb.options.BinaryStorage;
 import org.hibernate.ogm.datastore.mongodb.options.GridFSBucket;
 import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 
@@ -31,43 +26,16 @@ public class Photo {
 	@Id
 	private String id;
 
+	@GridFSBucket(BUCKET_NAME)
 	private GridFS gridfs;
 
-	@Lob
-	@GridFSBucket(BUCKET_NAME)
-	@BinaryStorage(GRID_FS)
-	private Blob contentAsBlob;
-
-	@Lob
-	@GridFSBucket(BUCKET_NAME)
-	@BinaryStorage(GRID_FS)
-	private byte[] contentAsByteArray;
-
-	@Lob
-	@GridFSBucket(BUCKET_NAME)
-	@BinaryStorage(GRID_FS)
-	private String contentAsString;
+	private GridFS gridfsWithDefault;
 
 	public Photo() {
 	}
 
 	public Photo(String id) {
 		this.id = id;
-	}
-
-	public Photo(String id, Blob contentAsBlob) {
-		this.id = id;
-		this.contentAsBlob = contentAsBlob;
-	}
-
-	public Photo(String id, String contentAsString) {
-		this.id = id;
-		this.contentAsString = contentAsString;
-	}
-
-	public Photo(String id, byte[] contentAsByteArray) {
-		this.id = id;
-		this.contentAsByteArray = contentAsByteArray;
 	}
 
 	public String getId() {
@@ -78,36 +46,20 @@ public class Photo {
 		this.id = id;
 	}
 
-	public Blob getContentAsBlob() {
-		return contentAsBlob;
-	}
-
-	public void setContentAsBlob(Blob contentAsBlob) {
-		this.contentAsBlob = contentAsBlob;
-	}
-
-	public byte[] getContentAsByteArray() {
-		return contentAsByteArray;
-	}
-
-	public void setContentAsByteArray(byte[] contentAsByteArray) {
-		this.contentAsByteArray = contentAsByteArray;
-	}
-
-	public String getContentAsString() {
-		return contentAsString;
-	}
-
-	public void setContentAsString(String contentAsString) {
-		this.contentAsString = contentAsString;
-	}
-
-	public GridFS getGridfs() {
+	public GridFS getGridFS() {
 		return gridfs;
 	}
 
-	public void setGridfs(GridFS gridfs) {
+	public void setGridFS(GridFS gridfs) {
 		this.gridfs = gridfs;
+	}
+
+	public GridFS getGridfsWithDefault() {
+		return gridfsWithDefault;
+	}
+
+	public void setGridfsWithDefault(GridFS gridfsWithDefault) {
+		this.gridfsWithDefault = gridfsWithDefault;
 	}
 
 	@Override
@@ -129,6 +81,6 @@ public class Photo {
 
 	@Override
 	public String toString() {
-		return "Photo [id=" + id + ", contentAsString=" + contentAsString + "]";
+		return "Photo [id=" + id + "]";
 	}
 }

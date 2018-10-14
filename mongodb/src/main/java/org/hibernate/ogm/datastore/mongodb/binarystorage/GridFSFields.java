@@ -10,25 +10,28 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
-import org.hibernate.ogm.datastore.mongodb.options.BinaryStorageType;
-
-public class FieldsWithBinaryStorageOption {
+public class GridFSFields {
 
 	private final Class<?> entityClass;
 
-	private Map<Field, BinaryStorageType> storages = new HashMap<>();
+	private Map<Field, String> bucketNames = new HashMap<>();
 
-	public FieldsWithBinaryStorageOption(Class<?> entityClass) {
+	public GridFSFields(Class<?> entityClass) {
 		this.entityClass = entityClass;
 	}
 
-	public void add(Field field, BinaryStorageType binaryStorageType) {
-		storages.put( field, binaryStorageType );
+	public void add(Field field, String binaryStorageType) {
+		bucketNames.put( field, binaryStorageType );
 	}
 
-	public BinaryStorageType get(String fieldName) {
-		for ( Entry<Field, BinaryStorageType> entry : storages.entrySet() ) {
+	public Set<Field> getFields() {
+		return bucketNames.keySet();
+	}
+
+	public String getBucketName(String fieldName) {
+		for ( Entry<Field, String> entry : bucketNames.entrySet() ) {
 			if ( entry.getKey().getName().equals( fieldName ) ) {
 				return entry.getValue();
 			}

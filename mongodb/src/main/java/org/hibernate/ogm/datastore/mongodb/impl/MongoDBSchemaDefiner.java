@@ -30,13 +30,12 @@ import org.hibernate.mapping.Index;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.UniqueKey;
 import org.hibernate.ogm.datastore.mongodb.MongoDBDialect;
-import org.hibernate.ogm.datastore.mongodb.binarystorage.FieldsWithBinaryStorageOption;
+import org.hibernate.ogm.datastore.mongodb.binarystorage.GridFSFields;
 import org.hibernate.ogm.datastore.mongodb.index.impl.MongoDBIndexSpec;
 import org.hibernate.ogm.datastore.mongodb.index.impl.MongoDBIndexType;
 import org.hibernate.ogm.datastore.mongodb.logging.impl.Log;
 import org.hibernate.ogm.datastore.mongodb.logging.impl.LoggerFactory;
-import org.hibernate.ogm.datastore.mongodb.options.BinaryStorageType;
-import org.hibernate.ogm.datastore.mongodb.options.impl.BinaryStorageOption;
+import org.hibernate.ogm.datastore.mongodb.type.GridFS;
 import org.hibernate.ogm.datastore.spi.BaseSchemaDefiner;
 import org.hibernate.ogm.datastore.spi.DatastoreProvider;
 import org.hibernate.ogm.model.key.spi.AssociationKeyMetadata;
@@ -45,7 +44,6 @@ import org.hibernate.ogm.model.key.spi.IdSourceKeyMetadata;
 import org.hibernate.ogm.options.shared.impl.IndexOptionsOption;
 import org.hibernate.ogm.options.shared.spi.IndexOption;
 import org.hibernate.ogm.options.shared.spi.IndexOptions;
-import org.hibernate.ogm.options.spi.OptionsContext;
 import org.hibernate.ogm.options.spi.OptionsService;
 import org.hibernate.ogm.persister.impl.OgmEntityPersister;
 import org.hibernate.ogm.util.impl.Contracts;
@@ -98,18 +96,16 @@ public class MongoDBSchemaDefiner extends BaseSchemaDefiner {
 		}
 	}
 
-	private Map<String, FieldsWithBinaryStorageOption> findBinaryStorageTypeEntities(Map<String, Class<?>> tableEntityTypeMapping,
+	private Map<String, GridFSFields> findBinaryStorageTypeEntities(Map<String, Class<?>> tableEntityTypeMapping,
 			OptionsService optionsService) {
-		Map<String, FieldsWithBinaryStorageOption> map = new HashMap<>();
+		Map<String, GridFSFields> map = new HashMap<>();
 		for ( Entry<String, Class<?>> entries : tableEntityTypeMapping.entrySet() ) {
 			boolean storageTypeDefined = false;
-			FieldsWithBinaryStorageOption storages = new FieldsWithBinaryStorageOption( entries.getValue() );
+			GridFSFields storages = new GridFSFields( entries.getValue() );
 			for ( Field currentField : entries.getValue().getDeclaredFields() ) {
-				OptionsContext optionsContext = optionsService.context().getPropertyOptions( entries.getValue(), currentField.getName() );
-				BinaryStorageType binaryStorageType = optionsContext.getUnique( BinaryStorageOption.class );
-				if ( binaryStorageType != null ) {
+				if ( currentField.getType() == GridFS.class ) {
 					storageTypeDefined = true;
-					storages.add( currentField, binaryStorageType );
+					storages.add( currentField, null );
 				}
 			}
 			if ( storageTypeDefined ) {
