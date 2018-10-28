@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.hibernate.ogm</groupId>
+        <artifactId>hibernate-ogm-bom</artifactId>
+        <version>5.4.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>hibernate-ogm-neo4j-procedures</artifactId>
+
+    <dependencies>
+        <dependency>
+            <!-- This gives us the Procedure API our runtime code uses. We 
+                have a `provided` scope on it, because when this is deployed in a Neo4j Instance, 
+                the API will be provided by Neo4j. If you add non-Neo4j dependencies to this 
+                project, their scope should normally be `compile` -->
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-procedure-api</artifactId>
+            <version>${version.org.neo4j}</version>
+        </dependency>
+    </dependencies>
+</project>
