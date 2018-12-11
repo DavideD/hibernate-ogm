@@ -472,6 +472,20 @@ public abstract class OgmEntityPersister extends AbstractEntityPersister impleme
 		return columnNames;
 	}
 
+	private static List<String> parentsNames(final OgmEntityPersister persister ) {
+		List<String> tables = new ArrayList<>();
+		if ( !persister.getEntityMetamodel().getSubclassEntityNames().isEmpty() ) {
+			String superClass = persister.getEntityMetamodel().getSuperclass();
+			while ( superClass != null ) {
+				OgmEntityPersister superEntityPersister = (OgmEntityPersister) persister.getFactory().getMetamodel().entityPersister( superClass );
+				String tableName = superEntityPersister.getTableName();
+				tables.add( tableName );
+				superClass = superEntityPersister.getEntityMetamodel().getSuperclass();
+			}
+		}
+		return tables;
+	}
+
 	/**
 	 * Returns the names of all those columns which represent a collection to be stored within the owning entity
 	 * structure (element collections and/or *-to-many associations, depending on the dialect's capabilities).
@@ -612,9 +626,11 @@ public abstract class OgmEntityPersister extends AbstractEntityPersister impleme
 
 		List<String> selectableColumnNames = selectableColumnNames( this, discriminator );
 		Set<String> polymorphicEntityColumns = polymorphicEntityColumns( this, selectableColumnNames, discriminator );
+		List<String> parentsNames = parentsNames( this );
 		return new TupleTypeContextImpl(
 				selectableColumnNames,
 				polymorphicEntityColumns,
+				parentsNames,
 				associatedEntityKeyMetadata,
 				roles,
 				optionsService.context().getEntityOptions( getMappedClass() ),

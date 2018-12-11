@@ -37,15 +37,18 @@ public class TupleTypeContextImpl implements TupleTypeContext {
 
 	private final Map<String, String> roles;
 	private final Set<String> polymorphicEntityColumns;
+	private final List<String> parentsNames;
 
 	public TupleTypeContextImpl(List<String> selectableColumns,
 			Set<String> polymorphicEntityColumns,
+			List<String> parentsNames,
 			Map<String, AssociatedEntityKeyMetadata> associatedEntityMetadata,
 			Map<String, String> roles,
 			OptionsContext optionsContext,
 			String discriminatorColumn,
 			Object discriminatorValue) {
 
+		this.parentsNames = parentsNames;
 		this.polymorphicEntityColumns = Collections.unmodifiableSet( polymorphicEntityColumns );
 		this.selectableColumns = Collections.unmodifiableList( selectableColumns );
 		this.associatedEntityMetadata = Collections.unmodifiableMap( associatedEntityMetadata );
@@ -63,6 +66,11 @@ public class TupleTypeContextImpl implements TupleTypeContext {
 	@Override
 	public Set<String> getPolymorphicEntityColumns() {
 		return polymorphicEntityColumns;
+	}
+
+	@Override
+	public List<String> getParentsNames() {
+		return parentsNames;
 	}
 
 	@Override

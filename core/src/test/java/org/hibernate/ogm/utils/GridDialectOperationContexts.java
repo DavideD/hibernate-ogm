@@ -58,6 +58,7 @@ public class GridDialectOperationContexts {
 		private OptionsContext optionsContext = EmptyOptionsContext.INSTANCE;
 		private List<String> selectableColumns = Collections.<String>emptyList();
 		private Set<String> polymorphicEntityColumns = Collections.<String>emptySet();
+		private List<String> parentsNames = Collections.<String>emptyList();
 		private Map<String, AssociatedEntityKeyMetadata> associatedEntityMetadata = Collections.<String, AssociatedEntityKeyMetadata>emptyMap();
 		private Map<String, String> roles = Collections.<String, String>emptyMap();
 
@@ -90,6 +91,7 @@ public class GridDialectOperationContexts {
 			return new TupleTypeContextImpl(
 					selectableColumns,
 					polymorphicEntityColumns,
+					parentsNames,
 					associatedEntityMetadata,
 					roles,
 					optionsContext, null, null );

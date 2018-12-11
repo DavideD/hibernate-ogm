@@ -47,6 +47,8 @@ public interface TupleTypeContext {
 	 */
 	Set<String> getPolymorphicEntityColumns();
 
+	List<String> getParentsNames();
+
 	/**
 	 * Whether the given column is part of a *-to-one association or not. If so, a dialect may choose to not persist the
 	 * column value in the corresponding tuple data structure itself but e.g. as a native relationship (in the case of
