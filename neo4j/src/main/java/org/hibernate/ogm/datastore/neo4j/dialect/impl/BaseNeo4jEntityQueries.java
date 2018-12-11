@@ -97,7 +97,7 @@ public abstract class BaseNeo4jEntityQueries extends BaseNeo4jQueries {
 		this.findEntityQuery = initFindEntityQuery( entityKeyMetadata, includeEmbedded );
 		this.findEntityWithEmbeddedEndNodeQuery = initFindEntityQueryWithEmbeddedEndNode( entityKeyMetadata );
 		this.findEntitiesQuery = initFindEntitiesQuery( entityKeyMetadata, includeEmbedded );
-		this.createEntityQuery = initCreateEntityQuery( entityKeyMetadata );
+		this.createEntityQuery = initCreateEntityQuery( entityKeyMetadata, tupleTypeContext );
 		this.updateEntityProperties = initMatchOwnerEntityNode( entityKeyMetadata );
 		this.createEntityWithPropertiesQuery = initCreateEntityWithPropertiesQuery( entityKeyMetadata );
 		this.removeEntityQuery = initRemoveEntityQuery( entityKeyMetadata );
@@ -522,12 +522,26 @@ public abstract class BaseNeo4jEntityQueries extends BaseNeo4jQueries {
 	/*
 	 * Example: CREATE (n:ENTITY:table {id: {0}}) RETURN n
 	 */
-	private static String initCreateEntityQuery(EntityKeyMetadata entityKeyMetadata) {
+	private static String initCreateEntityQuery(EntityKeyMetadata entityKeyMetadata, TupleTypeContext tupleTypeContext) {
 		StringBuilder queryBuilder = new StringBuilder( "CREATE " );
-		appendEntityNode( ENTITY_ALIAS, entityKeyMetadata, queryBuilder );
+		String[] labels = extraLabels( tupleTypeContext );
+		appendEntityNode( ENTITY_ALIAS, entityKeyMetadata, queryBuilder, labels );
 		queryBuilder.append( " RETURN " );
 		queryBuilder.append( ENTITY_ALIAS );
 		return queryBuilder.toString();
+	}
+
+	private static String[] extraLabels(TupleTypeContext tupleTypeContext) {
+		if ( tupleTypeContext == null ) {
+			return new String[0];
+		}
+
+		String[] labels = new String[tupleTypeContext.getParentsNames().size()];
+		int i = 0;
+		for ( String tableName : tupleTypeContext.getParentsNames() ) {
+			labels[i++] = tableName;
+		}
+		return labels;
 	}
 
 	/*

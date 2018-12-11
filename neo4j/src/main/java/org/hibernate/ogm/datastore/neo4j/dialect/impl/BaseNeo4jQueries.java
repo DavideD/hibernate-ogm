@@ -27,6 +27,10 @@ class BaseNeo4jQueries {
 		escapeIdentifier( queryBuilder, entityKeyMetadata.getTable() );
 	}
 
+	protected static void appendLabel(String label, StringBuilder queryBuilder) {
+		escapeIdentifier( queryBuilder, label );
+	}
+
 	protected static void appendProperties(EntityKeyMetadata entityKeyMetadata, StringBuilder queryBuilder) {
 		appendProperties( queryBuilder, entityKeyMetadata.getColumnNames(), 0 );
 	}
@@ -74,21 +78,25 @@ class BaseNeo4jQueries {
 	 *
 	 * (owner:ENTITY:table {id: {0}})
 	 */
-	protected static void appendEntityNode(String alias, EntityKeyMetadata entityKeyMetadata, StringBuilder queryBuilder) {
-		appendEntityNode( alias, entityKeyMetadata, queryBuilder, 0 );
+	protected static void appendEntityNode(String alias, EntityKeyMetadata entityKeyMetadata, StringBuilder queryBuilder, String... extraLabels) {
+		appendEntityNode( alias, entityKeyMetadata, queryBuilder, 0, extraLabels );
 	}
 
-	protected static void appendEntityNode(String alias, EntityKeyMetadata entityKeyMetadata, StringBuilder queryBuilder, int offset) {
-		appendEntityNode( alias, entityKeyMetadata, queryBuilder, offset, true );
+	protected static void appendEntityNode(String alias, EntityKeyMetadata entityKeyMetadata, StringBuilder queryBuilder, int offset, String... extraLabels) {
+		appendEntityNode( alias, entityKeyMetadata, queryBuilder, offset, true, extraLabels );
 	}
 
-	protected static void appendEntityNode(String alias, EntityKeyMetadata entityKeyMetadata, StringBuilder queryBuilder, int offset, boolean addProperties) {
+	protected static void appendEntityNode(String alias, EntityKeyMetadata entityKeyMetadata, StringBuilder queryBuilder, int offset, boolean addProperties, String... extraLabels) {
 		queryBuilder.append( "(" );
 		queryBuilder.append( alias );
 		queryBuilder.append( ":" );
 		queryBuilder.append( ENTITY );
 		queryBuilder.append( ":" );
 		appendLabel( entityKeyMetadata, queryBuilder );
+		for ( String label : extraLabels ) {
+			queryBuilder.append( ":" );
+			appendLabel( label, queryBuilder );
+		}
 		if ( addProperties ) {
 			appendProperties( queryBuilder, entityKeyMetadata.getColumnNames(), offset );
 		}

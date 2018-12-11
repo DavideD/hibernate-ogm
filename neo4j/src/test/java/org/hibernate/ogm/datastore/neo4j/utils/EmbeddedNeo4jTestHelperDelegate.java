@@ -163,6 +163,9 @@ public class EmbeddedNeo4jTestHelperDelegate implements Neo4jTestHelperDelegate 
 		Transaction tx = engine.beginTx();
 		try {
 			ResourceIterator<Object> nodes = engine.execute( query, node.getParams() ).columnAs( node.getAlias() );
+			if ( !nodes.hasNext() ) {
+				return null;
+			}
 
 			PropertyContainer propertyContainer = (PropertyContainer) nodes.next();
 			if ( nodes.hasNext() ) {
@@ -186,6 +189,9 @@ public class EmbeddedNeo4jTestHelperDelegate implements Neo4jTestHelperDelegate 
 		Transaction tx = engine.beginTx();
 		try {
 			ResourceIterator<Object> nodes = engine.execute( query, node.getParams() ).columnAs( node.getAlias() );
+			if ( !nodes.hasNext() ) {
+				return null;
+			}
 
 			PropertyContainer propertyContainer = (PropertyContainer) nodes.next();
 			if ( nodes.hasNext() ) {
