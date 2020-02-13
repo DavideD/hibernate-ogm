@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ~ Hibernate OGM, Domain model persistence for NoSQL datastores
+ ~
+ ~ License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ ~ See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+  -->
+<infinispan
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:infinispan:config:9.4 http://www.infinispan.org/schemas/infinispan-config-.4.xsd"
+    xmlns="urn:infinispan:config:9.4">
+
+    <jgroups>
+         <stack-file name="ems-jgroups" path="ems-jgroups-udp.xml"/>
+    </jgroups>
+
+    <cache-container name="ems-model" statistics="false" shutdown-hook="DONT_REGISTER">
+        <transport stack="ems-jgroups"  cluster="EMS"/>
+        <jmx duplicate-domains="true"/>
+
+        <!-- *************************************** -->
+        <!--     Default cache used as template      -->
+        <!-- *************************************** -->
+        <replicated-cache-configuration name ="replicated_conf" mode="SYNC" statistics="false" statistics-available="false">
+            <locking isolation="REPEATABLE_READ"/>
+            <transaction mode="BATCH" locking="PESSIMISTIC"/>
+			<expiration interval="-1"/>
+            <persistence>
+				<file-store fetch-state="true" preload="true" path="${test.infinispan.file-store}"/>
+			</persistence>
+            <state-transfer timeout="480000"/>
+        </replicated-cache-configuration>
+
+        <!-- *************************************** -->
+        <!--     Cache to store the OGM entities     -->
+        <!-- *************************************** -->
+        <replicated-cache name="ENTITIES" configuration="replicated_conf" />
+
+        <!-- *********************************************** -->
+        <!--   Cache to store the relations across entities  -->
+        <!-- *********************************************** -->
+        <replicated-cache name="ASSOCIATIONS" configuration="replicated_conf"/>
+
+        <!-- ***************************** -->
+        <!--   Cache to store identifiers  -->
+        <!-- ***************************** -->
+        <replicated-cache name="IDENTIFIERS" configuration="replicated_conf"/>
+
+    </cache-container>
+</infinispan>

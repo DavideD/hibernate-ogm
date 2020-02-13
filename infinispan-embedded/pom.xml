@@ -22,6 +22,10 @@
     <name>Hibernate OGM for Infinispan Embedded</name>
     <description>Persist objects in Infinispan Embedded</description>
 
+    <properties>
+        <test.infinispan.file-store>${project.build.directory}/infinispan-replicated</test.infinispan.file-store>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.hibernate.ogm</groupId>
